@@ -10,33 +10,206 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as GroupsIndexRouteImport } from './routes/groups.index'
+import { Route as GroupsGroupIdRouteImport } from './routes/groups.$groupId'
+import { Route as GroupsNewRouteImport } from './routes/groups.new'
+import { Route as SettleGroupIdRouteImport } from './routes/settle.$groupId'
+import { Route as SplitAmountRouteImport } from './routes/split.amount'
+import { Route as SplitItemsRouteImport } from './routes/split.items'
+import { Route as SplitResultRouteImport } from './routes/split.result'
+import { Route as SplitReviewRouteImport } from './routes/split.review'
+import { Route as SplitScanRouteImport } from './routes/split.scan'
+import { Route as SplitShareRouteImport } from './routes/split.share'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ActivityRoute = ActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupsIndexRoute = GroupsIndexRouteImport.update({
+  id: '/groups/',
+  path: '/groups/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupsGroupIdRoute = GroupsGroupIdRouteImport.update({
+  id: '/groups/$groupId',
+  path: '/groups/$groupId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupsNewRoute = GroupsNewRouteImport.update({
+  id: '/groups/new',
+  path: '/groups/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettleGroupIdRoute = SettleGroupIdRouteImport.update({
+  id: '/settle/$groupId',
+  path: '/settle/$groupId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplitAmountRoute = SplitAmountRouteImport.update({
+  id: '/split/amount',
+  path: '/split/amount',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplitItemsRoute = SplitItemsRouteImport.update({
+  id: '/split/items',
+  path: '/split/items',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplitResultRoute = SplitResultRouteImport.update({
+  id: '/split/result',
+  path: '/split/result',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplitReviewRoute = SplitReviewRouteImport.update({
+  id: '/split/review',
+  path: '/split/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplitScanRoute = SplitScanRouteImport.update({
+  id: '/split/scan',
+  path: '/split/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplitShareRoute = SplitShareRouteImport.update({
+  id: '/split/share',
+  path: '/split/share',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
+  '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/groups/$groupId': typeof GroupsGroupIdRoute
+  '/groups/new': typeof GroupsNewRoute
+  '/settle/$groupId': typeof SettleGroupIdRoute
+  '/split/amount': typeof SplitAmountRoute
+  '/split/items': typeof SplitItemsRoute
+  '/split/result': typeof SplitResultRoute
+  '/split/review': typeof SplitReviewRoute
+  '/split/scan': typeof SplitScanRoute
+  '/split/share': typeof SplitShareRoute
+  '/groups/': typeof GroupsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
+  '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/groups/$groupId': typeof GroupsGroupIdRoute
+  '/groups/new': typeof GroupsNewRoute
+  '/settle/$groupId': typeof SettleGroupIdRoute
+  '/split/amount': typeof SplitAmountRoute
+  '/split/items': typeof SplitItemsRoute
+  '/split/result': typeof SplitResultRoute
+  '/split/review': typeof SplitReviewRoute
+  '/split/scan': typeof SplitScanRoute
+  '/split/share': typeof SplitShareRoute
+  '/groups': typeof GroupsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
+  '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/groups/$groupId': typeof GroupsGroupIdRoute
+  '/groups/new': typeof GroupsNewRoute
+  '/settle/$groupId': typeof SettleGroupIdRoute
+  '/split/amount': typeof SplitAmountRoute
+  '/split/items': typeof SplitItemsRoute
+  '/split/result': typeof SplitResultRoute
+  '/split/review': typeof SplitReviewRoute
+  '/split/scan': typeof SplitScanRoute
+  '/split/share': typeof SplitShareRoute
+  '/groups/': typeof GroupsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/activity'
+    | '/onboarding'
+    | '/profile'
+    | '/groups/$groupId'
+    | '/groups/new'
+    | '/settle/$groupId'
+    | '/split/amount'
+    | '/split/items'
+    | '/split/result'
+    | '/split/review'
+    | '/split/scan'
+    | '/split/share'
+    | '/groups/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/activity'
+    | '/onboarding'
+    | '/profile'
+    | '/groups/$groupId'
+    | '/groups/new'
+    | '/settle/$groupId'
+    | '/split/amount'
+    | '/split/items'
+    | '/split/result'
+    | '/split/review'
+    | '/split/scan'
+    | '/split/share'
+    | '/groups'
+  id:
+    | '__root__'
+    | '/'
+    | '/activity'
+    | '/onboarding'
+    | '/profile'
+    | '/groups/$groupId'
+    | '/groups/new'
+    | '/settle/$groupId'
+    | '/split/amount'
+    | '/split/items'
+    | '/split/result'
+    | '/split/review'
+    | '/split/scan'
+    | '/split/share'
+    | '/groups/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActivityRoute: typeof ActivityRoute
+  OnboardingRoute: typeof OnboardingRoute
+  ProfileRoute: typeof ProfileRoute
+  GroupsGroupIdRoute: typeof GroupsGroupIdRoute
+  GroupsNewRoute: typeof GroupsNewRoute
+  SettleGroupIdRoute: typeof SettleGroupIdRoute
+  SplitAmountRoute: typeof SplitAmountRoute
+  SplitItemsRoute: typeof SplitItemsRoute
+  SplitResultRoute: typeof SplitResultRoute
+  SplitReviewRoute: typeof SplitReviewRoute
+  SplitScanRoute: typeof SplitScanRoute
+  SplitShareRoute: typeof SplitShareRoute
+  GroupsIndexRoute: typeof GroupsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +221,115 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/activity': {
+      id: '/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof ActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groups/': {
+      id: '/groups/'
+      path: '/groups'
+      fullPath: '/groups/'
+      preLoaderRoute: typeof GroupsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groups/$groupId': {
+      id: '/groups/$groupId'
+      path: '/groups/$groupId'
+      fullPath: '/groups/$groupId'
+      preLoaderRoute: typeof GroupsGroupIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groups/new': {
+      id: '/groups/new'
+      path: '/groups/new'
+      fullPath: '/groups/new'
+      preLoaderRoute: typeof GroupsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settle/$groupId': {
+      id: '/settle/$groupId'
+      path: '/settle/$groupId'
+      fullPath: '/settle/$groupId'
+      preLoaderRoute: typeof SettleGroupIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/split/amount': {
+      id: '/split/amount'
+      path: '/split/amount'
+      fullPath: '/split/amount'
+      preLoaderRoute: typeof SplitAmountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/split/items': {
+      id: '/split/items'
+      path: '/split/items'
+      fullPath: '/split/items'
+      preLoaderRoute: typeof SplitItemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/split/result': {
+      id: '/split/result'
+      path: '/split/result'
+      fullPath: '/split/result'
+      preLoaderRoute: typeof SplitResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/split/review': {
+      id: '/split/review'
+      path: '/split/review'
+      fullPath: '/split/review'
+      preLoaderRoute: typeof SplitReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/split/scan': {
+      id: '/split/scan'
+      path: '/split/scan'
+      fullPath: '/split/scan'
+      preLoaderRoute: typeof SplitScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/split/share': {
+      id: '/split/share'
+      path: '/split/share'
+      fullPath: '/split/share'
+      preLoaderRoute: typeof SplitShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActivityRoute: ActivityRoute,
+  OnboardingRoute: OnboardingRoute,
+  ProfileRoute: ProfileRoute,
+  GroupsGroupIdRoute: GroupsGroupIdRoute,
+  GroupsNewRoute: GroupsNewRoute,
+  SettleGroupIdRoute: SettleGroupIdRoute,
+  SplitAmountRoute: SplitAmountRoute,
+  SplitItemsRoute: SplitItemsRoute,
+  SplitResultRoute: SplitResultRoute,
+  SplitReviewRoute: SplitReviewRoute,
+  SplitScanRoute: SplitScanRoute,
+  SplitShareRoute: SplitShareRoute,
+  GroupsIndexRoute: GroupsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
