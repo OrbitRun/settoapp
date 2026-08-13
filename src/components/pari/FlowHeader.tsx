@@ -7,10 +7,10 @@ export function FlowHeader({
   onClose,
   variant = "back",
 }: {
-  title?: string;
-  subtitle?: string;
-  onClose?: () => void;
-  variant?: "back" | "close";
+  title?: string | undefined;
+  subtitle?: string | undefined;
+  onClose?: (() => void) | undefined;
+  variant?: "back" | "close" | undefined;
 }) {
   const router = useRouter();
 
