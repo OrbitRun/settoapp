@@ -1,0 +1,102 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { Copy } from "lucide-react";
+import { toast } from "sonner";
+
+import { Divider, Panel, Screen } from "@/components/pari/AppShell";
+import { FlowHeader } from "@/components/pari/FlowHeader";
+import { Avatar } from "@/components/pari/Avatar";
+import { MoneyAmount } from "@/components/pari/MoneyAmount";
+import { EmptyState } from "@/components/pari/EmptyState";
+import { usePari } from "@/data/store";
+import { formatMinor } from "@/lib/money";
+
+export const Route = createFileRoute("/settle/$groupId")({
+  head: () => ({
+    meta: [
+      { title: "Settle up — PARI" },
+      {
+        name: "description",
+        content: "The shortest way to clear a group: fewest payments, exact amounts.",
+      },
+      { property: "og:title", content: "Settle up — PARI" },
+      {
+        property: "og:description",
+        content: "The shortest way to clear a group: fewest payments, exact amounts.",
+      },
+    ],
+  }),
+  component: SettleScreen,
+});
+
+function SettleScreen() {
+  const { groupId } = Route.useParams();
+  const pari = usePari();
+  const group = pari.data.groups.find((g) => g.id === groupId);
+  const plan = pari.settlementPlan(groupId);
+
+  return (
+    <Screen>
+      <FlowHeader title="Settle up" subtitle={group?.name} />
+
+      <div className="px-1 pb-8">
+        <h1 className="text-[26px] font-semibold tracking-[-0.03em]">Settle up</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          PARI works out the fewest payments that clear everyone.
+        </p>
+      </div>
+
+      {plan.length === 0 ? (
+        <EmptyState
+          title="Everything is settled"
+          description="No payments needed in this group right now."
+        />
+      ) : (
+        <Panel>
+          {plan.map((step, index) => (
+            <div key={`${step.fromPersonId}-${step.toPersonId}`}>
+              {index > 0 ? <Divider /> : null}
+              <div className="space-y-4 px-4 py-4">
+                <div className="flex items-center gap-3">
+                  <Avatar name={pari.personName(step.fromPersonId)} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-medium tracking-tight">
+                      {pari.personName(step.fromPersonId)} pays{" "}
+                      {pari.personName(step.toPersonId)}
+                    </p>
+                    <MoneyAmount minor={step.amountMinor} tone="muted" size="sm" className="mt-1 block" />
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(
+                        formatMinor(step.amountMinor, { currency: "" }).trim(),
+                      );
+                      toast.success("Amount copied");
+                    }}
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-surface-strong text-sm font-medium"
+                  >
+                    <Copy className="h-4 w-4" strokeWidth={1.6} />
+                    Copy amount
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      pari.markSettled(groupId, step);
+                      toast.success("Marked as paid");
+                    }}
+                    className="inline-flex h-11 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground"
+                  >
+                    Mark as paid
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </Panel>
+      )}
+    </Screen>
+  );
+}
