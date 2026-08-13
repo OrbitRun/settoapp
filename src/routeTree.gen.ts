@@ -18,6 +18,8 @@ import { Route as GroupsGroupIdRouteImport } from './routes/groups.$groupId'
 import { Route as GroupsNewRouteImport } from './routes/groups.new'
 import { Route as SettleGroupIdRouteImport } from './routes/settle.$groupId'
 import { Route as SplitAmountRouteImport } from './routes/split.amount'
+import { Route as SplitItemsRouteImport } from './routes/split.items'
+import { Route as SplitResultRouteImport } from './routes/split.result'
 import { Route as SplitReviewRouteImport } from './routes/split.review'
 import { Route as SplitScanRouteImport } from './routes/split.scan'
 import { Route as SplitShareRouteImport } from './routes/split.share'
@@ -67,6 +69,16 @@ const SplitAmountRoute = SplitAmountRouteImport.update({
   path: '/split/amount',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplitItemsRoute = SplitItemsRouteImport.update({
+  id: '/split/items',
+  path: '/split/items',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplitResultRoute = SplitResultRouteImport.update({
+  id: '/split/result',
+  path: '/split/result',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SplitReviewRoute = SplitReviewRouteImport.update({
   id: '/split/review',
   path: '/split/review',
@@ -92,6 +104,8 @@ export interface FileRoutesByFullPath {
   '/groups/new': typeof GroupsNewRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
   '/split/amount': typeof SplitAmountRoute
+  '/split/items': typeof SplitItemsRoute
+  '/split/result': typeof SplitResultRoute
   '/split/review': typeof SplitReviewRoute
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
@@ -106,6 +120,8 @@ export interface FileRoutesByTo {
   '/groups/new': typeof GroupsNewRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
   '/split/amount': typeof SplitAmountRoute
+  '/split/items': typeof SplitItemsRoute
+  '/split/result': typeof SplitResultRoute
   '/split/review': typeof SplitReviewRoute
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
@@ -121,6 +137,8 @@ export interface FileRoutesById {
   '/groups/new': typeof GroupsNewRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
   '/split/amount': typeof SplitAmountRoute
+  '/split/items': typeof SplitItemsRoute
+  '/split/result': typeof SplitResultRoute
   '/split/review': typeof SplitReviewRoute
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
@@ -137,6 +155,8 @@ export interface FileRouteTypes {
     | '/groups/new'
     | '/settle/$groupId'
     | '/split/amount'
+    | '/split/items'
+    | '/split/result'
     | '/split/review'
     | '/split/scan'
     | '/split/share'
@@ -151,6 +171,8 @@ export interface FileRouteTypes {
     | '/groups/new'
     | '/settle/$groupId'
     | '/split/amount'
+    | '/split/items'
+    | '/split/result'
     | '/split/review'
     | '/split/scan'
     | '/split/share'
@@ -165,6 +187,8 @@ export interface FileRouteTypes {
     | '/groups/new'
     | '/settle/$groupId'
     | '/split/amount'
+    | '/split/items'
+    | '/split/result'
     | '/split/review'
     | '/split/scan'
     | '/split/share'
@@ -180,6 +204,8 @@ export interface RootRouteChildren {
   GroupsNewRoute: typeof GroupsNewRoute
   SettleGroupIdRoute: typeof SettleGroupIdRoute
   SplitAmountRoute: typeof SplitAmountRoute
+  SplitItemsRoute: typeof SplitItemsRoute
+  SplitResultRoute: typeof SplitResultRoute
   SplitReviewRoute: typeof SplitReviewRoute
   SplitScanRoute: typeof SplitScanRoute
   SplitShareRoute: typeof SplitShareRoute
@@ -251,6 +277,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplitAmountRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/split/items': {
+      id: '/split/items'
+      path: '/split/items'
+      fullPath: '/split/items'
+      preLoaderRoute: typeof SplitItemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/split/result': {
+      id: '/split/result'
+      path: '/split/result'
+      fullPath: '/split/result'
+      preLoaderRoute: typeof SplitResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/split/review': {
       id: '/split/review'
       path: '/split/review'
@@ -284,6 +324,8 @@ const rootRouteChildren: RootRouteChildren = {
   GroupsNewRoute: GroupsNewRoute,
   SettleGroupIdRoute: SettleGroupIdRoute,
   SplitAmountRoute: SplitAmountRoute,
+  SplitItemsRoute: SplitItemsRoute,
+  SplitResultRoute: SplitResultRoute,
   SplitReviewRoute: SplitReviewRoute,
   SplitScanRoute: SplitScanRoute,
   SplitShareRoute: SplitShareRoute,
