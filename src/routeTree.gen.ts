@@ -17,6 +17,8 @@ import { Route as GroupsIndexRouteImport } from './routes/groups.index'
 import { Route as GroupsGroupIdRouteImport } from './routes/groups.$groupId'
 import { Route as GroupsNewRouteImport } from './routes/groups.new'
 import { Route as SettleGroupIdRouteImport } from './routes/settle.$groupId'
+import { Route as SplitAmountRouteImport } from './routes/split.amount'
+import { Route as SplitScanRouteImport } from './routes/split.scan'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +60,16 @@ const SettleGroupIdRoute = SettleGroupIdRouteImport.update({
   path: '/settle/$groupId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplitAmountRoute = SplitAmountRouteImport.update({
+  id: '/split/amount',
+  path: '/split/amount',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplitScanRoute = SplitScanRouteImport.update({
+  id: '/split/scan',
+  path: '/split/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +79,8 @@ export interface FileRoutesByFullPath {
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
+  '/split/amount': typeof SplitAmountRoute
+  '/split/scan': typeof SplitScanRoute
   '/groups/': typeof GroupsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +91,8 @@ export interface FileRoutesByTo {
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
+  '/split/amount': typeof SplitAmountRoute
+  '/split/scan': typeof SplitScanRoute
   '/groups': typeof GroupsIndexRoute
 }
 export interface FileRoutesById {
@@ -88,6 +104,8 @@ export interface FileRoutesById {
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
+  '/split/amount': typeof SplitAmountRoute
+  '/split/scan': typeof SplitScanRoute
   '/groups/': typeof GroupsIndexRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +118,8 @@ export interface FileRouteTypes {
     | '/groups/$groupId'
     | '/groups/new'
     | '/settle/$groupId'
+    | '/split/amount'
+    | '/split/scan'
     | '/groups/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +130,8 @@ export interface FileRouteTypes {
     | '/groups/$groupId'
     | '/groups/new'
     | '/settle/$groupId'
+    | '/split/amount'
+    | '/split/scan'
     | '/groups'
   id:
     | '__root__'
@@ -120,6 +142,8 @@ export interface FileRouteTypes {
     | '/groups/$groupId'
     | '/groups/new'
     | '/settle/$groupId'
+    | '/split/amount'
+    | '/split/scan'
     | '/groups/'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +155,8 @@ export interface RootRouteChildren {
   GroupsGroupIdRoute: typeof GroupsGroupIdRoute
   GroupsNewRoute: typeof GroupsNewRoute
   SettleGroupIdRoute: typeof SettleGroupIdRoute
+  SplitAmountRoute: typeof SplitAmountRoute
+  SplitScanRoute: typeof SplitScanRoute
   GroupsIndexRoute: typeof GroupsIndexRoute
 }
 
@@ -192,6 +218,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettleGroupIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/split/amount': {
+      id: '/split/amount'
+      path: '/split/amount'
+      fullPath: '/split/amount'
+      preLoaderRoute: typeof SplitAmountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/split/scan': {
+      id: '/split/scan'
+      path: '/split/scan'
+      fullPath: '/split/scan'
+      preLoaderRoute: typeof SplitScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -203,6 +243,8 @@ const rootRouteChildren: RootRouteChildren = {
   GroupsGroupIdRoute: GroupsGroupIdRoute,
   GroupsNewRoute: GroupsNewRoute,
   SettleGroupIdRoute: SettleGroupIdRoute,
+  SplitAmountRoute: SplitAmountRoute,
+  SplitScanRoute: SplitScanRoute,
   GroupsIndexRoute: GroupsIndexRoute,
 }
 export const routeTree = rootRouteImport
