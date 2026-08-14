@@ -79,13 +79,26 @@ type CreateGroupInput = {
   name: string;
   personNames: string[];
   defaultSplitType: SplitMode;
+  /**
+   * Default rule values keyed by member key: "self" for the owner, otherwise the
+   * lowercased person name — people only get ids once the group is created.
+   */
   percentages?: Record<string, number>;
+  shares?: Record<string, number>;
 };
 
 type UpdateGroupInput = {
   name?: string;
   defaultSplitType?: SplitMode;
   percentages?: Record<string, number> | null;
+  shares?: Record<string, number> | null;
+};
+
+/** A group's saved default split rule, resolved to person ids. */
+export type GroupRule = {
+  mode: SplitMode;
+  percentages: Record<string, number>;
+  shares: Record<string, number>;
 };
 
 type UpdateExpenseInput = {
@@ -121,6 +134,7 @@ type PariContextValue = {
   recentExpenses: (limit?: number) => Expense[];
   activityFeed: () => ActivityEntry[];
   groupDefaultPercentages: (groupId: string) => Record<string, number> | null;
+  groupRule: (groupId: string) => GroupRule | null;
   addExpense: (input: AddExpenseInput) => Promise<Expense | null>;
   updateExpense: (id: string, input: UpdateExpenseInput) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
@@ -567,6 +581,34 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const activityFeed = () =>
       [...data.activity].sort((a, b) => b.created_at.localeCompare(a.created_at));
 
+    const groupRule = (groupId: string): GroupRule | null => {
+      const group = data.groups.find((g) => g.id === groupId);
+      if (!group) return null;
+      const mode = (group.default_split_type as SplitMode) ?? "equal";
+      const members = data.groupMembers.filter((m) => m.group_id === groupId);
+      if (members.length === 0) return null;
+      if (mode === "percentage") {
+        if (members.some((m) => m.default_percentage == null)) return null;
+        return {
+          mode,
+          percentages: Object.fromEntries(
+            members.map((m) => [m.person_id, Number(m.default_percentage)]),
+          ),
+          shares: {},
+        };
+      }
+      if (mode === "shares") {
+        return {
+          mode,
+          percentages: {},
+          shares: Object.fromEntries(
+            members.map((m) => [m.person_id, Number(m.default_weight ?? 1)]),
+          ),
+        };
+      }
+      return { mode: "equal", percentages: {}, shares: {} };
+    };
+
     const groupDefaultPercentages = (groupId: string) => {
       const group = data.groups.find((g) => g.id === groupId);
       if (!group || group.default_split_type !== "percentage") return null;
@@ -767,18 +809,21 @@ export function PariProvider({ children }: { children: ReactNode }) {
       }
       const groupId = group.id as string;
 
-      const memberIds: string[] = [];
+      // Members carry the key they were configured under so the default rule
+      // entered before the group existed lands on the right person.
+      const members: { personId: string; key: string }[] = [];
       // The owner is always a member — match by identity, never by name.
-      if (currentPersonId) memberIds.push(currentPersonId);
+      if (currentPersonId) members.push({ personId: currentPersonId, key: "self" });
 
       for (const rawName of input.personNames) {
         const trimmed = rawName.trim();
         if (!trimmed) continue;
-        const existing = data.people.find(
-          (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
-        );
+        const key = trimmed.toLowerCase();
+        const existing = data.people.find((p) => p.name.toLowerCase() === key);
         if (existing) {
-          if (!memberIds.includes(existing.id)) memberIds.push(existing.id);
+          if (!members.some((m) => m.personId === existing.id)) {
+            members.push({ personId: existing.id, key });
+          }
           continue;
         }
         const { data: created, error: personError } = await supabase
@@ -790,17 +835,22 @@ export function PariProvider({ children }: { children: ReactNode }) {
           console.error("[pari] createGroup person", personError);
           continue;
         }
-        memberIds.push(created.id as string);
+        members.push({ personId: created.id as string, key });
       }
 
-      if (memberIds.length > 0) {
+      if (members.length > 0) {
         const { error: memberError } = await supabase.from("group_members").insert(
-          memberIds.map((personId, index) => ({
+          members.map((member, index) => ({
             owner_user_id: userId,
             group_id: groupId,
-            person_id: personId,
+            person_id: member.personId,
             role: index === 0 ? "owner" : "member",
-            default_percentage: input.percentages?.[personId] ?? null,
+            default_percentage:
+              input.defaultSplitType === "percentage"
+                ? (input.percentages?.[member.key] ?? null)
+                : null,
+            default_weight:
+              input.defaultSplitType === "shares" ? (input.shares?.[member.key] ?? 1) : null,
           })),
         );
         if (memberError) {
@@ -827,11 +877,19 @@ export function PariProvider({ children }: { children: ReactNode }) {
         await supabase.from("groups").update(groupPatch).eq("id", groupId);
       }
 
-      if (patch.percentages !== undefined) {
+      if (patch.percentages !== undefined || patch.shares !== undefined) {
         for (const personId of groupPersonIds(groupId)) {
+          const memberPatch: { default_percentage?: number | null; default_weight?: number | null } =
+            {};
+          if (patch.percentages !== undefined) {
+            memberPatch.default_percentage = patch.percentages?.[personId] ?? null;
+          }
+          if (patch.shares !== undefined) {
+            memberPatch.default_weight = patch.shares?.[personId] ?? null;
+          }
           await supabase
             .from("group_members")
-            .update({ default_percentage: patch.percentages?.[personId] ?? null })
+            .update(memberPatch)
             .eq("group_id", groupId)
             .eq("person_id", personId);
         }
@@ -1067,6 +1125,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       recentExpenses,
       activityFeed,
       groupDefaultPercentages,
+      groupRule,
       addExpense: isGuest ? guestAddExpense : addExpense,
       updateExpense,
       deleteExpense: isGuest ? guestDeleteExpense : deleteExpense,
