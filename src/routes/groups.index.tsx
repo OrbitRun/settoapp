@@ -5,6 +5,7 @@ import { BottomNav, Divider, Panel, Screen, TopBar } from "@/components/pari/App
 import { EmptyState } from "@/components/pari/EmptyState";
 import { GroupRow } from "@/components/pari/rows";
 import { usePari } from "@/data/store";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/groups/")({
   head: () => ({
@@ -26,19 +27,20 @@ export const Route = createFileRoute("/groups/")({
 
 function GroupsScreen() {
   const pari = usePari();
+  const t = useT();
   const groups = pari.data.groups.filter((group) => !group.archived_at);
 
   return (
     <>
       <Screen>
-        <TopBar title="Groups" />
+        <TopBar title={t("groups.title")} />
 
         <div className="space-y-6">
           <Panel>
             {groups.length === 0 ? (
               <EmptyState
-                title="No groups yet"
-                description="A group keeps one running balance for the people you share with."
+                title={t("groups.none")}
+                description={t("groups.noneHint")}
               />
             ) : (
               groups.map((group, index) => (
@@ -62,7 +64,7 @@ function GroupsScreen() {
             className="flex items-center justify-center gap-2 rounded-2xl py-4 text-[15px] font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <Plus className="h-4 w-4" strokeWidth={1.8} />
-            Create group
+            {t("groups.create")}
           </Link>
         </div>
       </Screen>

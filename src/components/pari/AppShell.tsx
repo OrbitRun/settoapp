@@ -5,6 +5,7 @@ import { Clock, Home, Plus, ScanLine, User, Users } from "lucide-react";
 import { usePari } from "@/data/store";
 import { emptyDraft } from "@/data/draft";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 import { Avatar } from "./Avatar";
 import { BottomSheet } from "./BottomSheet";
 
@@ -97,13 +98,13 @@ export function Divider() {
 }
 
 const NAV_LEFT = [
-  { to: "/", label: "Home", icon: Home, exact: true },
-  { to: "/groups", label: "Groups", icon: Users, exact: false },
+  { to: "/", labelKey: "nav.home", icon: Home, exact: true },
+  { to: "/groups", labelKey: "nav.groups", icon: Users, exact: false },
 ] as const;
 
 const NAV_RIGHT = [
-  { to: "/activity", label: "Activity", icon: Clock, exact: false },
-  { to: "/profile", label: "Profile", icon: User, exact: false },
+  { to: "/activity", labelKey: "nav.activity", icon: Clock, exact: false },
+  { to: "/profile", labelKey: "nav.profile", icon: User, exact: false },
 ] as const;
 
 export function BottomNav() {
@@ -195,17 +196,18 @@ export function BottomNav() {
 
 function NavItem({
   to,
-  label,
+  labelKey,
   icon: Icon,
   exact,
   pathname,
 }: {
   to: string;
-  label: string;
+  labelKey: string;
   icon: typeof Home;
   exact: boolean;
   pathname: string;
 }) {
+  const t = useT();
   const active = exact ? pathname === to : pathname.startsWith(to);
 
   return (
@@ -217,7 +219,7 @@ function NavItem({
       )}
     >
       <Icon className="h-5 w-5" strokeWidth={active ? 2 : 1.6} />
-      {label}
+      {t(labelKey)}
     </Link>
   );
 }

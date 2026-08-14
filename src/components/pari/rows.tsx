@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { shortDate } from "@/lib/dates";
 import { formatMinor } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useI18n, useT } from "@/lib/i18n";
 import { AvatarStack } from "./Avatar";
 import { MoneyAmount, balanceTone } from "./MoneyAmount";
 
@@ -18,6 +19,7 @@ export function GroupRow({
   memberNames: string[];
   balanceMinor: number;
 }) {
+  const t = useT();
   return (
     <Link
       to="/groups/$groupId"
@@ -29,13 +31,17 @@ export function GroupRow({
         <div className="mt-2 flex items-center gap-2">
           <AvatarStack names={memberNames} />
           <span className="text-xs text-muted-foreground">
-            {memberNames.length} members
+            {t("common.memberCount", { count: memberNames.length })}
           </span>
         </div>
       </div>
       <div className="shrink-0 text-right">
         <p className="text-xs text-muted-foreground">
-          {balanceMinor > 0 ? "You are owed" : balanceMinor < 0 ? "You owe" : "Settled"}
+          {balanceMinor > 0
+            ? t("balance.owed")
+            : balanceMinor < 0
+              ? t("balance.owe")
+              : t("balance.settled")}
         </p>
         <MoneyAmount
           minor={Math.abs(balanceMinor)}
@@ -98,6 +104,7 @@ export function ActivityRow({
   amountMinor?: number | undefined;
   timeIso: string;
 }) {
+  const { locale } = useI18n();
   return (
     <div className="flex items-baseline justify-between gap-4 px-4 py-3.5">
       <div className="min-w-0">
@@ -113,7 +120,7 @@ export function ActivityRow({
         ) : null}
       </div>
       <span className="shrink-0 text-xs text-muted-foreground">
-        {new Date(timeIso).toLocaleTimeString("da-DK", {
+        {new Date(timeIso).toLocaleTimeString(locale, {
           hour: "2-digit",
           minute: "2-digit",
         })}

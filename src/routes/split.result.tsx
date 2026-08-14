@@ -8,6 +8,7 @@ import { Avatar } from "@/components/pari/Avatar";
 import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { EmptyState } from "@/components/pari/EmptyState";
 import { usePari } from "@/data/store";
+import { useT } from "@/lib/i18n";
 import { formatMinor } from "@/lib/money";
 
 const searchSchema = z.object({ expenseId: z.string().optional() });
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/split/result")({
 function ResultScreen() {
   const { expenseId } = Route.useSearch();
   const pari = usePari();
+  const t = useT();
   const navigate = useNavigate();
 
   const expense = pari.data.expenses.find((e) => e.id === expenseId);
@@ -36,8 +38,8 @@ function ResultScreen() {
     return (
       <Screen>
         <EmptyState
-          title="Nothing to show"
-          description="This split is no longer available."
+          title={t("split.nothingToShow")}
+          description={t("split.noLongerAvailable")}
           action={
             <Link to="/" className="text-sm underline underline-offset-4">
               Go home
@@ -107,7 +109,7 @@ function ResultScreen() {
               )
               .join("\n");
             void navigator.clipboard?.writeText(`${expense.title}\n${lines}`);
-            toast.success("Result copied");
+            toast.success(t("split.copied"));
           }}
         >
           Share result

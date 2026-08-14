@@ -8,6 +8,7 @@ import { GroupPicker } from "@/components/pari/GroupPicker";
 import { ParticipantSelector } from "@/components/pari/ParticipantSelector";
 import { computeDraftAllocations, draftSharedTotalMinor, sharedItems } from "@/data/draft";
 import { usePari } from "@/data/store";
+import { useT } from "@/lib/i18n";
 import { formatMinor } from "@/lib/money";
 
 export const Route = createFileRoute("/split/share")({
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/split/share")({
 
 function ShareScreen() {
   const pari = usePari();
+  const t = useT();
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
 
@@ -44,8 +46,8 @@ function ShareScreen() {
     setDraft((prev) => ({ ...prev, groupId, participants: ids }));
   };
 
-  const confirm = () => {
-    const expense = pari.addExpense({
+  const confirm = async () => {
+    const expense = await pari.addExpense({
       groupId: draft.groupId,
       title: draft.title || draft.merchant || "Receipt",
       merchant: draft.merchant,
@@ -55,12 +57,13 @@ function ShareScreen() {
       source: "receipt",
       items: draft.items,
     });
+    if (!expense) return;
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
   };
 
   return (
     <Screen className="pb-44">
-      <FlowHeader title={draft.merchant ?? "Receipt"} />
+      <FlowHeader title={draft.merchant ?? t("split.receipt")} />
 
       <div className="px-1 pb-8">
         <h1 className="text-[26px] font-semibold leading-[1.2] tracking-[-0.03em]">

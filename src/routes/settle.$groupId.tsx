@@ -8,6 +8,7 @@ import { Avatar } from "@/components/pari/Avatar";
 import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { EmptyState } from "@/components/pari/EmptyState";
 import { usePari } from "@/data/store";
+import { useT } from "@/lib/i18n";
 import { formatMinor } from "@/lib/money";
 
 export const Route = createFileRoute("/settle/$groupId")({
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/settle/$groupId")({
 });
 
 function SettleScreen() {
+  const t = useT();
   const { groupId } = Route.useParams();
   const pari = usePari();
   const group = pari.data.groups.find((g) => g.id === groupId);
@@ -36,7 +38,7 @@ function SettleScreen() {
 
   return (
     <Screen>
-      <FlowHeader title="Settle up" subtitle={group?.name} />
+      <FlowHeader title={t("settle.title")} subtitle={group?.name} />
 
       <div className="px-1 pb-8">
         <h1 className="text-[26px] font-semibold tracking-[-0.03em]">Settle up</h1>
@@ -47,7 +49,7 @@ function SettleScreen() {
 
       {plan.length === 0 ? (
         <EmptyState
-          title="Everything is settled"
+          title={t("settle.allSettled")}
           description="No payments needed in this group right now."
         />
       ) : (
@@ -74,7 +76,7 @@ function SettleScreen() {
                       void navigator.clipboard?.writeText(
                         formatMinor(step.amountMinor, { currency: "" }).trim(),
                       );
-                      toast.success("Amount copied");
+                      toast.success(t("settle.copied"));
                     }}
                     className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-surface-strong text-sm font-medium"
                   >
@@ -85,7 +87,7 @@ function SettleScreen() {
                     type="button"
                     onClick={() => {
                       pari.markSettled(groupId, step);
-                      toast.success("Marked as paid");
+                      toast.success(t("settle.markedPaid"));
                     }}
                     className="inline-flex h-11 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground"
                   >

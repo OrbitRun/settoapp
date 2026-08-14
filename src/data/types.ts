@@ -1,16 +1,21 @@
 /**
- * Domain model. Field names mirror the intended relational schema
+ * Domain model. Field names mirror the relational schema
  * (profiles, people, groups, group_members, expenses, expense_items,
- * expense_splits, item_splits, settlements, activity) so the in-memory store
- * can later be swapped for a database without touching screens.
+ * expense_splits, item_splits, settlements, activity).
  */
 
 import type { SplitMode } from "@/lib/split";
+import type { Language } from "@/lib/i18n";
+
+export type Appearance = "system" | "light" | "dark";
 
 export type Profile = {
   id: string;
   display_name: string;
   avatar_url: string | null;
+  language: Language;
+  currency: string;
+  appearance: Appearance;
   created_at: string;
 };
 
@@ -20,6 +25,7 @@ export type Person = {
   linked_profile_id: string | null;
   name: string;
   avatar_url: string | null;
+  is_self: boolean;
   created_at: string;
 };
 
@@ -105,6 +111,8 @@ export type Settlement = {
 
 export type ActivityType =
   | "expense_added"
+  | "expense_updated"
+  | "expense_deleted"
   | "split_changed"
   | "settlement_marked"
   | "group_created";
@@ -112,10 +120,10 @@ export type ActivityType =
 export type ActivityEntry = {
   id: string;
   group_id: string | null;
-  actor_profile_id: string;
+  actor_person_id: string | null;
   activity_type: ActivityType;
   entity_type: "expense" | "settlement" | "group";
-  entity_id: string;
+  entity_id: string | null;
   metadata: Record<string, string | number>;
   created_at: string;
 };
@@ -131,4 +139,17 @@ export type PariData = {
   itemSplits: ItemSplit[];
   settlements: Settlement[];
   activity: ActivityEntry[];
+};
+
+export const emptyPariData: PariData = {
+  profiles: [],
+  people: [],
+  groups: [],
+  groupMembers: [],
+  expenses: [],
+  expenseItems: [],
+  expenseSplits: [],
+  itemSplits: [],
+  settlements: [],
+  activity: [],
 };

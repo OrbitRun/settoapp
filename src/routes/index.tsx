@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/pari/EmptyState";
 import { ExpenseRow, GroupRow } from "@/components/pari/rows";
 import { usePari } from "@/data/store";
 import { timeOfDayGreeting } from "@/lib/dates";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/")({
 
 function HomeScreen() {
   const pari = usePari();
+  const t = useT();
   const groups = pari.data.groups.filter((group) => !group.archived_at);
   const active = groups.filter((group) => pari.groupExpenses(group.id).length > 0);
   const recent = pari.recentExpenses(4);
@@ -42,25 +44,25 @@ function HomeScreen() {
             minor={pari.netBalance}
             hint={
               pari.netBalance === 0
-                ? "Everything is settled."
-                : `Across ${active.length} groups`
+                ? t("home.settled")
+                : t("home.acrossGroups", { count: active.length })
             }
           />
         </div>
 
         <div className="space-y-8">
           <Panel
-            title="Your groups"
+            title={t("home.yourGroups")}
             action={
               <Link to="/groups" className="text-sm text-muted-foreground">
-                See all
+                {t("home.seeAll")}
               </Link>
             }
           >
             {active.length === 0 ? (
               <EmptyState
-                title="No shared expenses yet"
-                description="Split your first expense in seconds."
+                title={t("home.noExpenses")}
+                description={t("home.noExpensesHint")}
               />
             ) : (
               active.map((group, index) => (
@@ -79,13 +81,13 @@ function HomeScreen() {
             )}
           </Panel>
 
-          <Panel title="Recent">
+          <Panel title={t("home.recent")}>
             {recent.map((expense, index) => (
               <div key={expense.id}>
                 {index > 0 ? <Divider /> : null}
                 <ExpenseRow
                   title={expense.title}
-                  subtitle={`Paid by ${pari.personName(expense.paid_by_person_id)}`}
+                  subtitle={t("home.paidBy", { name: pari.personName(expense.paid_by_person_id) })}
                   dateIso={expense.expense_date}
                   amountMinor={expense.total_minor}
                 />

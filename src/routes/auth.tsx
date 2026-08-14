@@ -1,0 +1,142 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
+import { useT } from "@/lib/i18n";
+
+export const Route = createFileRoute("/auth")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Sign in — PARI" },
+      { name: "description", content: "Sign in to PARI to split and settle shared expenses." },
+      { property: "og:title", content: "Sign in — PARI" },
+      {
+        property: "og:description",
+        content: "Sign in to PARI to split and settle shared expenses.",
+      },
+    ],
+  }),
+  component: AuthScreen,
+});
+
+function AuthScreen() {
+  const t = useT();
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/" });
+    });
+  }, [navigate]);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { display_name: name.trim() || email.split("@")[0] },
+          },
+        });
+        if (error) throw error;
+        const { data: session } = await supabase.auth.getSession();
+        if (session.session) navigate({ to: "/" });
+        else toast.success(t("auth.checkEmail"));
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        navigate({ to: "/" });
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const google = async () => {
+    setBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setBusy(false);
+      toast.error("Google sign-in failed");
+      return;
+    }
+    if (result.redirected) return;
+    navigate({ to: "/" });
+  };
+
+  return (
+    <div className="flex min-h-svh items-center bg-background px-6">
+      <div className="mx-auto w-full max-w-[400px] py-14">
+        <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.03em]">
+          {t("auth.title")}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("auth.subtitle")}</p>
+
+        <form onSubmit={submit} className="mt-10 space-y-3">
+          {mode === "signup" ? (
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={t("profile.name")}
+              autoComplete="name"
+              className="h-14 w-full rounded-2xl bg-surface px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
+            />
+          ) : null}
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder={t("auth.email")}
+            autoComplete="email"
+            className="h-14 w-full rounded-2xl bg-surface px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
+          />
+          <input
+            type="password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder={t("auth.password")}
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            className="h-14 w-full rounded-2xl bg-surface px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
+          />
+          <PrimaryButton type="submit" disabled={busy}>
+            {mode === "signup" ? t("auth.signUp") : t("auth.signIn")}
+          </PrimaryButton>
+        </form>
+
+        <div className="mt-3">
+          <SecondaryButton onClick={google} disabled={busy}>
+            {t("auth.google")}
+          </SecondaryButton>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          className="mx-auto mt-8 block text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {mode === "signin" ? t("auth.toSignUp") : t("auth.toSignIn")}
+        </button>
+      </div>
+    </div>
+  );
+}

@@ -7,6 +7,7 @@ import { FlowHeader } from "@/components/pari/FlowHeader";
 import { PrimaryButton } from "@/components/pari/Buttons";
 import { Avatar } from "@/components/pari/Avatar";
 import { usePari } from "@/data/store";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { SplitMode } from "@/lib/split";
 
@@ -28,14 +29,15 @@ export const Route = createFileRoute("/groups/new")({
   component: CreateGroupScreen,
 });
 
-const OPTIONS: { value: SplitMode; label: string }[] = [
-  { value: "equal", label: "Equal" },
-  { value: "percentage", label: "Percentage" },
-  { value: "exact", label: "Custom" },
+const OPTIONS: { value: SplitMode; labelKey: string }[] = [
+  { value: "equal", labelKey: "split.equal" },
+  { value: "percentage", labelKey: "split.percentage" },
+  { value: "exact", labelKey: "groups.custom" },
 ];
 
 function CreateGroupScreen() {
   const pari = usePari();
+  const t = useT();
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
@@ -51,18 +53,19 @@ function CreateGroupScreen() {
     setNewPerson("");
   };
 
-  const create = () => {
-    const groupId = pari.createGroup({
+  const create = async () => {
+    const groupId = await pari.createGroup({
       name,
       personNames: people,
       defaultSplitType: defaultSplit,
     });
+    if (!groupId) return;
     navigate({ to: "/groups/$groupId", params: { groupId } });
   };
 
   return (
     <Screen>
-      <FlowHeader title="New group" />
+      <FlowHeader title={t("groups.newGroup")} />
 
       <div className="space-y-9">
         <section className="space-y-3">
@@ -73,7 +76,7 @@ function CreateGroupScreen() {
             id="group-name"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Sommerhus 2026"
+            placeholder={t("groups.namePlaceholder")}
             className="w-full rounded-2xl bg-surface px-5 py-4 text-[17px] tracking-tight shadow-soft outline-none placeholder:text-muted-foreground/60"
           />
         </section>
@@ -114,7 +117,7 @@ function CreateGroupScreen() {
                   }
                 }}
                 onBlur={addPerson}
-                placeholder="Add person"
+                placeholder={t("groups.addPersonPlaceholder")}
                 className="w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/70"
               />
             </div>
@@ -130,7 +133,8 @@ function CreateGroupScreen() {
             onClick={() => setShowAdvanced((prev) => !prev)}
             className="px-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            Default split · {OPTIONS.find((o) => o.value === defaultSplit)?.label}
+            {t("split.howToSplit")} ·{" "}
+            {t(OPTIONS.find((o) => o.value === defaultSplit)?.labelKey ?? "split.equal")}
           </button>
 
           {showAdvanced ? (
@@ -147,7 +151,7 @@ function CreateGroupScreen() {
                       : "bg-surface-strong text-muted-foreground",
                   )}
                 >
-                  {option.label}
+                  {t(option.labelKey)}
                 </button>
               ))}
             </div>
