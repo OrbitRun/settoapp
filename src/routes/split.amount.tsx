@@ -219,7 +219,9 @@ function ManualExpenseScreen() {
 
           {draft.usingGroupDefault && draft.groupId ? (
             <p className="text-xs text-muted-foreground">
-              {t("split.usingGroupDefault", { group: pari.groupName(draft.groupId) })}
+              {t("split.usingGroupDefault", {
+                group: pari.data.groups.find((g) => g.id === draft.groupId)?.name ?? "",
+              })}
             </p>
           ) : null}
 
