@@ -66,5 +66,12 @@ export function formatMoney(
   }).format(toMajor(abs));
 
   const sign = showSign ? (amountMinor < 0 ? "−" : "+") : amountMinor < 0 ? "−" : "";
-  return `${sign}${number}${currency ? ` ${currency}` : ""}`;
+  return `${sign}${number}${currency ? ` ${currencyLabel(currency, locale)}` : ""}`;
 }
+
+/** Consumer-facing currency wording: Danish says "kr.", not "DKK". */
+export function currencyLabel(currency = defaultCurrency, locale = defaultLocale): string {
+  if (currency === "DKK" && locale.toLowerCase().startsWith("da")) return "kr.";
+  return currency;
+}
+
