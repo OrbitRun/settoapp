@@ -1,7 +1,10 @@
+import { Check } from "lucide-react";
+
 import { calculatePercentageSplit } from "@/lib/split";
 import { cn } from "@/lib/utils";
 import { Avatar } from "./Avatar";
 import { MoneyAmount } from "./MoneyAmount";
+import { NumericField } from "./NumericField";
 
 export function PercentageSplitEditor({
   totalMinor,
@@ -20,6 +23,18 @@ export function PercentageSplitEditor({
     people.map((person) => ({ personId: person.id, percentage: percentages[person.id] ?? 0 })),
   );
   const balanced = Math.round(sum) === 100;
+  const pair = people.length === 2;
+
+  const set = (personId: string, value: number) => {
+    const next = Math.min(100, Math.max(0, value));
+    onChange(personId, next);
+    if (pair) {
+      const other = people.find((person) => person.id !== personId);
+      if (other) onChange(other.id, Math.round((100 - next) * 100) / 100);
+    }
+  };
+
+  const round = (value: number) => value.toFixed(value % 1 === 0 ? 0 : 1);
 
   return (
     <div className="space-y-4">
@@ -39,19 +54,17 @@ export function PercentageSplitEditor({
                 size="sm"
                 className="w-24 shrink-0 text-right"
               />
-              <div className="flex h-11 w-[92px] shrink-0 items-center rounded-xl bg-surface-strong px-3">
-                <input
-                  inputMode="decimal"
-                  value={value === 0 ? "" : String(value)}
-                  placeholder="0"
-                  onChange={(event) => {
-                    const next = Number(event.target.value.replace(",", "."));
-                    onChange(person.id, Number.isFinite(next) ? next : 0);
-                  }}
-                  className="tnum w-full bg-transparent text-right text-[15px] font-medium outline-none"
-                />
-                <span className="ml-1 text-sm text-muted-foreground">%</span>
-              </div>
+              <NumericField
+                value={value}
+                onChange={(next) => set(person.id, next)}
+                min={0}
+                max={100}
+                decimals={1}
+                ariaLabel={`${person.name} percentage`}
+                suffix={<span className="text-sm">%</span>}
+                className="h-11 w-[92px] shrink-0 rounded-xl bg-surface-strong px-3"
+                inputClassName="text-right text-[15px] font-medium"
+              />
             </div>
           );
         })}
@@ -67,12 +80,18 @@ export function PercentageSplitEditor({
             style={{ width: `${Math.min(100, Math.max(0, sum))}%` }}
           />
         </div>
-        <p className="text-xs text-muted-foreground">
-          {balanced
-            ? "Adds up to 100%"
-            : sum < 100
-              ? `${(100 - sum).toFixed(sum % 1 === 0 ? 0 : 1)}% left to assign`
-              : `${(sum - 100).toFixed(sum % 1 === 0 ? 0 : 1)}% too much`}
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          {balanced ? (
+            <>
+              <Check className="h-3.5 w-3.5 text-positive" strokeWidth={2} />
+              Total 100%
+            </>
+          ) : (
+            <>
+              Total {round(sum)}% ·{" "}
+              {sum < 100 ? `${round(100 - sum)}% remaining` : `${round(sum - 100)}% too much`}
+            </>
+          )}
         </p>
       </div>
     </div>
