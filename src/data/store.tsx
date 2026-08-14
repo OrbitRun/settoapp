@@ -309,6 +309,10 @@ export function PariProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [draft, setDraftState] = useState<SplitDraft>(() => emptyDraft(""));
+  // Detected after mount only — the server can't know the device language.
+  const [deviceLanguage, setDeviceLanguage] = useState<Language>("da");
+  useEffect(() => setDeviceLanguage(detectLanguage()), []);
+
   const [guest, setGuestRaw] = useState<GuestState>(emptyGuestState);
   const [guestReady, setGuestReady] = useState(false);
   const [accountPrompt, setAccountPrompt] = useState<AccountPromptReason | null>(null);
