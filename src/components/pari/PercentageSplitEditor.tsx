@@ -88,12 +88,14 @@ export function PercentageSplitEditor({
           {balanced ? (
             <>
               <Check className="h-3.5 w-3.5 text-positive" strokeWidth={2} />
-              Total 100%
+              {t("split.percentTotalOk")}
             </>
           ) : (
             <>
-              Total {round(sum)}% ·{" "}
-              {sum < 100 ? `${round(100 - sum)}% remaining` : `${round(sum - 100)}% too much`}
+              {t("split.percentTotal", { value: round(sum) })} ·{" "}
+              {sum < 100
+                ? t("split.percentRemaining", { value: round(100 - sum) })
+                : t("split.percentOver", { value: round(sum - 100) })}
             </>
           )}
         </p>
