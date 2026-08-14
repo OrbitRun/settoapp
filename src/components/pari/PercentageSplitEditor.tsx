@@ -64,7 +64,9 @@ export function PercentageSplitEditor({
               ) : null}
               <NumericField
                 value={value}
-                onChange={(next) => set(person.id, next)}
+                commitOnly
+                onChange={() => {}}
+                onCommit={(next) => commit(person.id, next)}
                 min={0}
                 max={100}
                 decimals={1}
@@ -73,6 +75,7 @@ export function PercentageSplitEditor({
                 className="h-11 w-[92px] shrink-0 rounded-xl bg-surface-strong px-3"
                 inputClassName="text-right text-[15px] font-medium"
               />
+
             </div>
           );
         })}
