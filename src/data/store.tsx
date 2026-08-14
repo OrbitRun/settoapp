@@ -50,12 +50,14 @@ import {
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
+  | "save_split"
   | "save_expense"
   | "create_group"
   | "balances"
   | "history"
   | "settle"
   | "collaborate";
+
 
 const nowIso = () => new Date().toISOString();
 
