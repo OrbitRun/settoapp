@@ -29,10 +29,10 @@ export const Route = createFileRoute("/groups/new")({
   component: CreateGroupScreen,
 });
 
-const OPTIONS: { value: SplitMode; label: string }[] = [
-  { value: "equal", label: "Equal" },
-  { value: "percentage", label: "Percentage" },
-  { value: "exact", label: "Custom" },
+const OPTIONS: { value: SplitMode; labelKey: string }[] = [
+  { value: "equal", labelKey: "split.equal" },
+  { value: "percentage", labelKey: "split.percentage" },
+  { value: "exact", labelKey: "groups.custom" },
 ];
 
 function CreateGroupScreen() {
@@ -150,7 +150,7 @@ function CreateGroupScreen() {
                       : "bg-surface-strong text-muted-foreground",
                   )}
                 >
-                  {option.label}
+                  {t(option.labelKey)}
                 </button>
               ))}
             </div>

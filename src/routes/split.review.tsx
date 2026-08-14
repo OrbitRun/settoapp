@@ -71,7 +71,7 @@ function ReviewScreen() {
 
   return (
     <Screen className="pb-44">
-      <FlowHeader title="Receipt found" />
+      <FlowHeader title={t("receipt.found")} />
 
       <div className="px-1 pb-8">
         <p className="text-sm text-muted-foreground">{shortDate(draft.items.length ? new Date().toISOString() : new Date().toISOString())}</p>
@@ -85,7 +85,9 @@ function ReviewScreen() {
 
       <div className="mb-3 flex items-center justify-between px-4">
         <span className="text-[13px] text-muted-foreground">
-          {selected.length > 0 ? `${selected.length} selected` : `${draft.items.length} items`}
+          {selected.length > 0
+            ? t("receipt.itemsSelected", { count: selected.length })
+            : t("receipt.itemCount", { count: draft.items.length })}
         </span>
         <button
           type="button"
@@ -137,11 +139,11 @@ function ReviewScreen() {
 
       <div className="mt-5 space-y-2 px-4">
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Detected items</span>
+          <span>{t("receipt.detected")}</span>
           <span className="tnum">{formatMinor(itemsTotal, { compact: false })}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Receipt total</span>
+          <span className="text-muted-foreground">{t("receipt.total")}</span>
           <span className="tnum font-medium">
             {formatMinor(draft.amountMinor, { compact: false })}
           </span>
@@ -149,13 +151,15 @@ function ReviewScreen() {
         <p className="pt-1 text-sm">
           {difference === 0 ? (
             <span className="inline-flex items-center gap-1.5 text-positive">
-              <Check className="h-4 w-4" strokeWidth={2} /> Looks good
+              <Check className="h-4 w-4" strokeWidth={2} /> {t("receipt.looksGood")}
             </span>
           ) : (
             <span className="text-muted-foreground">
               {difference > 0
-                ? `We're missing ${formatMinor(difference, { compact: false })}`
-                : `That's ${formatMinor(-difference, { compact: false })} too much`}
+                ? t("receipt.missing", { amount: formatMinor(difference, { compact: false }) })
+                : t("receipt.tooMuch", {
+                    amount: formatMinor(-difference, { compact: false }),
+                  })}
             </span>
           )}
         </p>
@@ -166,34 +170,34 @@ function ReviewScreen() {
           {selected.length > 0 ? (
             <>
               <p className="pb-1 text-center text-sm text-muted-foreground">
-                {selected.length} {selected.length === 1 ? "item" : "items"} selected
+                {t("receipt.itemsSelected", { count: selected.length })}
               </p>
-              <PrimaryButton onClick={shareSelected}>Share selected</PrimaryButton>
-              <SecondaryButton onClick={markPrivate}>Keep private</SecondaryButton>
+              <PrimaryButton onClick={shareSelected}>{t("receipt.shareSelected")}</PrimaryButton>
+              <SecondaryButton onClick={markPrivate}>{t("receipt.keepPrivate")}</SecondaryButton>
             </>
           ) : (
             <PrimaryButton onClick={() => navigate({ to: "/split/share" })}>
-              Continue
+              {t("common.continue")}
             </PrimaryButton>
           )}
         </div>
       </div>
 
-      <BottomSheet open={editing !== null} onClose={() => setEditing(null)} title="Edit item">
+      <BottomSheet open={editing !== null} onClose={() => setEditing(null)} title={t("receipt.editItem")}>
         {editing ? (
           <div className="space-y-4">
             <input
               value={editing.name}
               onChange={(event) => setEditing({ ...editing, name: event.target.value })}
               className="w-full rounded-2xl bg-surface-strong px-4 py-3.5 text-[15px] outline-none"
-              aria-label="Item name"
+              aria-label={t("receipt.itemName")}
             />
             <div className="flex gap-2">
               <NumericField
                 value={toMajor(editing.unitPriceMinor)}
                 onChange={(next) => setEditing({ ...editing, unitPriceMinor: toMinor(next) })}
                 min={0}
-                ariaLabel="Price"
+                ariaLabel={t("receipt.price")}
                 suffix={<span className="text-xs">DKK</span>}
                 className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
@@ -203,7 +207,7 @@ function ReviewScreen() {
                 onChange={(next) => setEditing({ ...editing, quantity: Math.max(1, Math.round(next)) })}
                 min={1}
                 decimals={0}
-                ariaLabel="Quantity"
+                ariaLabel={t("receipt.quantity")}
                 suffix={<span className="text-xs">qty</span>}
                 className="h-12 w-28 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
@@ -216,7 +220,7 @@ function ReviewScreen() {
                 setEditing(null);
               }}
             >
-              Save
+              {t("common.save")}
             </PrimaryButton>
             <button
               type="button"
@@ -227,7 +231,7 @@ function ReviewScreen() {
               className="mx-auto flex items-center gap-2 py-2 text-sm text-muted-foreground transition-colors hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" strokeWidth={1.6} />
-              Delete item
+              {t("receipt.deleteItem")}
             </button>
           </div>
         ) : null}

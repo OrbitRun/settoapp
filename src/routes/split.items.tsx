@@ -88,11 +88,13 @@ function ItemSplitScreen() {
 
   return (
     <Screen className="pb-48">
-      <FlowHeader title="Split by item" subtitle={draft.merchant ?? undefined} />
+      <FlowHeader title={t("receipt.splitByItem")} subtitle={draft.merchant ?? undefined} />
 
       <div className="mb-3 flex items-center justify-between px-4">
         <span className="text-[13px] text-muted-foreground">
-          {selected.length > 0 ? `${selected.length} selected` : `${items.length} items`}
+          {selected.length > 0
+            ? t("receipt.itemsSelected", { count: selected.length })
+            : t("receipt.itemCount", { count: items.length })}
         </span>
         <button
           type="button"
@@ -141,7 +143,7 @@ function ItemSplitScreen() {
                   <span className="mt-0.5 block text-xs text-muted-foreground">
                     {assigned.length === 1
                       ? `${pari.personName(assigned[0]!)} · ${formatMinor(share, { compact: false })}`
-                      : `${formatMinor(share, { compact: false })} each`}
+                      : t("receipt.each", { amount: formatMinor(share, { compact: false }) })}
                   </span>
                 </button>
                 <span className="tnum shrink-0 text-[15px] font-medium">
@@ -177,14 +179,14 @@ function ItemSplitScreen() {
           {selected.length > 0 ? (
             <>
               <p className="pb-1 text-center text-sm text-muted-foreground">
-                {selected.length} {selected.length === 1 ? "item" : "items"} selected
+                {t("receipt.itemsSelected", { count: selected.length })}
               </p>
-              <PrimaryButton onClick={() => setAssignOpen(true)}>Assign people</PrimaryButton>
-              <SecondaryButton onClick={() => setSelected([])}>Clear</SecondaryButton>
+              <PrimaryButton onClick={() => setAssignOpen(true)}>{t("receipt.assignPeople")}</PrimaryButton>
+              <SecondaryButton onClick={() => setSelected([])}>{t("receipt.clear")}</SecondaryButton>
             </>
           ) : (
             <PrimaryButton onClick={confirm}>
-              Confirm split · {formatMinor(total, { compact: false })}
+              {t("receipt.confirmSplit")} · {formatMinor(total, { compact: false })}
             </PrimaryButton>
           )}
         </div>
@@ -193,8 +195,8 @@ function ItemSplitScreen() {
       <BottomSheet
         open={assignOpen}
         onClose={() => setAssignOpen(false)}
-        title="Assign people"
-        description={`Applies to ${selected.length} ${selected.length === 1 ? "item" : "items"}`}
+        title={t("receipt.assignPeople")}
+        description={t("receipt.appliesTo", { count: selected.length })}
       >
         <div className="flex flex-wrap gap-2 pb-6">
           {people.map((person) => (
