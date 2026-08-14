@@ -17,7 +17,7 @@ export function PercentageSplitEditor({
   totalMinor: number;
   people: { id: string; name: string }[];
   percentages: Record<string, number>;
-  onChange: (personId: string, percentage: number) => void;
+  onChange: (next: Record<string, number>) => void;
   showAmounts?: boolean;
 }) {
   const t = useT();
@@ -31,12 +31,13 @@ export function PercentageSplitEditor({
 
   // Committed only (blur / Enter / Done) — never while typing.
   const commit = (personId: string, value: number) => {
-    const next = Math.min(100, Math.max(0, value));
-    onChange(personId, next);
+    const clamped = Math.min(100, Math.max(0, value));
+    const next = { ...percentages, [personId]: clamped };
     if (pair) {
       const other = people.find((person) => person.id !== personId);
-      if (other) onChange(other.id, Math.round((100 - next) * 100) / 100);
+      if (other) next[other.id] = Math.round((100 - clamped) * 100) / 100;
     }
+    onChange(next);
   };
 
 

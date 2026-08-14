@@ -159,9 +159,7 @@ export function SplitRuleEditor({
         people={people}
         percentages={rule.percentages}
         showAmounts={showAmounts && totalMinor > 0}
-        onChange={(personId, percentage) =>
-          onChange({ percentages: { ...rule.percentages, [personId]: percentage } })
-        }
+        onChange={(percentages) => onChange({ percentages })}
       />
     );
   }
