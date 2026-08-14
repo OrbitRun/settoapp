@@ -36,9 +36,13 @@ function randomToken(length: number, alphabet: string) {
   return [...bytes].map((byte) => alphabet[byte % alphabet.length]).join("");
 }
 
+/**
+ * The public invitation URL. `/invite/{token}` is the canonical path and the
+ * future Universal Link target — it never contains an internal group id.
+ */
 export function invitationUrl(token: string) {
   const origin = typeof window === "undefined" ? "" : window.location.origin;
-  return `${origin}/join/${token}`;
+  return `${origin}/invite/${token}`;
 }
 
 /** Reuses the group's live invitation, or mints a new one. */
