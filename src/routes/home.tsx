@@ -71,10 +71,13 @@ function HomeScreen() {
           >
             {active.length === 0 ? (
               <EmptyState
-                title={t("home.noExpenses")}
-                description={t("home.noExpensesHint")}
+                title={groups.length === 0 ? t("home.noGroups") : t("home.groupsNoExpenses")}
+                description={
+                  groups.length === 0 ? t("home.noGroupsHint") : t("home.groupsNoExpensesHint")
+                }
               />
             ) : (
+
               active.map((group, index) => (
                 <div key={group.id}>
                   {index > 0 ? <Divider /> : null}

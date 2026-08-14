@@ -15,10 +15,13 @@ export function ParticipantPicker({
   selected,
   onChange,
   label,
+  /** People that belong to the current context (e.g. the selected group). */
+  scope,
 }: {
   selected: string[];
   onChange: (ids: string[]) => void;
   label?: string;
+  scope?: string[];
 }) {
   const pari = usePari();
   const t = useT();
@@ -27,13 +30,24 @@ export function ParticipantPicker({
   const [editing, setEditing] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
-  const people = pari.data.people.map((person) => ({
-    id: person.id,
-    name: person.name,
-    isSelf: person.is_self,
-    avatarUrl: person.avatar_url,
-  }));
+  // Only people relevant to this split: me, whoever is selected and the
+  // members of the chosen group. People from unrelated past splits stay away.
+  const visibleIds = new Set<string>([
+    ...(pari.currentPersonId ? [pari.currentPersonId] : []),
+    ...selected,
+    ...(scope ?? []),
+  ]);
+
+  const people = pari.data.people
+    .filter((person) => visibleIds.has(person.id))
+    .map((person) => ({
+      id: person.id,
+      name: person.name,
+      isSelf: person.is_self,
+      avatarUrl: person.avatar_url,
+    }));
   const allSelected = people.length > 0 && selected.length === people.length;
+
 
   const toggle = (id: string) =>
     onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);

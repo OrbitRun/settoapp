@@ -9,7 +9,7 @@ import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { ReceiptItemRow } from "@/components/pari/ReceiptItem";
 import { itemTotalMinor, itemsTotalMinor, type DraftItem } from "@/data/draft";
 import { usePari } from "@/data/store";
-import { formatMinor, toMajor, toMinor } from "@/lib/money";
+import { currencyLabel, formatMinor, toMajor, toMinor } from "@/lib/money";
 import { NumericField } from "@/components/pari/NumericField";
 import { shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
@@ -205,7 +205,7 @@ function ReviewScreen() {
                 onChange={(next) => setEditing({ ...editing, unitPriceMinor: toMinor(next) })}
                 min={0}
                 ariaLabel={t("receipt.price")}
-                suffix={<span className="text-xs">DKK</span>}
+                suffix={<span className="text-xs">{currencyLabel()}</span>}
                 className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
               />
@@ -215,7 +215,7 @@ function ReviewScreen() {
                 min={1}
                 decimals={0}
                 ariaLabel={t("receipt.quantity")}
-                suffix={<span className="text-xs">qty</span>}
+                suffix={<span className="text-xs">{t("receipt.quantityShort")}</span>}
                 className="h-12 w-28 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
               />

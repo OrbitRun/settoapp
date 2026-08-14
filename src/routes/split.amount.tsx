@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Check, Minus, Plus } from "lucide-react";
 
 import { Screen } from "@/components/pari/AppShell";
@@ -52,12 +52,8 @@ function ManualExpenseScreen() {
 
 
 
-  const people = useMemo(
-    () => pari.data.people.map((person) => ({ id: person.id, name: person.name })),
-    [pari.data.people],
-  );
-
   const participants = draft.participants.map((id) => ({ id, name: pari.personName(id) }));
+
   const allocations = computeDraftAllocations(draft);
   const perPerson = allocations[0]?.amountMinor ?? 0;
   const everyoneEqual =
@@ -86,10 +82,14 @@ function ManualExpenseScreen() {
       ...prev,
       groupId,
       participants: ids,
+      paidByPersonId: ids.includes(prev.paidByPersonId)
+        ? prev.paidByPersonId
+        : (ids[0] ?? prev.paidByPersonId),
       mode: defaults ? "percentage" : "equal",
       percentages: defaults ?? {},
       usingGroupDefault: Boolean(defaults),
     }));
+
   };
 
   const save = async () => {
@@ -176,7 +176,7 @@ function ManualExpenseScreen() {
 
             {showPaidBy ? (
               <div className="flex flex-wrap gap-2 px-1 pt-1">
-                {people.map((person) => (
+                {participants.map((person) => (
                   <PersonChip
                     key={person.id}
                     name={person.name}
@@ -194,8 +194,10 @@ function ManualExpenseScreen() {
 
         <ParticipantPicker
           selected={draft.participants}
+          scope={draft.groupId ? pari.groupPersonIds(draft.groupId) : []}
           onChange={(ids) => setDraft((prev) => ({ ...prev, participants: ids }))}
         />
+
 
         <section className="space-y-4 rounded-3xl bg-surface p-5 shadow-soft">
           <div className="flex items-center justify-between">
