@@ -26,6 +26,7 @@ import { Route as SplitResultRouteImport } from './routes/split.result'
 import { Route as SplitReviewRouteImport } from './routes/split.review'
 import { Route as SplitScanRouteImport } from './routes/split.scan'
 import { Route as SplitShareRouteImport } from './routes/split.share'
+import { Route as SplitStartRouteImport } from './routes/split.start'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -112,6 +113,11 @@ const SplitShareRoute = SplitShareRouteImport.update({
   path: '/split/share',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplitStartRoute = SplitStartRouteImport.update({
+  id: '/split/start',
+  path: '/split/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/split/review': typeof SplitReviewRoute
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
+  '/split/start': typeof SplitStartRoute
   '/groups/': typeof GroupsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/split/review': typeof SplitReviewRoute
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
+  '/split/start': typeof SplitStartRoute
   '/groups': typeof GroupsIndexRoute
 }
 export interface FileRoutesById {
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/split/review': typeof SplitReviewRoute
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
+  '/split/start': typeof SplitStartRoute
   '/groups/': typeof GroupsIndexRoute
 }
 export interface FileRouteTypes {
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/split/review'
     | '/split/scan'
     | '/split/share'
+    | '/split/start'
     | '/groups/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/split/review'
     | '/split/scan'
     | '/split/share'
+    | '/split/start'
     | '/groups'
   id:
     | '__root__'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/split/review'
     | '/split/scan'
     | '/split/share'
+    | '/split/start'
     | '/groups/'
   fileRoutesById: FileRoutesById
 }
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   SplitReviewRoute: typeof SplitReviewRoute
   SplitScanRoute: typeof SplitScanRoute
   SplitShareRoute: typeof SplitShareRoute
+  SplitStartRoute: typeof SplitStartRoute
   GroupsIndexRoute: typeof GroupsIndexRoute
 }
 
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplitShareRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/split/start': {
+      id: '/split/start'
+      path: '/split/start'
+      fullPath: '/split/start'
+      preLoaderRoute: typeof SplitStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -392,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplitReviewRoute: SplitReviewRoute,
   SplitScanRoute: SplitScanRoute,
   SplitShareRoute: SplitShareRoute,
+  SplitStartRoute: SplitStartRoute,
   GroupsIndexRoute: GroupsIndexRoute,
 }
 export const routeTree = rootRouteImport
