@@ -11,11 +11,13 @@ export function PercentageSplitEditor({
   people,
   percentages,
   onChange,
+  showAmounts = true,
 }: {
   totalMinor: number;
   people: { id: string; name: string }[];
   percentages: Record<string, number>;
   onChange: (personId: string, percentage: number) => void;
+  showAmounts?: boolean;
 }) {
   const sum = people.reduce((acc, person) => acc + (percentages[person.id] ?? 0), 0);
   const allocations = calculatePercentageSplit(
