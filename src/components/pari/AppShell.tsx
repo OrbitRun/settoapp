@@ -43,6 +43,7 @@ export function TopBar({
   action?: ReactNode;
 }) {
   const { currentProfileName } = usePari();
+  const t = useT();
 
   return (
     <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 pb-6 pt-3">
@@ -111,6 +112,7 @@ export function BottomNav() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { setDraft, currentPersonId, isGuest } = usePari();
+  const t = useT();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   const start = (target: "/split/amount" | "/split/scan") => {
