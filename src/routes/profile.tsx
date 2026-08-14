@@ -168,25 +168,17 @@ function ProfileScreen() {
       <BottomNav />
 
       <BottomSheet open={sheet !== null} onClose={close}>
-        {sheet === "name" || sheet === "person" ? (
+        {sheet === "name" ? (
           <div className="space-y-4 px-1">
-            <h2 className="text-[19px] font-semibold tracking-tight">
-              {sheet === "name" ? t("profile.name") : t("profile.addPerson")}
-            </h2>
+            <h2 className="text-[19px] font-semibold tracking-tight">{t("profile.name")}</h2>
             <input
               autoFocus
-              value={sheet === "name" ? nameValue : personName}
-              onChange={(event) =>
-                sheet === "name"
-                  ? setNameValue(event.target.value)
-                  : setPersonName(event.target.value)
-              }
+              value={nameValue}
+              onChange={(event) => setNameValue(event.target.value)}
               className="h-14 w-full rounded-2xl bg-surface-strong px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
             />
             <div className="space-y-2">
-              <PrimaryButton onClick={sheet === "name" ? saveName : addPerson}>
-                {t("common.save")}
-              </PrimaryButton>
+              <PrimaryButton onClick={saveName}>{t("common.save")}</PrimaryButton>
               <SecondaryButton onClick={close}>{t("common.cancel")}</SecondaryButton>
             </div>
           </div>
