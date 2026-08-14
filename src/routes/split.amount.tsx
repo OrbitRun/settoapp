@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { Check, Minus, Plus } from "lucide-react";
 
 import { Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
 import { PrimaryButton } from "@/components/pari/Buttons";
 import { GroupPicker } from "@/components/pari/GroupPicker";
-import { ParticipantSelector } from "@/components/pari/ParticipantSelector";
+import { ParticipantPicker } from "@/components/pari/ParticipantPicker";
 import { NumericField } from "@/components/pari/NumericField";
 import { PercentageSplitEditor } from "@/components/pari/PercentageSplitEditor";
 import { SplitSelector } from "@/components/pari/SplitSelector";
@@ -14,8 +15,7 @@ import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { computeDraftAllocations } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
-import { formatMinor, toMajor, toMinor } from "@/lib/money";
-import { cn } from "@/lib/utils";
+import { currencyLabel, formatMinor, toMajor, toMinor } from "@/lib/money";
 
 export const Route = createFileRoute("/split/amount")({
   head: () => ({
@@ -36,24 +36,32 @@ function ManualExpenseScreen() {
   const { draft, setDraft } = pari;
   const [showPaidBy, setShowPaidBy] = useState(false);
 
-  const people = useMemo(() => {
-    const ids = draft.groupId ? pari.groupPersonIds(draft.groupId) : pari.data.people.map((p) => p.id);
-    return ids.map((id) => ({ id, name: pari.personName(id) }));
-  }, [draft.groupId, pari]);
+  const people = useMemo(
+    () => pari.data.people.map((person) => ({ id: person.id, name: person.name })),
+    [pari.data.people],
+  );
 
-  const participants = people.filter((person) => draft.participants.includes(person.id));
+  const participants = draft.participants.map((id) => ({ id, name: pari.personName(id) }));
   const allocations = computeDraftAllocations(draft);
   const perPerson = allocations[0]?.amountMinor ?? 0;
   const everyoneEqual =
-    draft.mode === "equal" && allocations.length > 0 && allocations.every((a) => a.amountMinor === perPerson);
+    draft.mode === "equal" &&
+    allocations.length > 0 &&
+    allocations.every((a) => a.amountMinor === perPerson);
+
+  const exactSum = draft.participants.reduce((sum, id) => sum + (draft.exact[id] ?? 0), 0);
+  const exactBalanced = exactSum === draft.amountMinor;
+  const percentageBalanced =
+    Math.round(draft.participants.reduce((sum, id) => sum + (draft.percentages[id] ?? 0), 0)) ===
+    100;
 
   const canSave =
     draft.amountMinor > 0 &&
     draft.participants.length > 0 &&
-    (draft.mode !== "percentage" ||
-      Math.round(
-        draft.participants.reduce((sum, id) => sum + (draft.percentages[id] ?? 0), 0),
-      ) === 100);
+    (draft.mode !== "percentage" || percentageBalanced) &&
+    (draft.mode !== "exact" || exactBalanced);
+
+  const showGroups = !pari.isGuest && pari.data.groups.length > 0;
 
   const setGroup = (groupId: string | null) => {
     const defaults = groupId ? pari.groupDefaultPercentages(groupId) : null;
@@ -84,9 +92,13 @@ function ManualExpenseScreen() {
 
   return (
     <Screen className="pb-40">
-      <FlowHeader title={t("split.newExpense")} variant="close" onClose={() => navigate({ to: "/" })} />
+      <FlowHeader
+        title={t("split.newExpense")}
+        variant="close"
+        onClose={() => navigate({ to: "/" })}
+      />
 
-      <div className="px-1 pb-10 pt-4 text-center">
+      <div className="px-1 pb-8 pt-2 text-center">
         <div className="flex items-baseline justify-center gap-2">
           <NumericField
             autoFocus
@@ -97,7 +109,7 @@ function ManualExpenseScreen() {
             className="w-full max-w-[70%]"
             inputClassName="text-right text-[52px] font-semibold tracking-[-0.04em]"
           />
-          <span className="text-[22px] font-medium text-muted-foreground">DKK</span>
+          <span className="text-[22px] font-medium text-muted-foreground">{currencyLabel()}</span>
         </div>
 
         <input
@@ -109,78 +121,49 @@ function ManualExpenseScreen() {
       </div>
 
       <div className="space-y-6">
-        <div className="space-y-2">
-          <GroupPicker groupId={draft.groupId} onChange={setGroup} />
+        {showGroups ? (
+          <div className="space-y-2">
+            <GroupPicker groupId={draft.groupId} onChange={setGroup} />
 
-          <button
-            type="button"
-            onClick={() => setShowPaidBy((prev) => !prev)}
-            className="flex w-full items-center justify-between rounded-2xl bg-surface px-4 py-4 text-left shadow-soft"
-          >
-            <span className="text-[15px] text-muted-foreground">Paid by</span>
-            <span className="text-[15px] font-medium tracking-tight">
-              {draft.paidByPersonId === pari.currentPersonId
-                ? "You"
-                : pari.personName(draft.paidByPersonId)}
-            </span>
-          </button>
-
-          {showPaidBy ? (
-            <div className="flex flex-wrap gap-2 px-1 pt-1">
-              {people.map((person) => (
-                <PersonChip
-                  key={person.id}
-                  name={person.name}
-                  selected={draft.paidByPersonId === person.id}
-                  onClick={() => {
-                    setDraft((prev) => ({ ...prev, paidByPersonId: person.id }));
-                    setShowPaidBy(false);
-                  }}
-                />
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        {draft.usingGroupDefault ? (
-          <div className="flex items-center justify-between rounded-2xl bg-positive-soft px-4 py-3.5">
-            <p className="text-sm">
-              Using group split ·{" "}
-              {participants.map((p) => draft.percentages[p.id] ?? 0).join("/")}
-            </p>
             <button
               type="button"
-              onClick={() => setDraft((prev) => ({ ...prev, usingGroupDefault: false }))}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => setShowPaidBy((prev) => !prev)}
+              className="flex w-full items-center justify-between rounded-2xl bg-surface px-4 py-4 text-left shadow-soft"
             >
-              Change
+              <span className="text-[15px] text-muted-foreground">{t("split.paidBy")}</span>
+              <span className="text-[15px] font-medium tracking-tight">
+                {draft.paidByPersonId === pari.currentPersonId
+                  ? t("common.you")
+                  : pari.personName(draft.paidByPersonId)}
+              </span>
             </button>
+
+            {showPaidBy ? (
+              <div className="flex flex-wrap gap-2 px-1 pt-1">
+                {people.map((person) => (
+                  <PersonChip
+                    key={person.id}
+                    name={person.name}
+                    selected={draft.paidByPersonId === person.id}
+                    onClick={() => {
+                      setDraft((prev) => ({ ...prev, paidByPersonId: person.id }));
+                      setShowPaidBy(false);
+                    }}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : null}
 
-        <ParticipantSelector
-          people={people}
+        <ParticipantPicker
           selected={draft.participants}
-          onToggle={(personId) =>
-            setDraft((prev) => ({
-              ...prev,
-              participants: prev.participants.includes(personId)
-                ? prev.participants.filter((id) => id !== personId)
-                : [...prev.participants, personId],
-            }))
-          }
-          onSelectAll={() =>
-            setDraft((prev) => ({
-              ...prev,
-              participants:
-                prev.participants.length === people.length ? [] : people.map((p) => p.id),
-            }))
-          }
+          onChange={(ids) => setDraft((prev) => ({ ...prev, participants: ids }))}
         />
 
         <section className="space-y-4 rounded-3xl bg-surface p-5 shadow-soft">
           <div className="flex items-center justify-between">
-            <p className="text-[13px] text-muted-foreground">Split</p>
+            <p className="text-[13px] text-muted-foreground">{t("split.distribution")}</p>
             <SplitSelector
               mode={draft.mode}
               onChange={(mode) =>
@@ -199,18 +182,44 @@ function ManualExpenseScreen() {
                       : prev.percentages,
                   shares:
                     mode === "shares"
-                      ? Object.fromEntries(prev.participants.map((id) => [id, prev.shares[id] ?? 1]))
+                      ? Object.fromEntries(
+                          prev.participants.map((id) => [id, prev.shares[id] ?? 1]),
+                        )
                       : prev.shares,
                 }))
               }
             />
           </div>
 
-          {draft.mode === "equal" && everyoneEqual ? (
-            <p className="text-center text-[26px] font-semibold tracking-[-0.03em]">
-              {formatMinor(perPerson, { compact: false })}
-              <span className="ml-2 text-[15px] font-normal text-muted-foreground">each</span>
-            </p>
+          {draft.mode === "equal" ? (
+            everyoneEqual ? (
+              <div className="text-center">
+                <p className="text-[26px] font-semibold tracking-[-0.03em]">
+                  {formatMinor(perPerson, { compact: false })}
+                  <span className="ml-2 text-[15px] font-normal text-muted-foreground">
+                    {t("participants.each")}
+                  </span>
+                </p>
+                <p className="mt-1 text-[13px] text-muted-foreground">
+                  {t("participants.peopleCount", { count: draft.participants.length })}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {participants.map((person) => (
+                  <div key={person.id} className="flex items-center justify-between">
+                    <span className="min-w-0 flex-1 truncate text-[15px]">{person.name}</span>
+                    <MoneyAmount
+                      minor={
+                        allocations.find((a) => a.personId === person.id)?.amountMinor ?? 0
+                      }
+                      compact={false}
+                      size="sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            )
           ) : null}
 
           {draft.mode === "percentage" ? (
@@ -227,45 +236,6 @@ function ManualExpenseScreen() {
             />
           ) : null}
 
-          {draft.mode === "shares" ? (
-            <div className="space-y-3">
-              {participants.map((person) => (
-                <div key={person.id} className="flex items-center gap-3">
-                  <span className="min-w-0 flex-1 truncate text-[15px]">{person.name}</span>
-                  <MoneyAmount
-                    minor={
-                      allocations.find((a) => a.personId === person.id)?.amountMinor ?? 0
-                    }
-                    tone="muted"
-                    size="sm"
-                  />
-                  <div className="flex items-center gap-2">
-                    {[1, 2, 3].map((value) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            shares: { ...prev.shares, [person.id]: value },
-                          }))
-                        }
-                        className={cn(
-                          "h-9 w-9 rounded-xl text-sm font-medium transition-colors",
-                          (draft.shares[person.id] ?? 1) === value
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-surface-strong text-muted-foreground",
-                        )}
-                      >
-                        {value}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
-
           {draft.mode === "exact" ? (
             <div className="space-y-3">
               {participants.map((person) => (
@@ -280,26 +250,75 @@ function ManualExpenseScreen() {
                       }))
                     }
                     min={0}
-                    ariaLabel={`${person.name} amount`}
-                    suffix={<span className="text-xs">DKK</span>}
-                    className="h-11 w-32 rounded-xl bg-surface-strong px-3"
+                    ariaLabel={person.name}
+                    suffix={<span className="text-sm">{currencyLabel()}</span>}
+                    className="h-11 w-[132px] shrink-0 rounded-xl bg-surface-strong px-3"
                     inputClassName="text-right text-[15px] font-medium"
                   />
                 </div>
               ))}
-              <p className="text-xs text-muted-foreground">
-                {(() => {
-                  const assigned = participants.reduce(
-                    (sum, person) => sum + (draft.exact[person.id] ?? 0),
-                    0,
-                  );
-                  const diff = draft.amountMinor - assigned;
-                  if (diff === 0) return t("split.addsUp");
-                  return diff > 0
-                    ? `${formatMinor(diff)} left to assign`
-                    : `${formatMinor(-diff)} too much`;
-                })()}
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {exactBalanced ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-positive" strokeWidth={2} />
+                    {t("split.allocated", {
+                      allocated: formatMinor(exactSum, { compact: false }),
+                      total: formatMinor(draft.amountMinor, { compact: false }),
+                    })}
+                  </>
+                ) : exactSum < draft.amountMinor ? (
+                  t("split.remaining", {
+                    amount: formatMinor(draft.amountMinor - exactSum, { compact: false }),
+                  })
+                ) : (
+                  t("split.over", {
+                    amount: formatMinor(exactSum - draft.amountMinor, { compact: false }),
+                  })
+                )}
               </p>
+            </div>
+          ) : null}
+
+          {draft.mode === "shares" ? (
+            <div className="space-y-3">
+              {participants.map((person) => {
+                const shares = draft.shares[person.id] ?? 1;
+                const setShares = (next: number) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    shares: { ...prev.shares, [person.id]: Math.max(1, Math.min(20, next)) },
+                  }));
+
+                return (
+                  <div key={person.id} className="flex items-center gap-3">
+                    <span className="min-w-0 flex-1 truncate text-[15px]">{person.name}</span>
+                    <MoneyAmount
+                      minor={allocations.find((a) => a.personId === person.id)?.amountMinor ?? 0}
+                      tone="muted"
+                      size="sm"
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label="-"
+                        onClick={() => setShares(shares - 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-strong active:scale-95"
+                      >
+                        <Minus className="h-4 w-4" strokeWidth={2} />
+                      </button>
+                      <span className="tnum w-6 text-center text-[15px] font-medium">{shares}</span>
+                      <button
+                        type="button"
+                        aria-label="+"
+                        onClick={() => setShares(shares + 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-strong active:scale-95"
+                      >
+                        <Plus className="h-4 w-4" strokeWidth={2} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : null}
         </section>
@@ -308,7 +327,10 @@ function ManualExpenseScreen() {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center bg-gradient-to-t from-background via-background to-transparent pb-8 pt-10">
         <div className="pointer-events-auto w-full max-w-[430px] px-5">
           <PrimaryButton onClick={save} disabled={!canSave}>
-            Save split
+            {t("split.finish")}
+            {draft.amountMinor > 0
+              ? ` · ${formatMinor(draft.amountMinor, { compact: false })}`
+              : ""}
           </PrimaryButton>
         </div>
       </div>
