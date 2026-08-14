@@ -37,7 +37,16 @@ function ManualExpenseScreen() {
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
   const [showPaidBy, setShowPaidBy] = useState(false);
-  const amountChars = draft.amountMinor > 0 ? String(toMajor(draft.amountMinor)) : "0";
+  const amountChars = draft.amountMinor > 0 ? `${toMajor(draft.amountMinor)}` : "0";
+  const heroClass = cn(
+    "font-semibold tracking-[-0.04em]",
+    amountChars.length <= 5
+      ? "text-[60px] leading-[1.05]"
+      : amountChars.length <= 7
+        ? "text-[50px] leading-[1.08]"
+        : "text-[38px] leading-[1.12]",
+  );
+
 
 
   const people = useMemo(
