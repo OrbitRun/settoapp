@@ -54,13 +54,22 @@ export function ParticipantPicker({
       return;
     }
 
-    // Select already-known people first, then create generic ones.
+    // Select already-known people first.
     let ids = [...selected];
     for (const person of people) {
       if (ids.length >= target) break;
       if (!ids.includes(person.id)) ids.push(person.id);
     }
     onChange(ids);
+
+    if (ids.length >= target) return;
+
+    // Signed-in users keep a real address book: never invent "Person N" rows —
+    // open the add-person field so they can name the missing participant.
+    if (!pari.isGuest) {
+      setAdding(true);
+      return;
+    }
 
     while (ids.length < target) {
       const created = await pari.addPerson(t("participants.person", { index: ids.length + 1 }));
@@ -69,6 +78,7 @@ export function ParticipantPicker({
       onChange(ids);
     }
   };
+
 
   const commitRename = async (id: string) => {
     const trimmed = editName.trim();
