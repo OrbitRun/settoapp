@@ -441,6 +441,8 @@ export function PariProvider({ children }: { children: ReactNode }) {
         setMigrationFailed(true);
       })
       .finally(() => setMigrating(false));
+  }, [userId, guestReady, queryClient, navigate]);
+
 
   // An invitation opened while signed out is applied right after auth.
   useEffect(() => {
