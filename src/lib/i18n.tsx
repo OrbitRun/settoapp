@@ -235,6 +235,9 @@ const en: Dict = {
   "split.over": "{amount} too much",
   "split.finish": "Finish",
   "split.saveAsGroup": "Save as group",
+  "split.saveInPari": "Save in PARI",
+  "split.newSplit": "New split",
+
   "split.shareResult": "Share result",
   "split.copyResult": "Copy result",
   "split.done": "Done",
