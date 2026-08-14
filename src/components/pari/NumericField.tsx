@@ -26,6 +26,7 @@ export function NumericField({
   inputClassName,
   format,
   showZero = false,
+  commitOnly = false,
 }: {
   value: number;
   onChange: (value: number) => void;
@@ -45,7 +46,10 @@ export function NumericField({
   format?: (value: number) => string;
   /** Render a real "0" at rest instead of leaving the field empty. */
   showZero?: boolean;
+  /** Never report while typing — only on blur/Enter, through onCommit. */
+  commitOnly?: boolean;
 }) {
+
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(() => toText(value, format, showZero));
@@ -86,15 +90,15 @@ export function NumericField({
         onFocus={(event) => {
           setFocused(true);
           setText(value === 0 ? "" : stripFormat(event.target.value));
-          const el = event.target;
-          requestAnimationFrame(() => {
-            try {
-              el.select();
-            } catch {
-              el.setSelectionRange(el.value.length, el.value.length);
-            }
-          });
+          selectAll(event.target);
         }}
+        onMouseUp={(event) => {
+          // Keep the select-all instead of the browser placing a caret.
+          event.preventDefault();
+          selectAll(event.currentTarget);
+        }}
+        onTouchEnd={(event) => selectAll(event.currentTarget)}
+
         onChange={(event) => {
           let raw = event.target.value.replace(/[^\d.,]/g, "");
           // Typing over the resting "0" replaces it, wherever the caret sat.
@@ -103,16 +107,21 @@ export function NumericField({
           }
           raw = raw.replace(/^0+(?=\d)/, "");
           setText(raw);
+          if (commitOnly) return; // draft only — report on commit
           if (raw.trim() === "") return; // allow temporary blank, don't force 0
           onChange(clamp(parse(raw)));
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
         }}
         onBlur={() => {
           setFocused(false);
           const next = text.trim() === "" ? clamp(min ?? 0) : clamp(parse(text));
-          onChange(next);
+          if (!commitOnly) onChange(next);
           onCommit?.(next);
           setText(toText(next, format, showZero));
         }}
+
         className={cn(
           "tnum w-full min-w-0 bg-transparent outline-none placeholder:text-muted-foreground/40",
           inputClassName,
@@ -130,4 +139,14 @@ function stripFormat(raw: string) {
 function toText(value: number, format?: (value: number) => string, showZero = false) {
   if (value === 0) return showZero ? "0" : "";
   return format ? format(value) : String(value);
+}
+
+function selectAll(el: HTMLInputElement) {
+  requestAnimationFrame(() => {
+    try {
+      el.select();
+    } catch {
+      el.setSelectionRange(el.value.length, el.value.length);
+    }
+  });
 }

@@ -17,7 +17,7 @@ export function PercentageSplitEditor({
   totalMinor: number;
   people: { id: string; name: string }[];
   percentages: Record<string, number>;
-  onChange: (personId: string, percentage: number) => void;
+  onChange: (next: Record<string, number>) => void;
   showAmounts?: boolean;
 }) {
   const t = useT();
@@ -29,14 +29,17 @@ export function PercentageSplitEditor({
   const balanced = Math.round(sum) === 100;
   const pair = people.length === 2;
 
-  const set = (personId: string, value: number) => {
-    const next = Math.min(100, Math.max(0, value));
-    onChange(personId, next);
+  // Committed only (blur / Enter / Done) — never while typing.
+  const commit = (personId: string, value: number) => {
+    const clamped = Math.min(100, Math.max(0, value));
+    const next = { ...percentages, [personId]: clamped };
     if (pair) {
       const other = people.find((person) => person.id !== personId);
-      if (other) onChange(other.id, Math.round((100 - next) * 100) / 100);
+      if (other) next[other.id] = Math.round((100 - clamped) * 100) / 100;
     }
+    onChange(next);
   };
+
 
   const round = (value: number) => value.toFixed(value % 1 === 0 ? 0 : 1);
 
@@ -62,7 +65,9 @@ export function PercentageSplitEditor({
               ) : null}
               <NumericField
                 value={value}
-                onChange={(next) => set(person.id, next)}
+                commitOnly
+                onChange={() => {}}
+                onCommit={(next) => commit(person.id, next)}
                 min={0}
                 max={100}
                 decimals={1}
@@ -71,6 +76,7 @@ export function PercentageSplitEditor({
                 className="h-11 w-[92px] shrink-0 rounded-xl bg-surface-strong px-3"
                 inputClassName="text-right text-[15px] font-medium"
               />
+
             </div>
           );
         })}

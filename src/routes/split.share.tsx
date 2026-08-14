@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { toast } from "sonner";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
@@ -31,6 +33,7 @@ function ShareScreen() {
   const t = useT();
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
+  const [busy, setBusy] = useState(false);
 
   const showGroups = !pari.isGuest && pari.data.groups.length > 0;
 
@@ -63,6 +66,9 @@ function ShareScreen() {
   };
 
   const confirm = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
     const expense = await pari.addExpense({
       groupId: draft.groupId,
       title: draft.title || draft.merchant || "Receipt",
@@ -75,6 +81,11 @@ function ShareScreen() {
     });
     if (!expense) return;
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
+    } catch {
+      toast.error(t("common.saveFailed"));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const goItemised = () => {
@@ -168,9 +179,11 @@ function ShareScreen() {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center bg-gradient-to-t from-background via-background to-transparent pb-8 pt-10">
         <div className="pointer-events-auto w-full max-w-[430px] space-y-2 px-5">
           <PrimaryButton
-            onClick={confirm}
+            onClick={() => void confirm()}
             disabled={
-              draft.participants.length === 0 || !isRuleComplete(rule, participants, sharedTotal)
+              busy ||
+              draft.participants.length === 0 ||
+              !isRuleComplete(rule, participants, sharedTotal)
             }
           >
             {t("receipt.confirmSplit")}

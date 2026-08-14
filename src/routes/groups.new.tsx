@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
 
 import { Screen } from "@/components/pari/AppShell";
@@ -70,6 +71,7 @@ function CreateGroupScreen() {
   );
   const [newPerson, setNewPerson] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [rule, setRule] = useState<SplitRule>({
     mode: "equal",
     percentages: {},
@@ -97,6 +99,9 @@ function CreateGroupScreen() {
   };
 
   const create = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
     const groupId = await pari.createGroup({
       name,
       personNames: people,
@@ -106,6 +111,11 @@ function CreateGroupScreen() {
     });
     if (!groupId) return;
     navigate({ to: "/groups/$groupId", params: { groupId } });
+    } catch {
+      toast.error(t("common.saveFailed"));
+    } finally {
+      setBusy(false);
+    }
   };
 
 
@@ -221,7 +231,10 @@ function CreateGroupScreen() {
           ) : null}
         </section>
 
-        <PrimaryButton onClick={create} disabled={!name.trim() || people.length < 1 || !ruleReady}>
+        <PrimaryButton
+          onClick={() => void create()}
+          disabled={!name.trim() || people.length < 1 || !ruleReady || busy}
+        >
           {t("groups.create")}
         </PrimaryButton>
       </div>
