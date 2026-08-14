@@ -31,6 +31,7 @@ export function ParticipantPicker({
     id: person.id,
     name: person.name,
     isSelf: person.is_self,
+    avatarUrl: person.avatar_url,
   }));
   const allSelected = people.length > 0 && selected.length === people.length;
 
@@ -137,7 +138,12 @@ export function ParticipantPicker({
                     <Check className="h-4 w-4" strokeWidth={2.4} />
                   </span>
                 ) : (
-                  <Avatar name={person.name} size="sm" className="h-9 w-9 opacity-50" />
+                  <Avatar
+                    name={person.name}
+                    size="sm"
+                    imageUrl={person.avatarUrl}
+                    className="h-9 w-9 opacity-50"
+                  />
                 )}
               </button>
 
