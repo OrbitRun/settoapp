@@ -80,9 +80,9 @@ function ResultScreen() {
     toast.success(t("split.copied"));
   };
 
-  const saveAsGroup = () => {
+  const saveInPari = () => {
     if (pari.isGuest) {
-      pari.requireAccount("create_group");
+      pari.requireAccount("save_split");
       return;
     }
     pari.resetDraft();
@@ -92,6 +92,17 @@ function ResultScreen() {
     }
     navigate({ to: "/groups/new" });
   };
+
+  const newSplit = () => {
+    pari.resetDraft();
+    navigate({ to: "/split/start" });
+  };
+
+  const finish = () => {
+    pari.resetDraft();
+    navigate({ to: pari.isGuest ? "/" : "/home" });
+  };
+
 
   return (
     <Screen>
