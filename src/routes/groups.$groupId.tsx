@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, UserPlus } from "lucide-react";
+import { Check, Plus, UserPlus } from "lucide-react";
 
 import { BottomNav, Divider, Panel, Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
