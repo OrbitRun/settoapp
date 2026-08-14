@@ -119,6 +119,12 @@ type PariContextValue = {
   updateExpense: (id: string, input: UpdateExpenseInput) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
   createGroup: (input: CreateGroupInput) => Promise<string | null>;
+  updateGroup: (groupId: string, patch: UpdateGroupInput) => Promise<void>;
+  addGroupMembers: (groupId: string, personIds: string[]) => Promise<void>;
+  /** Refuses when the person is still tied to expenses in the group. */
+  removeGroupMember: (groupId: string, personId: string) => Promise<"ok" | "has-expenses">;
+  setGroupArchived: (groupId: string, archived: boolean) => Promise<void>;
+  deleteGroup: (groupId: string) => Promise<void>;
   markSettled: (groupId: string, step: SettlementStep) => Promise<void>;
   addPerson: (name: string) => Promise<Person | null>;
   renamePerson: (id: string, name: string) => Promise<void>;
