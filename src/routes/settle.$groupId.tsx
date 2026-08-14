@@ -46,16 +46,16 @@ function SettleScreen() {
       <FlowHeader title={t("settle.title")} subtitle={group?.name} />
 
       <div className="px-1 pb-8">
-        <h1 className="text-[26px] font-semibold tracking-[-0.03em]">Settle up</h1>
+        <h1 className="text-[26px] font-semibold tracking-[-0.03em]">{t("settle.title")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          PARI works out the fewest payments that clear everyone.
+          {t("settle.hint")}
         </p>
       </div>
 
       {plan.length === 0 ? (
         <EmptyState
           title={t("settle.allSettled")}
-          description="No payments needed in this group right now."
+          description={t("settle.nothingPending")}
         />
       ) : (
         <Panel>
@@ -67,8 +67,10 @@ function SettleScreen() {
                   <Avatar name={pari.personName(step.fromPersonId)} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[15px] font-medium tracking-tight">
-                      {pari.personName(step.fromPersonId)} pays{" "}
-                      {pari.personName(step.toPersonId)}
+                      {t("settle.pays", {
+                        from: pari.personName(step.fromPersonId),
+                        to: pari.personName(step.toPersonId),
+                      })}
                     </p>
                     <MoneyAmount minor={step.amountMinor} tone="muted" size="sm" className="mt-1 block" />
                   </div>
@@ -86,7 +88,7 @@ function SettleScreen() {
                     className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-surface-strong text-sm font-medium"
                   >
                     <Copy className="h-4 w-4" strokeWidth={1.6} />
-                    Copy amount
+                    {t("settle.copyAmount")}
                   </button>
                   <button
                     type="button"
@@ -96,7 +98,7 @@ function SettleScreen() {
                     }}
                     className="inline-flex h-11 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground"
                   >
-                    Mark as paid
+                    {t("settle.markPaid")}
                   </button>
                 </div>
               </div>

@@ -53,7 +53,7 @@ export function TopBar({
         <h1 className="truncate text-[26px] font-semibold tracking-[-0.03em]">{title}</h1>
       </div>
       {action ?? (
-        <Link to="/profile" aria-label="Profile and settings" className="shrink-0">
+        <Link to="/profile" aria-label={t("common.profileSettings")} className="shrink-0">
           <Avatar name={currentProfileName} size="md" />
         </Link>
       )}
@@ -135,7 +135,7 @@ export function BottomNav() {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              aria-label="Split an expense"
+              aria-label={t("sheet.title")}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground transition-transform duration-200 active:scale-95"
             >
               <Plus className="h-6 w-6" strokeWidth={2} />
@@ -151,8 +151,8 @@ export function BottomNav() {
       <BottomSheet
         open={open}
         onClose={() => setOpen(false)}
-        title="Split an expense"
-        description="Two taps and you're done."
+        title={t("sheet.title")}
+        description={t("sheet.subtitle")}
       >
         <div className="space-y-2">
           <button
@@ -163,10 +163,10 @@ export function BottomNav() {
             <ScanLine className="h-5 w-5 shrink-0" strokeWidth={1.6} />
             <span>
               <span className="block text-[15px] font-medium tracking-tight">
-                Scan receipt
+                {t("sheet.scan")}
               </span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
-                Take a photo or upload one
+                {t("sheet.scanHint")}
               </span>
             </span>
           </button>
@@ -178,9 +178,9 @@ export function BottomNav() {
           >
             <Plus className="h-5 w-5 shrink-0" strokeWidth={1.6} />
             <span>
-              <span className="block text-[15px] font-medium tracking-tight">Add amount</span>
+              <span className="block text-[15px] font-medium tracking-tight">{t("sheet.manual")}</span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
-                Enter an expense manually
+                {t("sheet.manualHint")}
               </span>
             </span>
           </button>
@@ -190,7 +190,7 @@ export function BottomNav() {
             onClick={() => start("/split/scan")}
             className="mx-auto block pt-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            Multiple receipts
+            {t("sheet.multiple")}
           </button>
         </div>
       </BottomSheet>
