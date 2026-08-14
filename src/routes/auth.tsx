@@ -9,6 +9,11 @@ import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { mode?: "signup" } =>
+    search['mode'] === "signup" ? { mode: "signup" } : {},
+
+
+
   head: () => ({
     meta: [
       { title: "Sign in — PARI" },

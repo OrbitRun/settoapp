@@ -4,11 +4,10 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  useNavigate,
-  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
@@ -18,6 +17,8 @@ import { I18nProvider } from "@/lib/i18n";
 import { setMoneyDefaults } from "@/lib/money";
 import { setDateLanguage } from "@/lib/dates";
 import { Toaster } from "@/components/ui/sonner";
+import { AccountSheet } from "@/components/pari/AccountSheet";
+
 
 function NotFoundComponent() {
   return (
@@ -122,16 +123,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function AppFrame({ children }: { children: ReactNode }) {
   const pari = usePari();
-  const navigate = useNavigate();
-  const routerState = useRouterState();
-  const path = routerState.location.pathname;
-  const isPublic = path === "/auth" || path === "/onboarding";
-
-  useEffect(() => {
-    if (!pari.loading && !pari.session && !isPublic) {
-      navigate({ to: "/auth" });
-    }
-  }, [pari.loading, pari.session, isPublic, navigate]);
 
   setMoneyDefaults(pari.currency, pari.language === "da" ? "da-DK" : "en-GB");
   setDateLanguage(pari.language);
@@ -145,16 +136,14 @@ function AppFrame({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle("dark", dark);
   }, [pari.appearance]);
 
-  if (pari.loading && !isPublic) {
-    return <div className="min-h-svh bg-background" />;
-  }
-
-  if (!pari.session && !isPublic) {
-    return <div className="min-h-svh bg-background" />;
-  }
-
-  return <I18nProvider language={pari.language}>{children}</I18nProvider>;
+  return (
+    <I18nProvider language={pari.language}>
+      {children}
+      <AccountSheet />
+    </I18nProvider>
+  );
 }
+
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();

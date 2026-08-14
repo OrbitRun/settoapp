@@ -4,10 +4,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import type { Session } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -32,8 +35,30 @@ import {
   type Person,
   type Profile,
 } from "./types";
+import {
+  clearGuestState,
+  emptyGuestState,
+  loadGuestState,
+  makeGuestExpense,
+  makeGuestItemId,
+  makeGuestPerson,
+  makeGuestSplitId,
+  saveGuestState,
+  withSelfPerson,
+  type GuestState,
+} from "./guest";
+
+/** Why the app is asking a guest to create an account. */
+export type AccountPromptReason =
+  | "save_expense"
+  | "create_group"
+  | "balances"
+  | "history"
+  | "settle"
+  | "collaborate";
 
 const nowIso = () => new Date().toISOString();
+
 
 export type AddExpenseInput = {
   groupId: string | null;
@@ -101,7 +126,19 @@ type PariContextValue = {
   draft: SplitDraft;
   setDraft: (updater: SplitDraft | ((prev: SplitDraft) => SplitDraft)) => void;
   resetDraft: () => void;
+  /** True when nobody is signed in — PARI runs as a local, device-only workspace. */
+  isGuest: boolean;
+  /** Opens the contextual "create an account" sheet instead of redirecting. */
+  requireAccount: (reason: AccountPromptReason) => void;
+  accountPrompt: AccountPromptReason | null;
+  dismissAccountPrompt: () => void;
+  /** True while a guest split is being moved into a freshly created account. */
+  migratingGuestData: boolean;
+  /** True when carrying a guest split into the new account failed. */
+  guestMigrationFailed: boolean;
+
 };
+
 
 const PariContext = createContext<PariContextValue | null>(null);
 
@@ -144,11 +181,159 @@ async function fetchAll(userId: string): Promise<PariData> {
   };
 }
 
+/**
+ * Moves a guest's local splits into a freshly authenticated account so nobody
+ * ever has to scan or split the same receipt twice.
+ * Returns the id of the newest saved expense.
+ */
+async function migrateGuestData(userId: string, state: GuestState): Promise<string | null> {
+  const { data: existingPeople } = await supabase.from("people").select("*");
+  const people = (existingPeople ?? []) as unknown as Person[];
+
+  let selfPerson = people.find((p) => p.is_self) ?? null;
+  if (!selfPerson) {
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", userId)
+      .maybeSingle();
+    const { data: created } = await supabase
+      .from("people")
+      .insert({
+        owner_user_id: userId,
+        name: (profileRow?.display_name as string | undefined) || "PARI",
+        is_self: true,
+        linked_profile_id: userId,
+      })
+      .select()
+      .single();
+    selfPerson = (created ?? null) as unknown as Person | null;
+  }
+
+  const idMap = new Map<string, string>();
+  for (const guestPerson of state.people) {
+    if (guestPerson.is_self) {
+      if (selfPerson) idMap.set(guestPerson.id, selfPerson.id);
+      continue;
+    }
+    const match = people.find(
+      (p) => p.name.toLowerCase() === guestPerson.name.toLowerCase(),
+    );
+    if (match) {
+      idMap.set(guestPerson.id, match.id);
+      continue;
+    }
+    const { data: created } = await supabase
+      .from("people")
+      .insert({ owner_user_id: userId, name: guestPerson.name })
+      .select()
+      .single();
+    if (created) idMap.set(guestPerson.id, created.id as string);
+  }
+
+  let lastExpenseId: string | null = null;
+
+  // Oldest first so the account timeline keeps the guest's order.
+  const ordered = [...state.expenses].sort((a, b) =>
+    a.expense_date.localeCompare(b.expense_date),
+  );
+
+  for (const guestExpense of ordered) {
+    const payerId = idMap.get(guestExpense.paid_by_person_id) ?? selfPerson?.id;
+    if (!payerId) continue;
+
+    const { data: created, error } = await supabase
+      .from("expenses")
+      .insert({
+        owner_user_id: userId,
+        group_id: null,
+        paid_by_person_id: payerId,
+        title: guestExpense.title,
+        merchant: guestExpense.merchant,
+        total_minor: guestExpense.total_minor,
+        source_type: guestExpense.source_type,
+        currency: guestExpense.currency,
+        expense_date: guestExpense.expense_date,
+      })
+      .select()
+      .single();
+    if (error || !created) throw error ?? new Error("Could not save the split");
+
+    const expenseId = created.id as string;
+    lastExpenseId = expenseId;
+
+    const splits = state.expenseSplits
+      .filter((split) => split.expense_id === guestExpense.id)
+      .map((split) => ({
+        owner_user_id: userId,
+        expense_id: expenseId,
+        person_id: idMap.get(split.person_id) ?? payerId,
+        amount_minor: split.amount_minor,
+        percentage: split.percentage,
+        shares: split.shares,
+      }));
+    if (splits.length > 0) await supabase.from("expense_splits").insert(splits);
+
+    const items = state.expenseItems
+      .filter((item) => item.expense_id === guestExpense.id)
+      .map((item, index) => ({
+        owner_user_id: userId,
+        expense_id: expenseId,
+        name: item.name,
+        quantity: item.quantity,
+        unit_price_minor: item.unit_price_minor,
+        total_minor: item.total_minor,
+        is_shared: item.is_shared,
+        position: index,
+      }));
+    if (items.length > 0) await supabase.from("expense_items").insert(items);
+
+    await supabase.from("activity").insert({
+      owner_user_id: userId,
+      group_id: null,
+      actor_person_id: payerId,
+      activity_type: "expense_added",
+      entity_type: "expense",
+      entity_id: expenseId,
+      metadata: { title: guestExpense.title, amount_minor: guestExpense.total_minor },
+    });
+  }
+
+  return lastExpenseId;
+}
+
+
+
 export function PariProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [draft, setDraftState] = useState<SplitDraft>(() => emptyDraft(""));
+  const [guest, setGuestRaw] = useState<GuestState>(emptyGuestState);
+  const [guestReady, setGuestReady] = useState(false);
+  const [accountPrompt, setAccountPrompt] = useState<AccountPromptReason | null>(null);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationFailed, setMigrationFailed] = useState(false);
+  const migratedRef = useRef(false);
+  const navigate = useNavigate();
+
+
+  const setGuest = useCallback((updater: (prev: GuestState) => GuestState) => {
+    setGuestRaw((prev) => {
+      const next = updater(prev);
+      saveGuestState(next);
+      return next;
+    });
+  }, []);
+
+  // Hydrate the guest workspace on the client only (keeps SSR markup stable).
+  useEffect(() => {
+    const stored = withSelfPerson(loadGuestState());
+    setGuestRaw(stored);
+    saveGuestState(stored);
+    if (stored.draft) setDraftState(stored.draft);
+    setGuestReady(true);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -172,6 +357,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const userId = session?.user?.id ?? null;
+  const isGuest = authReady && !userId;
 
   const query = useQuery({
     queryKey: ["pari", userId],
@@ -180,8 +366,20 @@ export function PariProvider({ children }: { children: ReactNode }) {
     staleTime: 10_000,
   });
 
-  const data = query.data ?? emptyPariData;
-  const profile = data.profiles[0] ?? null;
+  const accountData = query.data ?? emptyPariData;
+
+  const data = useMemo<PariData>(() => {
+    if (!isGuest) return accountData;
+    return {
+      ...emptyPariData,
+      people: guest.people,
+      expenses: guest.expenses,
+      expenseItems: guest.expenseItems,
+      expenseSplits: guest.expenseSplits,
+    };
+  }, [isGuest, accountData, guest]);
+
+  const profile = accountData.profiles[0] ?? null;
   const selfPerson = data.people.find((p) => p.is_self) ?? data.people[0];
   const currentPersonId = selfPerson?.id ?? "";
 
@@ -193,9 +391,51 @@ export function PariProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!currentPersonId) return;
     setDraftState((prev) =>
-      prev.paidByPersonId ? prev : { ...prev, paidByPersonId: currentPersonId, participants: [currentPersonId] },
+      prev.paidByPersonId && data.people.some((p) => p.id === prev.paidByPersonId)
+        ? prev
+        : { ...prev, paidByPersonId: currentPersonId, participants: [currentPersonId] },
     );
-  }, [currentPersonId]);
+  }, [currentPersonId, data.people]);
+
+  // Persist the guest's split in progress so a reload or OAuth redirect keeps it.
+  useEffect(() => {
+    if (!isGuest || !guestReady) return;
+    setGuest((prev) => (prev.draft === draft ? prev : { ...prev, draft }));
+  }, [draft, isGuest, guestReady, setGuest]);
+
+  // A guest just signed in or created an account: carry their split across.
+  useEffect(() => {
+    if (!userId || !guestReady || migratedRef.current) return;
+    migratedRef.current = true;
+    const stored = loadGuestState();
+    const resetGuest = () => {
+      clearGuestState();
+      setGuestRaw(withSelfPerson(emptyGuestState));
+      setDraftState(emptyDraft(""));
+    };
+    if (stored.expenses.length === 0) {
+      resetGuest();
+      return;
+    }
+    setMigrating(true);
+    void migrateGuestData(userId, stored)
+      .then(async (expenseId) => {
+        resetGuest();
+        await queryClient.invalidateQueries({ queryKey: ["pari"] });
+        if (expenseId) {
+          navigate({ to: "/split/result", search: { expenseId } });
+        }
+      })
+      .catch((error) => {
+        console.error("[pari] guest migration", error);
+        migratedRef.current = false;
+        setMigrationFailed(true);
+      })
+      .finally(() => setMigrating(false));
+  }, [userId, guestReady, queryClient, navigate]);
+
+
+
 
   const value = useMemo<PariContextValue>(() => {
     const personById = (id: string) => data.people.find((p) => p.id === id);
@@ -531,13 +771,86 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const signOut = async () => {
       await supabase.auth.signOut();
       queryClient.clear();
+      clearGuestState();
+      setGuestRaw(withSelfPerson(emptyGuestState));
+      setDraftState(emptyDraft(""));
+    };
+
+    // ---- Guest (device-only) mutations -------------------------------------
+
+    const guestAddPerson = async (name: string): Promise<Person | null> => {
+      const trimmed = name.trim();
+      if (!trimmed) return null;
+      const existing = guest.people.find(
+        (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
+      );
+      if (existing) return existing;
+      const person = makeGuestPerson(trimmed);
+      setGuest((prev) => ({ ...prev, people: [...prev.people, person] }));
+      return person;
+    };
+
+    const guestAddExpense = async (input: AddExpenseInput): Promise<Expense | null> => {
+      const expense = makeGuestExpense({
+        title: input.title || input.merchant || "Split",
+        merchant: input.merchant,
+        paidByPersonId: input.paidByPersonId,
+        totalMinor: input.totalMinor,
+        source: input.source,
+        currency: "DKK",
+        ...(input.expenseDate ? { expenseDate: input.expenseDate } : {}),
+      });
+
+      const splits = input.allocations.map((allocation) => ({
+        id: makeGuestSplitId(),
+        expense_id: expense.id,
+        person_id: allocation.personId,
+        amount_minor: allocation.amountMinor,
+        percentage: allocation.percentage ?? null,
+        shares: allocation.shares ?? null,
+      }));
+
+      const items = (input.items ?? []).map((item) => ({
+        id: makeGuestItemId(),
+        expense_id: expense.id,
+        name: item.name,
+        quantity: item.quantity,
+        unit_price_minor: item.unitPriceMinor,
+        total_minor: itemTotalMinor(item),
+        category: null,
+        is_shared: item.isShared,
+        created_at: expense.created_at,
+      }));
+
+      setGuest((prev) => ({
+        ...prev,
+        expenses: [expense, ...prev.expenses],
+        expenseSplits: [...prev.expenseSplits, ...splits],
+        expenseItems: [...prev.expenseItems, ...items],
+      }));
+      return expense;
+    };
+
+    const guestDeleteExpense = async (id: string) => {
+      setGuest((prev) => ({
+        ...prev,
+        expenses: prev.expenses.filter((e) => e.id !== id),
+        expenseSplits: prev.expenseSplits.filter((s) => s.expense_id !== id),
+        expenseItems: prev.expenseItems.filter((i) => i.expense_id !== id),
+      }));
+    };
+
+    const notForGuests = (reason: AccountPromptReason) => () => {
+      setAccountPrompt(reason);
+      return Promise.resolve(null);
     };
 
     return {
       data,
-      loading: !authReady || (Boolean(userId) && query.isLoading),
+      loading: !authReady || (Boolean(userId) && query.isLoading) || migrating,
       session,
       profile,
+
       language: (profile?.language as Language) ?? detectLanguage(),
       currency: profile?.currency ?? "DKK",
       appearance: (profile?.appearance as Appearance) ?? "system",
@@ -557,12 +870,18 @@ export function PariProvider({ children }: { children: ReactNode }) {
       recentExpenses,
       activityFeed,
       groupDefaultPercentages,
-      addExpense,
+      addExpense: isGuest ? guestAddExpense : addExpense,
       updateExpense,
-      deleteExpense,
-      createGroup,
-      markSettled,
-      addPerson,
+      deleteExpense: isGuest ? guestDeleteExpense : deleteExpense,
+      createGroup: isGuest
+        ? (notForGuests("create_group") as PariContextValue["createGroup"])
+        : createGroup,
+      markSettled: isGuest
+        ? (async () => {
+            setAccountPrompt("settle");
+          })
+        : markSettled,
+      addPerson: isGuest ? guestAddPerson : addPerson,
       renamePerson,
       deletePerson,
       updateProfile,
@@ -571,7 +890,14 @@ export function PariProvider({ children }: { children: ReactNode }) {
       draft,
       setDraft: setDraftState,
       resetDraft: () => setDraftState(emptyDraft(currentPersonId)),
+      isGuest,
+      requireAccount: (reason: AccountPromptReason) => setAccountPrompt(reason),
+      accountPrompt,
+      dismissAccountPrompt: () => setAccountPrompt(null),
+      migratingGuestData: migrating,
+      guestMigrationFailed: migrationFailed,
     };
+
   }, [
     data,
     draft,
@@ -584,7 +910,15 @@ export function PariProvider({ children }: { children: ReactNode }) {
     query.isLoading,
     queryClient,
     refresh,
+    isGuest,
+    guest,
+    setGuest,
+    accountPrompt,
+    migrating,
+    migrationFailed,
   ]);
+
+
 
   return <PariContext.Provider value={value}>{children}</PariContext.Provider>;
 }

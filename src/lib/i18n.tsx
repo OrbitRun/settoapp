@@ -179,6 +179,28 @@ const en: Dict = {
   "auth.toSignUp": "New here? Create an account",
   "auth.toSignIn": "Already have an account? Sign in",
   "auth.checkEmail": "Check your email to confirm your account.",
+
+  "welcome.title": "Share anything.\nSettle easily.",
+  "welcome.subtitle": "Split a bill in seconds — no account needed.",
+  "welcome.primary": "Split a bill",
+  "welcome.secondary": "Sign in",
+  "welcome.note": "Create an account later to save your splits.",
+  "guest.badge": "Guest",
+  "guest.yourSplits": "Your splits",
+  "guest.saveCta": "Create an account to save this",
+  "guest.migrated": "Your split was saved to your account.",
+  "guest.migrationFailed": "We couldn't move your split. It's still on this device.",
+  "account.title": "Create an account",
+  "account.save_expense": "Create an account to save this expense and keep your history.",
+  "account.create_group": "Groups need an account so balances stay in sync.",
+  "account.balances": "Running balances need an account.",
+  "account.history": "Your history is saved once you have an account.",
+  "account.settle": "Settling up needs an account.",
+  "account.collaborate": "Sharing with others needs an account.",
+  "account.cta": "Create account",
+  "account.signIn": "I already have an account",
+  "account.later": "Not now",
+
 };
 
 const da: Dict = {
@@ -356,6 +378,28 @@ const da: Dict = {
   "auth.toSignUp": "Ny her? Opret en konto",
   "auth.toSignIn": "Har du allerede en konto? Log ind",
   "auth.checkEmail": "Tjek din mail for at bekræfte kontoen.",
+
+  "welcome.title": "Del alt.\nGør op med et tryk.",
+  "welcome.subtitle": "Split en regning på sekunder — helt uden konto.",
+  "welcome.primary": "Split en regning",
+  "welcome.secondary": "Log ind",
+  "welcome.note": "Opret en konto senere, hvis du vil gemme dine splits.",
+  "guest.badge": "Gæst",
+  "guest.yourSplits": "Dine splits",
+  "guest.saveCta": "Opret en konto for at gemme",
+  "guest.migrated": "Dit split er gemt på din konto.",
+  "guest.migrationFailed": "Vi kunne ikke flytte dit split. Det ligger stadig på denne enhed.",
+  "account.title": "Opret en konto",
+  "account.save_expense": "Opret en konto for at gemme udgiften og din historik.",
+  "account.create_group": "Grupper kræver en konto, så saldi holdes opdateret.",
+  "account.balances": "Løbende saldi kræver en konto.",
+  "account.history": "Din historik gemmes, når du har en konto.",
+  "account.settle": "At gøre op kræver en konto.",
+  "account.collaborate": "At dele med andre kræver en konto.",
+  "account.cta": "Opret konto",
+  "account.signIn": "Jeg har allerede en konto",
+  "account.later": "Ikke nu",
+
 };
 
 const DICTS: Record<Language, Dict> = { en, da };
