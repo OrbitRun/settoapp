@@ -173,9 +173,28 @@ async function fetchAll(userId: string): Promise<PariData> {
     supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(200),
   ]);
 
+  const profileRows = (profiles.data ?? []) as unknown as Profile[];
+  let peopleRows = (people.data ?? []) as unknown as Person[];
+
+  // Every account needs a "me" person — without it the split flow has nobody
+  // to select and falls back to generic placeholders.
+  if (!peopleRows.some((person) => person.owner_user_id === userId && person.is_self)) {
+    const { data: created } = await supabase
+      .from("people")
+      .insert({
+        owner_user_id: userId,
+        linked_profile_id: userId,
+        name: profileRows[0]?.display_name || "Mig",
+        is_self: true,
+      })
+      .select()
+      .single();
+    if (created) peopleRows = [created as unknown as Person, ...peopleRows];
+  }
+
   return {
-    profiles: (profiles.data ?? []) as unknown as Profile[],
-    people: (people.data ?? []) as unknown as Person[],
+    profiles: profileRows,
+    people: peopleRows,
     groups: (groups.data ?? []) as unknown as PariData["groups"],
     groupMembers: (groupMembers.data ?? []) as unknown as PariData["groupMembers"],
     expenses: (expenses.data ?? []) as unknown as Expense[],
@@ -186,6 +205,7 @@ async function fetchAll(userId: string): Promise<PariData> {
     activity: (activity.data ?? []) as unknown as ActivityEntry[],
   };
 }
+
 
 /**
  * Moves a guest's local splits into a freshly authenticated account so nobody
