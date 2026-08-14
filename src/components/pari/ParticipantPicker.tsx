@@ -64,13 +64,8 @@ export function ParticipantPicker({
 
     if (ids.length >= target) return;
 
-    // Signed-in users keep a real address book: never invent "Person N" rows —
-    // open the add-person field so they can name the missing participant.
-    if (!pari.isGuest) {
-      setAdding(true);
-      return;
-    }
-
+    // Nobody should be forced to name people up front: fill the gap with
+    // placeholders that can be renamed at any point.
     while (ids.length < target) {
       const created = await pari.addPerson(t("participants.person", { index: ids.length + 1 }));
       if (!created) break;
