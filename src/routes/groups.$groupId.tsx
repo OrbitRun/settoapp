@@ -12,6 +12,7 @@ import { emptyDraft } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { AuthGate } from "@/components/pari/AuthGate";
 
 export const Route = createFileRoute("/groups/$groupId")({
   head: () => ({
@@ -25,7 +26,11 @@ export const Route = createFileRoute("/groups/$groupId")({
       },
     ],
   }),
-  component: GroupDetailScreen,
+  component: () => (
+    <AuthGate>
+      <GroupDetailScreen />
+    </AuthGate>
+  ),
 });
 
 const TABS = ["Expenses", "People", "Rules"] as const;

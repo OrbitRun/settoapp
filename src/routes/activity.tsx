@@ -11,6 +11,7 @@ import { dayGroupLabel, shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { ActivityEntry } from "@/data/types";
+import { AuthGate } from "@/components/pari/AuthGate";
 
 export const Route = createFileRoute("/activity")({
   head: () => ({
@@ -27,7 +28,11 @@ export const Route = createFileRoute("/activity")({
       },
     ],
   }),
-  component: ActivityScreen,
+  component: () => (
+    <AuthGate>
+      <ActivityScreen />
+    </AuthGate>
+  ),
 });
 
 const KEYS: Record<ActivityEntry["activity_type"], string> = {

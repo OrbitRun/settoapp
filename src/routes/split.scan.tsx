@@ -90,7 +90,7 @@ function ScanScreen() {
 
   return (
     <Screen className="pb-16">
-      <FlowHeader title={t("split.scan")} variant="close" onClose={() => navigate({ to: "/" })} />
+      <FlowHeader title={t("split.scan")} variant="close" onClose={() => navigate({ to: pari.isGuest ? "/" : "/home" })} />
 
       <input
         ref={cameraRef}

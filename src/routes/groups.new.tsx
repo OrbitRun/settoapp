@@ -10,6 +10,7 @@ import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { SplitMode } from "@/lib/split";
+import { AuthGate } from "@/components/pari/AuthGate";
 
 export const Route = createFileRoute("/groups/new")({
   head: () => ({
@@ -26,7 +27,11 @@ export const Route = createFileRoute("/groups/new")({
       },
     ],
   }),
-  component: CreateGroupScreen,
+  component: () => (
+    <AuthGate>
+      <CreateGroupScreen />
+    </AuthGate>
+  ),
 });
 
 const OPTIONS: { value: SplitMode; labelKey: string }[] = [

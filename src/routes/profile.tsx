@@ -13,6 +13,7 @@ import { usePari } from "@/data/store";
 import { useT, type Language } from "@/lib/i18n";
 import type { Appearance } from "@/data/types";
 import { cn } from "@/lib/utils";
+import { AuthGate } from "@/components/pari/AuthGate";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -23,7 +24,11 @@ export const Route = createFileRoute("/profile")({
       { property: "og:description", content: "Your details, people and preferences in PARI." },
     ],
   }),
-  component: ProfileScreen,
+  component: () => (
+    <AuthGate>
+      <ProfileScreen />
+    </AuthGate>
+  ),
 });
 
 const CURRENCIES = ["DKK", "EUR", "SEK", "NOK", "GBP", "USD"] as const;
@@ -189,7 +194,7 @@ function ProfileScreen() {
               type="button"
               onClick={async () => {
                 await pari.signOut();
-                navigate({ to: "/auth" });
+                navigate({ to: "/", replace: true });
               }}
               className="w-full px-4 py-4 text-left text-[15px] text-negative"
             >

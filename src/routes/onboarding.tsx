@@ -64,7 +64,7 @@ function OnboardingScreen() {
         </div>
 
         <PrimaryButton
-          onClick={() => (last ? navigate({ to: "/" }) : setStep((prev) => prev + 1))}
+          onClick={() => (last ? navigate({ to: "/home" }) : setStep((prev) => prev + 1))}
         >
           {last ? "Get started" : "Continue"}
         </PrimaryButton>
