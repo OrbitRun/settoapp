@@ -919,7 +919,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
       draft,
       setDraft: setDraftState,
       resetDraft: () => setDraftState(emptyDraft(currentPersonId)),
+      authReady,
       isGuest,
+
       requireAccount: (reason: AccountPromptReason) => setAccountPrompt(reason),
       accountPrompt,
       dismissAccountPrompt: () => setAccountPrompt(null),
