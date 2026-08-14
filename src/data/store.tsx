@@ -790,6 +790,27 @@ export function PariProvider({ children }: { children: ReactNode }) {
       return person;
     };
 
+    const guestRenamePerson = async (id: string, name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      setGuest((prev) => ({
+        ...prev,
+        people: prev.people.map((p) => (p.id === id ? { ...p, name: trimmed } : p)),
+      }));
+    };
+
+    const guestDeletePerson = async (id: string) => {
+      setGuest((prev) => ({
+        ...prev,
+        people: prev.people.filter((p) => p.id === id ? false : true),
+      }));
+      setDraftState((prev) => ({
+        ...prev,
+        participants: prev.participants.filter((personId) => personId !== id),
+      }));
+    };
+
+
     const guestAddExpense = async (input: AddExpenseInput): Promise<Expense | null> => {
       const expense = makeGuestExpense({
         title: input.title || input.merchant || "Split",
