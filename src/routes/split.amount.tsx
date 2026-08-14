@@ -116,7 +116,7 @@ function ManualExpenseScreen() {
           {/* An invisible mirror sizes the field to its content so the amount and
               the currency stay centered as one unit at any length. */}
           <span className="relative inline-block">
-            <span aria-hidden className={cn(heroClass, "invisible whitespace-pre px-[0.35em]")}>
+            <span aria-hidden className={cn(heroClass, "invisible whitespace-pre px-[0.6em]")}>
               {amountChars}
             </span>
             <NumericField
