@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 
 import { calculatePercentageSplit } from "@/lib/split";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Avatar } from "./Avatar";
 import { MoneyAmount } from "./MoneyAmount";
@@ -11,12 +12,15 @@ export function PercentageSplitEditor({
   people,
   percentages,
   onChange,
+  showAmounts = true,
 }: {
   totalMinor: number;
   people: { id: string; name: string }[];
   percentages: Record<string, number>;
   onChange: (personId: string, percentage: number) => void;
+  showAmounts?: boolean;
 }) {
+  const t = useT();
   const sum = people.reduce((acc, person) => acc + (percentages[person.id] ?? 0), 0);
   const allocations = calculatePercentageSplit(
     totalMinor,
@@ -48,12 +52,14 @@ export function PercentageSplitEditor({
             <div key={person.id} className="flex items-center gap-3">
               <Avatar name={person.name} size="sm" />
               <span className="min-w-0 flex-1 truncate text-[15px]">{person.name}</span>
-              <MoneyAmount
-                minor={amount}
-                tone="muted"
-                size="sm"
-                className="w-24 shrink-0 text-right"
-              />
+              {showAmounts ? (
+                <MoneyAmount
+                  minor={amount}
+                  tone="muted"
+                  size="sm"
+                  className="w-24 shrink-0 text-right"
+                />
+              ) : null}
               <NumericField
                 value={value}
                 onChange={(next) => set(person.id, next)}
@@ -84,12 +90,14 @@ export function PercentageSplitEditor({
           {balanced ? (
             <>
               <Check className="h-3.5 w-3.5 text-positive" strokeWidth={2} />
-              Total 100%
+              {t("split.percentTotalOk")}
             </>
           ) : (
             <>
-              Total {round(sum)}% ·{" "}
-              {sum < 100 ? `${round(100 - sum)}% remaining` : `${round(sum - 100)}% too much`}
+              {t("split.percentTotal", { value: round(sum) })} ·{" "}
+              {sum < 100
+                ? t("split.percentRemaining", { value: round(100 - sum) })
+                : t("split.percentOver", { value: round(sum - 100) })}
             </>
           )}
         </p>
