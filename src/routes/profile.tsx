@@ -64,11 +64,6 @@ function ProfileScreen() {
     close();
   };
 
-  const addPerson = async () => {
-    const created = await pari.addPerson(personName);
-    if (created) setPersonName("");
-    close();
-  };
 
   const appearanceLabel: Record<Appearance, string> = {
     system: t("profile.system"),
