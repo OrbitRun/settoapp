@@ -63,6 +63,9 @@ function GroupDetailScreen() {
   const balances = pari.groupBalances(groupId);
   const myBalance = pari.myGroupBalance(groupId);
   const defaults = pari.groupDefaultPercentages(groupId);
+  // "Gør op" is a real action only when someone actually owes someone else.
+  const canSettle = pari.settlementPlan(groupId).length > 0;
+
 
   const addExpense = () => {
     pari.setDraft({
