@@ -27,9 +27,12 @@ export const emptyGuestState: GuestState = {
 };
 
 const uid = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `guest-${Math.random().toString(36).slice(2)}`;
+  `guest-${
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  }`;
+
 
 export const isGuestId = (id: string | null | undefined) => Boolean(id?.startsWith("guest-"));
 
