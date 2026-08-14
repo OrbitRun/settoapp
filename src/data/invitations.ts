@@ -54,6 +54,7 @@ export async function ensureGroupInvitation(
     .from("group_invitations")
     .select("*")
     .eq("group_id", groupId)
+    .eq("status", "active")
     .is("revoked_at", null)
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
