@@ -17,8 +17,9 @@ export function AccountSheet() {
 
   const go = (mode: "signup" | "signin") => {
     pari.dismissAccountPrompt();
-    navigate({ to: "/auth", search: { mode } });
+    navigate({ to: "/auth", search: mode === "signup" ? { mode: "signup" } : {} });
   };
+
 
   return (
     <BottomSheet
