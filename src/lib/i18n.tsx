@@ -452,7 +452,11 @@ const da: Dict = {
   "guest.migrated": "Dit split er gemt på din konto.",
   "guest.migrationFailed": "Vi kunne ikke flytte dit split. Det ligger stadig på denne enhed.",
   "account.title": "Opret en konto",
+  "account.saveTitle": "Gem dit split",
+  "account.save_split":
+    "Opret en konto for at gemme udgiften, personerne og din historik i PARI.",
   "account.save_expense": "Opret en konto for at gemme udgiften og din historik.",
+
   "account.create_group": "Grupper kræver en konto, så saldi holdes opdateret.",
   "account.balances": "Løbende saldi kræver en konto.",
   "account.history": "Din historik gemmes, når du har en konto.",
