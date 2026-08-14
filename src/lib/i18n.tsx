@@ -179,6 +179,28 @@ const en: Dict = {
   "auth.toSignUp": "New here? Create an account",
   "auth.toSignIn": "Already have an account? Sign in",
   "auth.checkEmail": "Check your email to confirm your account.",
+
+  "welcome.title": "Share anything.\nSettle easily.",
+  "welcome.subtitle": "Split a bill in seconds — no account needed.",
+  "welcome.primary": "Split a bill",
+  "welcome.secondary": "Sign in",
+  "welcome.note": "Create an account later to save your splits.",
+  "guest.badge": "Guest",
+  "guest.yourSplits": "Your splits",
+  "guest.saveCta": "Create an account to save this",
+  "guest.migrated": "Your split was saved to your account.",
+  "guest.migrationFailed": "We couldn't move your split. It's still on this device.",
+  "account.title": "Create an account",
+  "account.save_expense": "Create an account to save this expense and keep your history.",
+  "account.create_group": "Groups need an account so balances stay in sync.",
+  "account.balances": "Running balances need an account.",
+  "account.history": "Your history is saved once you have an account.",
+  "account.settle": "Settling up needs an account.",
+  "account.collaborate": "Sharing with others needs an account.",
+  "account.cta": "Create account",
+  "account.signIn": "I already have an account",
+  "account.later": "Not now",
+
 };
 
 const da: Dict = {
