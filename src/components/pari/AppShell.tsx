@@ -96,12 +96,15 @@ export function Divider() {
   return <div className="mx-4 h-px bg-hairline" />;
 }
 
-const NAV = [
+const NAV_LEFT = [
   { to: "/", label: "Home", icon: Home, exact: true },
   { to: "/groups", label: "Groups", icon: Users, exact: false },
 ] as const;
 
-const NAV_RIGHT = [{ to: "/activity", label: "Activity", icon: Clock, exact: false }] as const;
+const NAV_RIGHT = [
+  { to: "/activity", label: "Activity", icon: Clock, exact: false },
+  { to: "/profile", label: "Profile", icon: User, exact: false },
+] as const;
 
 export function BottomNav() {
   const [open, setOpen] = useState(false);
