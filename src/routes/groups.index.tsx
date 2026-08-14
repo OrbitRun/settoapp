@@ -102,7 +102,7 @@ function GroupsScreen() {
             onSubmit={(event) => {
               event.preventDefault();
               const trimmed = code.trim();
-              if (trimmed) navigate({ to: "/join/$token", params: { token: trimmed } });
+              if (trimmed) navigate({ to: "/invite/$token", params: { token: trimmed } });
             }}
             className="flex items-center gap-2 rounded-2xl bg-surface px-4 py-2.5 shadow-soft"
           >
