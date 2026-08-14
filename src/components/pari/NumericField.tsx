@@ -140,3 +140,13 @@ function toText(value: number, format?: (value: number) => string, showZero = fa
   if (value === 0) return showZero ? "0" : "";
   return format ? format(value) : String(value);
 }
+
+function selectAll(el: HTMLInputElement) {
+  requestAnimationFrame(() => {
+    try {
+      el.select();
+    } catch {
+      el.setSelectionRange(el.value.length, el.value.length);
+    }
+  });
+}
