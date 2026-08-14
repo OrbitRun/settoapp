@@ -1057,6 +1057,11 @@ export function PariProvider({ children }: { children: ReactNode }) {
       createGroup: isGuest
         ? (notForGuests("create_group") as PariContextValue["createGroup"])
         : createGroup,
+      updateGroup,
+      addGroupMembers,
+      removeGroupMember,
+      setGroupArchived,
+      deleteGroup,
       markSettled: isGuest
         ? (async () => {
             setAccountPrompt("settle");
