@@ -66,7 +66,7 @@ function AuthScreen() {
         navigate({ to: "/home" });
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Something went wrong");
+      toast.error(error instanceof Error ? error.message : t("auth.error"));
     } finally {
       setBusy(false);
     }
@@ -79,7 +79,7 @@ function AuthScreen() {
     });
     if (result.error) {
       setBusy(false);
-      toast.error("Google sign-in failed");
+      toast.error(t("auth.googleFailed"));
       return;
     }
     if (result.redirected) return;

@@ -76,7 +76,7 @@ function ReviewScreen() {
       <div className="px-1 pb-8">
         <p className="text-sm text-muted-foreground">{shortDate(draft.items.length ? new Date().toISOString() : new Date().toISOString())}</p>
         <h1 className="mt-1 text-[26px] font-semibold tracking-[-0.03em]">
-          {draft.merchant ?? "Receipt"}
+          {draft.merchant ?? t("split.receipt")}
         </h1>
         <p className="tnum mt-2 text-[17px] text-muted-foreground">
           {formatMinor(draft.amountMinor, { compact: false })}
@@ -129,7 +129,7 @@ function ReviewScreen() {
                 </span>
                 <button
                   type="button"
-                  aria-label={`Edit ${item.name}`}
+                  aria-label={`${t("common.edit")} ${item.name}`}
                   onClick={(event) => {
                     event.stopPropagation();
                     setEditing(item);

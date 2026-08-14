@@ -62,7 +62,7 @@ function ScanScreen() {
   const openCamera = () => {
     setError(null);
     if (!cameraRef.current) {
-      setError("Camera isn't available here. Choose a photo instead.");
+      setError(t("scan.noCamera"));
       return;
     }
     cameraRef.current.click();
@@ -129,14 +129,14 @@ function ScanScreen() {
           <div className="relative w-full max-w-[280px] overflow-hidden rounded-[26px] bg-surface shadow-soft">
             <img
               src={previewUrl}
-              alt="Selected receipt"
+              alt={t("scan.selectedAlt")}
               className="max-h-[46svh] w-full object-contain"
             />
             {!reading ? (
               <button
                 type="button"
                 onClick={() => setFile(null)}
-                aria-label="Remove image"
+                aria-label={t("scan.removeImage")}
                 className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-background/85 backdrop-blur"
               >
                 <X className="h-4 w-4" strokeWidth={1.8} />

@@ -75,7 +75,7 @@ function CreateGroupScreen() {
       <div className="space-y-9">
         <section className="space-y-3">
           <label htmlFor="group-name" className="block px-1 text-[13px] text-muted-foreground">
-            Group name
+            {t("common.groupName")}
           </label>
           <input
             id="group-name"
@@ -87,18 +87,18 @@ function CreateGroupScreen() {
         </section>
 
         <section className="space-y-3">
-          <p className="px-1 text-[13px] text-muted-foreground">People</p>
+          <p className="px-1 text-[13px] text-muted-foreground">{t("groups.people")}</p>
           <div className="rounded-3xl bg-surface p-2 shadow-soft">
             {people.map((person, index) => (
               <div key={`${person}-${index}`} className="flex items-center gap-3 px-3 py-2.5">
                 <Avatar name={person} size="sm" />
                 <span className="min-w-0 flex-1 truncate text-[15px]">{person}</span>
                 {index === 0 ? (
-                  <span className="text-xs text-muted-foreground">You</span>
+                  <span className="text-xs text-muted-foreground">{t("common.you")}</span>
                 ) : (
                   <button
                     type="button"
-                    aria-label={`Remove ${person}`}
+                    aria-label={`${t("common.remove")} ${person}`}
                     onClick={() => setPeople((prev) => prev.filter((_, i) => i !== index))}
                     className="text-muted-foreground transition-colors hover:text-foreground"
                   >
@@ -128,7 +128,7 @@ function CreateGroupScreen() {
             </div>
           </div>
           <p className="px-1 text-xs text-muted-foreground">
-            No email needed. They can connect their profile later.
+            {t("groups.peopleHint")}
           </p>
         </section>
 
@@ -164,7 +164,7 @@ function CreateGroupScreen() {
         </section>
 
         <PrimaryButton onClick={create} disabled={!name.trim() || people.length < 2}>
-          Create group
+          {t("groups.create")}
         </PrimaryButton>
       </div>
     </Screen>

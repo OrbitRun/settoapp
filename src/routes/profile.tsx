@@ -178,7 +178,7 @@ function ProfileScreen() {
                 </div>
               </div>
             ))}
-            <Divider />
+            {pari.data.people.length > 0 ? <Divider /> : null}
             <button
               type="button"
               onClick={() => setSheet("person")}

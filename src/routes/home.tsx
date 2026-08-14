@@ -91,19 +91,24 @@ function HomeScreen() {
             )}
           </Panel>
 
-          <Panel title={t("home.recent")}>
-            {recent.map((expense, index) => (
-              <div key={expense.id}>
-                {index > 0 ? <Divider /> : null}
-                <ExpenseRow
-                  title={expense.title}
-                  subtitle={t("home.paidBy", { name: pari.personName(expense.paid_by_person_id) })}
-                  dateIso={expense.expense_date}
-                  amountMinor={expense.total_minor}
-                />
-              </div>
-            ))}
-          </Panel>
+          {recent.length > 0 ? (
+            <Panel title={t("home.recent")}>
+              {recent.map((expense, index) => (
+                <div key={expense.id}>
+                  {index > 0 ? <Divider /> : null}
+                  <ExpenseRow
+                    title={expense.title}
+                    subtitle={t("home.paidBy", {
+                      name: pari.personName(expense.paid_by_person_id),
+                    })}
+                    dateIso={expense.expense_date}
+                    amountMinor={expense.total_minor}
+                  />
+                </div>
+              ))}
+            </Panel>
+          ) : null}
+
         </div>
       </Screen>
       <BottomNav />

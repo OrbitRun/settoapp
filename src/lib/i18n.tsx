@@ -223,6 +223,45 @@ const en: Dict = {
   "start.manual": "Enter amount",
   "start.manualHint": "Add the amount yourself",
 
+  "sheet.title": "Split an expense",
+  "sheet.subtitle": "Two taps and you're done.",
+  "sheet.scan": "Scan receipt",
+  "sheet.scanHint": "Take a photo or upload one",
+  "sheet.manual": "Add amount",
+  "sheet.manualHint": "Enter an expense manually",
+  "sheet.multiple": "Multiple receipts",
+  "common.profileSettings": "Profile and settings",
+  "common.remove": "Remove",
+  "common.groupName": "Group name",
+  "common.currency": "Currency",
+
+  "onboarding.shareTitle": "Share anything.",
+  "onboarding.shareBody": "Dinner, rent, groceries or a weekend away.",
+  "onboarding.splitTitle": "Split it your way.",
+  "onboarding.splitBody": "Equal, 60/40 or down to individual items.",
+  "onboarding.settleTitle": "Settle easily.",
+  "onboarding.settleBody": "PARI keeps track of who owes what.",
+  "onboarding.getStarted": "Get started",
+
+  "groups.defaultSplit": "Default split",
+  "groups.noExpensesHint": "Add the first one and PARI keeps the balance.",
+  "groups.peopleHint": "No email needed. They can connect their profile later.",
+
+  "settle.hint": "PARI works out the fewest payments that clear everyone.",
+  "settle.nothingPending": "No payments needed in this group right now.",
+  "settle.pays": "{from} pays {to}",
+  "settle.copyAmount": "Copy amount",
+  "settle.markPaid": "Mark as paid",
+
+  "scan.noCamera": "Camera isn't available here. Choose a photo instead.",
+  "scan.selectedAlt": "Selected receipt",
+  "scan.removeImage": "Remove image",
+
+  "auth.error": "Something went wrong",
+  "auth.googleFailed": "Google sign-in failed",
+
+
+
   "guest.badge": "Guest",
   "guest.yourSplits": "Your splits",
   "guest.saveCta": "Create an account to save this",
@@ -505,6 +544,45 @@ const da: Dict = {
   "start.scanHint": "Tag et billede — PARI finder varerne",
   "start.manual": "Indtast beløb",
   "start.manualHint": "Skriv beløbet selv",
+
+  "sheet.title": "Del en udgift",
+  "sheet.subtitle": "Klar på få tryk.",
+  "sheet.scan": "Scan kvittering",
+  "sheet.scanHint": "Tag et billede eller vælg et",
+  "sheet.manual": "Indtast beløb",
+  "sheet.manualHint": "Opret en udgift manuelt",
+  "sheet.multiple": "Flere kvitteringer",
+  "common.profileSettings": "Profil og indstillinger",
+  "common.remove": "Fjern",
+  "common.groupName": "Gruppenavn",
+  "common.currency": "Valuta",
+
+  "onboarding.shareTitle": "Del alt.",
+  "onboarding.shareBody": "Middag, husleje, indkøb eller en weekendtur.",
+  "onboarding.splitTitle": "Split på din måde.",
+  "onboarding.splitBody": "Lige over, 60/40 eller helt ned på varelinjer.",
+  "onboarding.settleTitle": "Gør nemt op.",
+  "onboarding.settleBody": "PARI holder styr på, hvem der skylder hvad.",
+  "onboarding.getStarted": "Kom i gang",
+
+  "groups.defaultSplit": "Standardfordeling",
+  "groups.noExpensesHint": "Tilføj den første, så holder PARI styr på balancen.",
+  "groups.peopleHint": "Ingen e-mail nødvendig. De kan koble deres profil på senere.",
+
+  "settle.hint": "PARI finder de færreste betalinger, der gør alle kvit.",
+  "settle.nothingPending": "Der skal ikke betales noget i gruppen lige nu.",
+  "settle.pays": "{from} betaler {to}",
+  "settle.copyAmount": "Kopiér beløb",
+  "settle.markPaid": "Markér som betalt",
+
+  "scan.noCamera": "Kameraet er ikke tilgængeligt her. Vælg et billede i stedet.",
+  "scan.selectedAlt": "Valgt kvittering",
+  "scan.removeImage": "Fjern billede",
+
+  "auth.error": "Noget gik galt",
+  "auth.googleFailed": "Google-login mislykkedes",
+
+
 
   "guest.badge": "Gæst",
   "guest.yourSplits": "Dine splits",
