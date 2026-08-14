@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/pari/EmptyState";
 import { ExpenseRow } from "@/components/pari/rows";
 import { emptyDraft } from "@/data/draft";
 import { usePari } from "@/data/store";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/groups/$groupId")({
@@ -34,13 +35,14 @@ function GroupDetailScreen() {
   const pari = usePari();
   const navigate = useNavigate();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Expenses");
+  const t = useT();
 
   const group = pari.data.groups.find((g) => g.id === groupId);
   if (!group) {
     return (
       <Screen>
-        <FlowHeader title="Group" />
-        <EmptyState title="This group no longer exists" />
+        <FlowHeader title={t("groups.title")} />
+        <EmptyState title={t("groups.gone")} />
       </Screen>
     );
   }
@@ -71,13 +73,13 @@ function GroupDetailScreen() {
         <div className="animate-rise px-1 pb-8">
           <BalanceDisplay
             minor={myBalance}
-            label="Your balance"
+            label={t("groups.yourBalance")}
             hint={
               myBalance > 0
-                ? "You should receive money"
+                ? t("groups.shouldReceive")
                 : myBalance < 0
-                  ? "You should pay this"
-                  : "Everything is settled"
+                  ? t("groups.shouldPay")
+                  : t("settle.allSettled")
             }
           />
         </div>
@@ -105,7 +107,7 @@ function GroupDetailScreen() {
             <Panel>
               {expenses.length === 0 ? (
                 <EmptyState
-                  title="No expenses yet"
+                  title={t("groups.noExpenses")}
                   description="Add the first one and PARI keeps the balance."
                 />
               ) : (
@@ -176,7 +178,7 @@ function GroupDetailScreen() {
                   ? memberIds
                       .map((id) => `${pari.personName(id)} ${defaults[id] ?? 0}%`)
                       .join(" · ")
-                  : "Equal between everyone"}
+                  : t("groups.equalBetweenEveryone")}
               </p>
             </div>
             <Divider />
