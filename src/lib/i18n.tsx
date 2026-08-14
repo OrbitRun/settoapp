@@ -488,6 +488,9 @@ const da: Dict = {
   "split.over": "{amount} for meget",
   "split.finish": "Færdig",
   "split.saveAsGroup": "Gem som gruppe",
+  "split.saveInPari": "Gem i PARI",
+  "split.newSplit": "Nyt split",
+
   "split.shareResult": "Del resultat",
   "split.copyResult": "Kopiér resultat",
   "split.done": "Færdig",
