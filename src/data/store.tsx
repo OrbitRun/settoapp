@@ -82,6 +82,12 @@ type CreateGroupInput = {
   percentages?: Record<string, number>;
 };
 
+type UpdateGroupInput = {
+  name?: string;
+  defaultSplitType?: SplitMode;
+  percentages?: Record<string, number> | null;
+};
+
 type UpdateExpenseInput = {
   title?: string;
   merchant?: string | null;
