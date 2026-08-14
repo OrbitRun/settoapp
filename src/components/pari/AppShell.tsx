@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { Clock, Home, Plus, ScanLine, Users, Wallet } from "lucide-react";
+import { Clock, Home, Plus, ScanLine, User, Users } from "lucide-react";
 
 import { usePari } from "@/data/store";
 import { emptyDraft } from "@/data/draft";
@@ -21,7 +21,7 @@ export function Screen({
     <div className="min-h-svh bg-background">
       <div
         className={cn(
-          "mx-auto w-full max-w-[430px] pb-32",
+          "mx-auto w-full max-w-[430px] pb-[calc(6.5rem+env(safe-area-inset-bottom))]",
           padded && "px-5 pt-4",
           className,
         )}
@@ -120,32 +120,26 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-[max(env(safe-area-inset-bottom),1rem)]">
-        <div className="pointer-events-auto mx-5 grid w-full max-w-[390px] grid-cols-[1fr_1fr_auto_1fr_1fr] items-center rounded-[26px] bg-primary px-3 py-2.5 text-primary-foreground shadow-[0_14px_40px_-14px_oklch(0.268_0.046_173.8_/_0.55)]">
-          {NAV.map((item) => (
+      <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+        <div className="pointer-events-auto mx-4 grid w-full max-w-[390px] grid-cols-5 items-center rounded-[22px] bg-primary px-2 py-1.5 text-primary-foreground shadow-[0_8px_24px_-16px_oklch(0.268_0.046_173.8_/_0.5)]">
+          {NAV_LEFT.map((item) => (
             <NavItem key={item.to} {...item} pathname={pathname} />
           ))}
 
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="Split an expense"
-            className="mx-1 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground transition-transform duration-200 active:scale-95"
-          >
-            <Plus className="h-6 w-6" strokeWidth={2} />
-          </button>
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-label="Split an expense"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground transition-transform duration-200 active:scale-95"
+            >
+              <Plus className="h-6 w-6" strokeWidth={2} />
+            </button>
+          </div>
 
           {NAV_RIGHT.map((item) => (
             <NavItem key={item.to} {...item} pathname={pathname} />
           ))}
-          <Link
-            to="/groups"
-            className="flex flex-col items-center gap-1 py-1 text-[10px] opacity-0"
-            tabIndex={-1}
-            aria-hidden
-          >
-            <Wallet className="h-5 w-5" />
-          </Link>
         </div>
       </nav>
 
@@ -218,7 +212,7 @@ function NavItem({
     <Link
       to={to}
       className={cn(
-        "flex flex-col items-center gap-1 py-1 text-[10px] transition-opacity",
+        "flex min-h-[44px] flex-col items-center justify-center gap-1 text-[10px] transition-opacity",
         active ? "opacity-100" : "opacity-55",
       )}
     >

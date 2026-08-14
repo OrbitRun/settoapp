@@ -6,13 +6,14 @@ import { FlowHeader } from "@/components/pari/FlowHeader";
 import { PrimaryButton } from "@/components/pari/Buttons";
 import { GroupPicker } from "@/components/pari/GroupPicker";
 import { ParticipantSelector } from "@/components/pari/ParticipantSelector";
+import { NumericField } from "@/components/pari/NumericField";
 import { PercentageSplitEditor } from "@/components/pari/PercentageSplitEditor";
 import { SplitSelector } from "@/components/pari/SplitSelector";
 import { PersonChip } from "@/components/pari/PersonChip";
 import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { computeDraftAllocations } from "@/data/draft";
 import { usePari } from "@/data/store";
-import { formatMinor, parseAmountToMinor, toMajor } from "@/lib/money";
+import { formatMinor, toMajor, toMinor } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/split/amount")({
@@ -31,9 +32,6 @@ function ManualExpenseScreen() {
   const pari = usePari();
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
-  const [amountText, setAmountText] = useState(
-    draft.amountMinor ? String(toMajor(draft.amountMinor)) : "",
-  );
   const [showPaidBy, setShowPaidBy] = useState(false);
 
   const people = useMemo(() => {
@@ -87,18 +85,14 @@ function ManualExpenseScreen() {
 
       <div className="px-1 pb-10 pt-4 text-center">
         <div className="flex items-baseline justify-center gap-2">
-          <input
+          <NumericField
             autoFocus
-            inputMode="decimal"
-            value={amountText}
-            onChange={(event) => {
-              const next = event.target.value.replace(/[^\d.,]/g, "");
-              setAmountText(next);
-              setDraft((prev) => ({ ...prev, amountMinor: parseAmountToMinor(next) }));
-            }}
-            placeholder="0"
-            aria-label="Amount"
-            className="tnum w-full max-w-[70%] bg-transparent text-right text-[52px] font-semibold tracking-[-0.04em] outline-none placeholder:text-muted-foreground/40"
+            value={toMajor(draft.amountMinor)}
+            onChange={(next) => setDraft((prev) => ({ ...prev, amountMinor: toMinor(next) }))}
+            min={0}
+            ariaLabel="Amount"
+            className="w-full max-w-[70%]"
+            inputClassName="text-right text-[52px] font-semibold tracking-[-0.04em]"
           />
           <span className="text-[22px] font-medium text-muted-foreground">DKK</span>
         </div>
@@ -274,26 +268,20 @@ function ManualExpenseScreen() {
               {participants.map((person) => (
                 <div key={person.id} className="flex items-center gap-3">
                   <span className="min-w-0 flex-1 truncate text-[15px]">{person.name}</span>
-                  <div className="flex h-11 w-32 items-center rounded-xl bg-surface-strong px-3">
-                    <input
-                      inputMode="decimal"
-                      placeholder="0"
-                      value={
-                        draft.exact[person.id] ? String(toMajor(draft.exact[person.id]!)) : ""
-                      }
-                      onChange={(event) =>
-                        setDraft((prev) => ({
-                          ...prev,
-                          exact: {
-                            ...prev.exact,
-                            [person.id]: parseAmountToMinor(event.target.value),
-                          },
-                        }))
-                      }
-                      className="tnum w-full bg-transparent text-right text-[15px] font-medium outline-none"
-                    />
-                    <span className="ml-1 text-xs text-muted-foreground">DKK</span>
-                  </div>
+                  <NumericField
+                    value={toMajor(draft.exact[person.id] ?? 0)}
+                    onChange={(next) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        exact: { ...prev.exact, [person.id]: toMinor(next) },
+                      }))
+                    }
+                    min={0}
+                    ariaLabel={`${person.name} amount`}
+                    suffix={<span className="text-xs">DKK</span>}
+                    className="h-11 w-32 rounded-xl bg-surface-strong px-3"
+                    inputClassName="text-right text-[15px] font-medium"
+                  />
                 </div>
               ))}
               <p className="text-xs text-muted-foreground">
