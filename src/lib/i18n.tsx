@@ -435,9 +435,17 @@ const da: Dict = {
 
   "welcome.title": "Del alt.\nGør op med et tryk.",
   "welcome.subtitle": "Split en regning på sekunder — helt uden konto.",
-  "welcome.primary": "Split en regning",
+  "welcome.primary": "Split en udgift",
   "welcome.secondary": "Log ind",
+  "welcome.createAccount": "Opret konto",
   "welcome.note": "Opret en konto senere, hvis du vil gemme dine splits.",
+  "start.title": "Split",
+  "start.heading": "Hvordan vil du splitte?",
+  "start.scan": "Scan kvittering",
+  "start.scanHint": "Tag et billede — PARI finder varerne",
+  "start.manual": "Indtast beløb",
+  "start.manualHint": "Skriv beløbet selv",
+
   "guest.badge": "Gæst",
   "guest.yourSplits": "Dine splits",
   "guest.saveCta": "Opret en konto for at gemme",
