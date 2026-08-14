@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 
 import { calculatePercentageSplit } from "@/lib/split";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Avatar } from "./Avatar";
 import { MoneyAmount } from "./MoneyAmount";
@@ -19,6 +20,7 @@ export function PercentageSplitEditor({
   onChange: (personId: string, percentage: number) => void;
   showAmounts?: boolean;
 }) {
+  const t = useT();
   const sum = people.reduce((acc, person) => acc + (percentages[person.id] ?? 0), 0);
   const allocations = calculatePercentageSplit(
     totalMinor,
