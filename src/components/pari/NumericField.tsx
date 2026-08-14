@@ -25,6 +25,7 @@ export function NumericField({
   style,
   inputClassName,
   format,
+  showZero = false,
 }: {
   value: number;
   onChange: (value: number) => void;
