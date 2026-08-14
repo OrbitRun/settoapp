@@ -555,6 +555,7 @@ const da: Dict = {
   "invite.needAccount": "Du skal have en konto for at være med — vi husker din invitation.",
   "invite.invalidTitle": "Invitationen findes ikke",
   "invite.invalidBody": "Linket er udløbet eller trukket tilbage. Bed om et nyt.",
+  "invite.getApp": "Hent PARI",
 
   "convert.title": "Gem dit split i PARI",
   "convert.body": "Opret en gratis konto og behold dit split, følg saldi og gør op senere.",
