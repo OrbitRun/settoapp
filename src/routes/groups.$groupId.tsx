@@ -98,19 +98,20 @@ function GroupDetailScreen() {
         <div className="mb-6 flex gap-1 rounded-2xl bg-surface-strong p-1">
           {TABS.map((option) => (
             <button
-              key={option}
+              key={option.value}
               type="button"
-              onClick={() => setTab(option)}
+              onClick={() => setTab(option.value)}
               className={cn(
                 "flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors",
-                tab === option
+                tab === option.value
                   ? "bg-surface text-foreground shadow-soft"
                   : "text-muted-foreground",
               )}
             >
-              {option}
+              {t(option.labelKey)}
             </button>
           ))}
+
         </div>
 
         {tab === "Expenses" ? (
