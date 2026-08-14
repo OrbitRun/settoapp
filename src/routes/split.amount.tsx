@@ -268,26 +268,20 @@ function ManualExpenseScreen() {
               {participants.map((person) => (
                 <div key={person.id} className="flex items-center gap-3">
                   <span className="min-w-0 flex-1 truncate text-[15px]">{person.name}</span>
-                  <div className="flex h-11 w-32 items-center rounded-xl bg-surface-strong px-3">
-                    <input
-                      inputMode="decimal"
-                      placeholder="0"
-                      value={
-                        draft.exact[person.id] ? String(toMajor(draft.exact[person.id]!)) : ""
-                      }
-                      onChange={(event) =>
-                        setDraft((prev) => ({
-                          ...prev,
-                          exact: {
-                            ...prev.exact,
-                            [person.id]: parseAmountToMinor(event.target.value),
-                          },
-                        }))
-                      }
-                      className="tnum w-full bg-transparent text-right text-[15px] font-medium outline-none"
-                    />
-                    <span className="ml-1 text-xs text-muted-foreground">DKK</span>
-                  </div>
+                  <NumericField
+                    value={toMajor(draft.exact[person.id] ?? 0)}
+                    onChange={(next) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        exact: { ...prev.exact, [person.id]: toMinor(next) },
+                      }))
+                    }
+                    min={0}
+                    ariaLabel={`${person.name} amount`}
+                    suffix={<span className="text-xs">DKK</span>}
+                    className="h-11 w-32 rounded-xl bg-surface-strong px-3"
+                    inputClassName="text-right text-[15px] font-medium"
+                  />
                 </div>
               ))}
               <p className="text-xs text-muted-foreground">
