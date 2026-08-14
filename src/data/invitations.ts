@@ -13,6 +13,7 @@ export type GroupInvitation = {
   join_code: string;
   expires_at: string;
   revoked_at: string | null;
+  status?: string;
 };
 
 export type InvitationPreview = {
@@ -35,9 +36,13 @@ function randomToken(length: number, alphabet: string) {
   return [...bytes].map((byte) => alphabet[byte % alphabet.length]).join("");
 }
 
+/**
+ * The public invitation URL. `/invite/{token}` is the canonical path and the
+ * future Universal Link target — it never contains an internal group id.
+ */
 export function invitationUrl(token: string) {
   const origin = typeof window === "undefined" ? "" : window.location.origin;
-  return `${origin}/join/${token}`;
+  return `${origin}/invite/${token}`;
 }
 
 /** Reuses the group's live invitation, or mints a new one. */
@@ -49,6 +54,7 @@ export async function ensureGroupInvitation(
     .from("group_invitations")
     .select("*")
     .eq("group_id", groupId)
+    .eq("status", "active")
     .is("revoked_at", null)
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
@@ -78,7 +84,7 @@ export async function ensureGroupInvitation(
 export async function revokeInvitation(id: string) {
   await supabase
     .from("group_invitations")
-    .update({ revoked_at: new Date().toISOString() })
+    .update({ revoked_at: new Date().toISOString(), status: "revoked" })
     .eq("id", id);
 }
 

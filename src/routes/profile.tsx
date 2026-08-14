@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { BottomNav, Divider, Panel, Screen } from "@/components/pari/AppShell";
@@ -38,11 +38,8 @@ function ProfileScreen() {
   const t = useT();
   const navigate = useNavigate();
 
-  const [sheet, setSheet] = useState<null | "name" | "language" | "currency" | "appearance" | "person">(
-    null,
-  );
+  const [sheet, setSheet] = useState<null | "name" | "language" | "currency" | "appearance">(null);
   const [nameValue, setNameValue] = useState(pari.currentProfileName);
-  const [personName, setPersonName] = useState("");
 
   const close = () => setSheet(null);
 
@@ -67,11 +64,6 @@ function ProfileScreen() {
     close();
   };
 
-  const addPerson = async () => {
-    const created = await pari.addPerson(personName);
-    if (created) setPersonName("");
-    close();
-  };
 
   const appearanceLabel: Record<Appearance, string> = {
     system: t("profile.system"),
@@ -151,44 +143,6 @@ function ProfileScreen() {
             </Link>
           </Panel>
 
-          <Panel title={t("profile.people")}>
-            {pari.data.people.map((person, index) => (
-              <div key={person.id}>
-                {index > 0 ? <Divider /> : null}
-                <div className="flex items-center gap-3 px-4 py-3.5">
-                  <Avatar name={person.name} size="sm" />
-                  <span className="min-w-0 flex-1 truncate text-[15px]">
-                    {person.name}
-                    {person.is_self ? (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {t("common.you")}
-                      </span>
-                    ) : null}
-                  </span>
-                  {!person.is_self ? (
-                    <button
-                      type="button"
-                      aria-label={`${t("common.delete")} ${person.name}`}
-                      onClick={() => pari.deletePerson(person.id)}
-                      className="text-muted-foreground/70 transition-colors hover:text-negative"
-                    >
-                      <Trash2 className="h-4 w-4" strokeWidth={1.6} />
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-            {pari.data.people.length > 0 ? <Divider /> : null}
-            <button
-              type="button"
-              onClick={() => setSheet("person")}
-              className="flex w-full items-center gap-2 px-4 py-4 text-left text-[15px] text-muted-foreground"
-            >
-              <Plus className="h-4 w-4" strokeWidth={1.8} />
-              {t("profile.addPerson")}
-            </button>
-          </Panel>
-
           <Panel>
             <button
               type="button"
@@ -206,25 +160,17 @@ function ProfileScreen() {
       <BottomNav />
 
       <BottomSheet open={sheet !== null} onClose={close}>
-        {sheet === "name" || sheet === "person" ? (
+        {sheet === "name" ? (
           <div className="space-y-4 px-1">
-            <h2 className="text-[19px] font-semibold tracking-tight">
-              {sheet === "name" ? t("profile.name") : t("profile.addPerson")}
-            </h2>
+            <h2 className="text-[19px] font-semibold tracking-tight">{t("profile.name")}</h2>
             <input
               autoFocus
-              value={sheet === "name" ? nameValue : personName}
-              onChange={(event) =>
-                sheet === "name"
-                  ? setNameValue(event.target.value)
-                  : setPersonName(event.target.value)
-              }
+              value={nameValue}
+              onChange={(event) => setNameValue(event.target.value)}
               className="h-14 w-full rounded-2xl bg-surface-strong px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
             />
             <div className="space-y-2">
-              <PrimaryButton onClick={sheet === "name" ? saveName : addPerson}>
-                {t("common.save")}
-              </PrimaryButton>
+              <PrimaryButton onClick={saveName}>{t("common.save")}</PrimaryButton>
               <SecondaryButton onClick={close}>{t("common.cancel")}</SecondaryButton>
             </div>
           </div>

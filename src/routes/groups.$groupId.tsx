@@ -161,6 +161,13 @@ function GroupDetailScreen() {
               >
                 {t("groups.settleUp")}
               </Link>
+              <Link
+                to="/groups/$groupId/edit"
+                params={{ groupId }}
+                className="pb-2 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {t("groups.edit")}
+              </Link>
             </div>
           </div>
         ) : null}
@@ -219,6 +226,14 @@ function GroupDetailScreen() {
               <p className="text-[15px] font-medium tracking-tight">{t("common.currency")}</p>
               <p className="text-sm text-muted-foreground">{group.currency}</p>
             </div>
+            <Divider />
+            <Link
+              to="/groups/$groupId/edit"
+              params={{ groupId }}
+              className="block px-4 py-4 text-[15px]"
+            >
+              {t("groups.edit")}
+            </Link>
           </Panel>
         ) : null}
       </Screen>

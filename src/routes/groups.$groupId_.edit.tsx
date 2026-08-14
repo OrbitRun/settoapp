@@ -1,0 +1,251 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { Archive, ArchiveRestore, Plus, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
+
+import { Divider, Panel, Screen } from "@/components/pari/AppShell";
+import { FlowHeader } from "@/components/pari/FlowHeader";
+import { Avatar } from "@/components/pari/Avatar";
+import { BottomSheet } from "@/components/pari/BottomSheet";
+import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
+import { EmptyState } from "@/components/pari/EmptyState";
+import { AuthGate } from "@/components/pari/AuthGate";
+import { usePari } from "@/data/store";
+import { useT } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import type { SplitMode } from "@/lib/split";
+
+export const Route = createFileRoute("/groups/$groupId_/edit")({
+  head: () => ({
+    meta: [
+      { title: "Edit group — PARI" },
+      { name: "description", content: "Rename the group, manage members and split rules." },
+      { property: "og:title", content: "Edit group — PARI" },
+      {
+        property: "og:description",
+        content: "Rename the group, manage members and split rules.",
+      },
+    ],
+  }),
+  component: () => (
+    <AuthGate>
+      <EditGroupScreen />
+    </AuthGate>
+  ),
+});
+
+const OPTIONS: { value: SplitMode; labelKey: string }[] = [
+  { value: "equal", labelKey: "split.equal" },
+  { value: "percentage", labelKey: "split.percentage" },
+  { value: "exact", labelKey: "groups.custom" },
+];
+
+function EditGroupScreen() {
+  const { groupId } = Route.useParams();
+  const pari = usePari();
+  const t = useT();
+  const navigate = useNavigate();
+
+  const group = pari.data.groups.find((g) => g.id === groupId);
+  const [name, setName] = useState(group?.name ?? "");
+  const [split, setSplit] = useState<SplitMode>((group?.default_split_type as SplitMode) ?? "equal");
+  const [newMember, setNewMember] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  if (!group) {
+    return (
+      <Screen>
+        <FlowHeader title={t("groups.title")} />
+        <EmptyState title={t("groups.gone")} />
+      </Screen>
+    );
+  }
+
+  const memberIds = pari.groupPersonIds(groupId);
+  const candidates = pari.data.people.filter((person) => !memberIds.includes(person.id));
+
+  const save = async () => {
+    await pari.updateGroup(groupId, { name, defaultSplitType: split });
+    toast.success(t("groups.saved"));
+    navigate({ to: "/groups/$groupId", params: { groupId } });
+  };
+
+  const addNamedMember = async () => {
+    const trimmed = newMember.trim();
+    if (!trimmed) return;
+    const person = await pari.addPerson(trimmed);
+    setNewMember("");
+    if (person) await pari.addGroupMembers(groupId, [person.id]);
+  };
+
+  const remove = async (personId: string) => {
+    const result = await pari.removeGroupMember(groupId, personId);
+    if (result === "has-expenses") toast.error(t("groups.memberHasExpenses"));
+  };
+
+  const toggleArchive = async () => {
+    const archived = Boolean(group.archived_at);
+    await pari.setGroupArchived(groupId, !archived);
+    toast.success(archived ? t("groups.unarchived") : t("groups.archived"));
+    navigate({ to: "/groups" });
+  };
+
+  const remove_group = async () => {
+    setConfirmDelete(false);
+    await pari.deleteGroup(groupId);
+    toast.success(t("groups.deleted"));
+    navigate({ to: "/groups" });
+  };
+
+  return (
+    <>
+      <Screen>
+        <FlowHeader title={t("groups.edit")} subtitle={group.name} />
+
+        <div className="space-y-9">
+          <section className="space-y-3">
+            <label htmlFor="group-name" className="block px-1 text-[13px] text-muted-foreground">
+              {t("common.groupName")}
+            </label>
+            <input
+              id="group-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="w-full rounded-2xl bg-surface px-5 py-4 text-[17px] tracking-tight shadow-soft outline-none"
+            />
+          </section>
+
+          <section className="space-y-3">
+            <p className="px-1 text-[13px] text-muted-foreground">{t("groups.people")}</p>
+            <Panel>
+              {memberIds.map((personId, index) => (
+                <div key={personId}>
+                  {index > 0 ? <Divider /> : null}
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <Avatar name={pari.personName(personId)} size="sm" />
+                    <span className="min-w-0 flex-1 truncate text-[15px]">
+                      {pari.personName(personId)}
+                      {personId === pari.currentPersonId ? (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {t("common.you")}
+                        </span>
+                      ) : null}
+                    </span>
+                    {personId !== pari.currentPersonId ? (
+                      <button
+                        type="button"
+                        aria-label={`${t("common.remove")} ${pari.personName(personId)}`}
+                        onClick={() => void remove(personId)}
+                        className="text-muted-foreground/70 transition-colors hover:text-negative"
+                      >
+                        <X className="h-4 w-4" strokeWidth={1.8} />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+              <Divider />
+              <div className="flex items-center gap-3 px-4 py-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-strong">
+                  <Plus className="h-4 w-4 text-muted-foreground" strokeWidth={1.8} />
+                </span>
+                <input
+                  value={newMember}
+                  onChange={(event) => setNewMember(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void addNamedMember();
+                    }
+                  }}
+                  placeholder={t("groups.addPersonPlaceholder")}
+                  className="w-full bg-transparent text-[16px] outline-none placeholder:text-muted-foreground/70"
+                />
+              </div>
+            </Panel>
+
+            {candidates.length > 0 ? (
+              <div className="flex flex-wrap gap-2 px-1">
+                {candidates.map((person) => (
+                  <button
+                    key={person.id}
+                    type="button"
+                    onClick={() => void pari.addGroupMembers(groupId, [person.id])}
+                    className="rounded-full bg-surface-strong px-3.5 py-1.5 text-sm"
+                  >
+                    + {person.name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </section>
+
+          <section className="space-y-3">
+            <p className="px-1 text-[13px] text-muted-foreground">{t("groups.defaultSplit")}</p>
+            <div className="flex gap-2">
+              {OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setSplit(option.value)}
+                  className={cn(
+                    "flex-1 rounded-2xl py-3 text-sm font-medium transition-colors",
+                    split === option.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface-strong text-muted-foreground",
+                  )}
+                >
+                  {t(option.labelKey)}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <PrimaryButton onClick={() => void save()} disabled={!name.trim()}>
+            {t("common.save")}
+          </PrimaryButton>
+
+          <Panel>
+            <button
+              type="button"
+              onClick={() => void toggleArchive()}
+              className="flex w-full items-center gap-3 px-4 py-4 text-left text-[15px]"
+            >
+              {group.archived_at ? (
+                <ArchiveRestore className="h-4 w-4" strokeWidth={1.8} />
+              ) : (
+                <Archive className="h-4 w-4" strokeWidth={1.8} />
+              )}
+              {group.archived_at ? t("groups.unarchive") : t("groups.archive")}
+            </button>
+            <Divider />
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="flex w-full items-center gap-3 px-4 py-4 text-left text-[15px] text-negative"
+            >
+              <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+              {t("groups.delete")}
+            </button>
+          </Panel>
+        </div>
+      </Screen>
+
+      <BottomSheet
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        title={t("groups.deleteTitle")}
+        description={t("groups.deleteBody", { group: group.name })}
+      >
+        <div className="space-y-2 pb-2">
+          <PrimaryButton onClick={() => void remove_group()}>
+            {t("groups.deleteConfirm")}
+          </PrimaryButton>
+          <SecondaryButton onClick={() => setConfirmDelete(false)}>
+            {t("common.cancel")}
+          </SecondaryButton>
+        </div>
+      </BottomSheet>
+    </>
+  );
+}

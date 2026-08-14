@@ -19,6 +19,7 @@ import { Route as ExpenseExpenseIdRouteImport } from './routes/expense.$expenseI
 import { Route as GroupsIndexRouteImport } from './routes/groups.index'
 import { Route as GroupsGroupIdRouteImport } from './routes/groups.$groupId'
 import { Route as GroupsNewRouteImport } from './routes/groups.new'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
 import { Route as SettleGroupIdRouteImport } from './routes/settle.$groupId'
 import { Route as SplitAmountRouteImport } from './routes/split.amount'
@@ -28,6 +29,7 @@ import { Route as SplitReviewRouteImport } from './routes/split.review'
 import { Route as SplitScanRouteImport } from './routes/split.scan'
 import { Route as SplitShareRouteImport } from './routes/split.share'
 import { Route as SplitStartRouteImport } from './routes/split.start'
+import { Route as GroupsGroupIdEditRouteImport } from './routes/groups.$groupId_.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -79,6 +81,11 @@ const GroupsNewRoute = GroupsNewRouteImport.update({
   path: '/groups/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinTokenRoute = JoinTokenRouteImport.update({
   id: '/join/$token',
   path: '/join/$token',
@@ -124,6 +131,11 @@ const SplitStartRoute = SplitStartRouteImport.update({
   path: '/split/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GroupsGroupIdEditRoute = GroupsGroupIdEditRouteImport.update({
+  id: '/groups/$groupId_/edit',
+  path: '/groups/$groupId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -135,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
   '/split/amount': typeof SplitAmountRoute
@@ -145,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/split/share': typeof SplitShareRoute
   '/split/start': typeof SplitStartRoute
   '/groups/': typeof GroupsIndexRoute
+  '/groups/$groupId/edit': typeof GroupsGroupIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -156,6 +170,7 @@ export interface FileRoutesByTo {
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
   '/split/amount': typeof SplitAmountRoute
@@ -166,6 +181,7 @@ export interface FileRoutesByTo {
   '/split/share': typeof SplitShareRoute
   '/split/start': typeof SplitStartRoute
   '/groups': typeof GroupsIndexRoute
+  '/groups/$groupId/edit': typeof GroupsGroupIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -178,6 +194,7 @@ export interface FileRoutesById {
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
   '/split/amount': typeof SplitAmountRoute
@@ -188,6 +205,7 @@ export interface FileRoutesById {
   '/split/share': typeof SplitShareRoute
   '/split/start': typeof SplitStartRoute
   '/groups/': typeof GroupsIndexRoute
+  '/groups/$groupId_/edit': typeof GroupsGroupIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -201,6 +219,7 @@ export interface FileRouteTypes {
     | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
+    | '/invite/$token'
     | '/join/$token'
     | '/settle/$groupId'
     | '/split/amount'
@@ -211,6 +230,7 @@ export interface FileRouteTypes {
     | '/split/share'
     | '/split/start'
     | '/groups/'
+    | '/groups/$groupId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -222,6 +242,7 @@ export interface FileRouteTypes {
     | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
+    | '/invite/$token'
     | '/join/$token'
     | '/settle/$groupId'
     | '/split/amount'
@@ -232,6 +253,7 @@ export interface FileRouteTypes {
     | '/split/share'
     | '/split/start'
     | '/groups'
+    | '/groups/$groupId/edit'
   id:
     | '__root__'
     | '/'
@@ -243,6 +265,7 @@ export interface FileRouteTypes {
     | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
+    | '/invite/$token'
     | '/join/$token'
     | '/settle/$groupId'
     | '/split/amount'
@@ -253,6 +276,7 @@ export interface FileRouteTypes {
     | '/split/share'
     | '/split/start'
     | '/groups/'
+    | '/groups/$groupId_/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -265,6 +289,7 @@ export interface RootRouteChildren {
   ExpenseExpenseIdRoute: typeof ExpenseExpenseIdRoute
   GroupsGroupIdRoute: typeof GroupsGroupIdRoute
   GroupsNewRoute: typeof GroupsNewRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   JoinTokenRoute: typeof JoinTokenRoute
   SettleGroupIdRoute: typeof SettleGroupIdRoute
   SplitAmountRoute: typeof SplitAmountRoute
@@ -275,6 +300,7 @@ export interface RootRouteChildren {
   SplitShareRoute: typeof SplitShareRoute
   SplitStartRoute: typeof SplitStartRoute
   GroupsIndexRoute: typeof GroupsIndexRoute
+  GroupsGroupIdEditRoute: typeof GroupsGroupIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -349,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GroupsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join/$token': {
       id: '/join/$token'
       path: '/join/$token'
@@ -412,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplitStartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/groups/$groupId_/edit': {
+      id: '/groups/$groupId_/edit'
+      path: '/groups/$groupId/edit'
+      fullPath: '/groups/$groupId/edit'
+      preLoaderRoute: typeof GroupsGroupIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -425,6 +465,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExpenseExpenseIdRoute: ExpenseExpenseIdRoute,
   GroupsGroupIdRoute: GroupsGroupIdRoute,
   GroupsNewRoute: GroupsNewRoute,
+  InviteTokenRoute: InviteTokenRoute,
   JoinTokenRoute: JoinTokenRoute,
   SettleGroupIdRoute: SettleGroupIdRoute,
   SplitAmountRoute: SplitAmountRoute,
@@ -435,6 +476,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplitShareRoute: SplitShareRoute,
   SplitStartRoute: SplitStartRoute,
   GroupsIndexRoute: GroupsIndexRoute,
+  GroupsGroupIdEditRoute: GroupsGroupIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

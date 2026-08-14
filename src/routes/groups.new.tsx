@@ -12,7 +12,11 @@ import { cn } from "@/lib/utils";
 import type { SplitMode } from "@/lib/split";
 import { AuthGate } from "@/components/pari/AuthGate";
 
+type GroupSearch = { people?: string };
+
 export const Route = createFileRoute("/groups/new")({
+  validateSearch: (search: Record<string, unknown>): GroupSearch =>
+    typeof search['people'] === "string" ? { people: search['people'] } : {},
   head: () => ({
     meta: [
       { title: "Create a group — PARI" },
@@ -45,8 +49,20 @@ function CreateGroupScreen() {
   const t = useT();
   const navigate = useNavigate();
 
+  // Coming from a finished split: reuse exactly the people who shared it.
+  const { people: carried } = Route.useSearch();
   const [name, setName] = useState("");
-  const [people, setPeople] = useState<string[]>([pari.currentProfileName]);
+  const [people, setPeople] = useState<string[]>(() => {
+    const fromSplit = (carried ?? "")
+      .split("|")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (fromSplit.length === 0) return [pari.currentProfileName];
+    const rest = fromSplit.filter(
+      (value) => value.toLowerCase() !== pari.currentProfileName.toLowerCase(),
+    );
+    return [pari.currentProfileName, ...rest];
+  });
   const [newPerson, setNewPerson] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [defaultSplit, setDefaultSplit] = useState<SplitMode>("equal");

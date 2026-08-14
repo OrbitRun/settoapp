@@ -235,6 +235,7 @@ export type Database = {
           join_code: string
           owner_user_id: string
           revoked_at: string | null
+          status: string
           token: string
           updated_at: string
         }
@@ -246,6 +247,7 @@ export type Database = {
           join_code: string
           owner_user_id: string
           revoked_at?: string | null
+          status?: string
           token: string
           updated_at?: string
         }
@@ -257,6 +259,7 @@ export type Database = {
           join_code?: string
           owner_user_id?: string
           revoked_at?: string | null
+          status?: string
           token?: string
           updated_at?: string
         }

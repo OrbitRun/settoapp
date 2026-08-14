@@ -82,6 +82,12 @@ type CreateGroupInput = {
   percentages?: Record<string, number>;
 };
 
+type UpdateGroupInput = {
+  name?: string;
+  defaultSplitType?: SplitMode;
+  percentages?: Record<string, number> | null;
+};
+
 type UpdateExpenseInput = {
   title?: string;
   merchant?: string | null;
@@ -119,6 +125,12 @@ type PariContextValue = {
   updateExpense: (id: string, input: UpdateExpenseInput) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
   createGroup: (input: CreateGroupInput) => Promise<string | null>;
+  updateGroup: (groupId: string, patch: UpdateGroupInput) => Promise<void>;
+  addGroupMembers: (groupId: string, personIds: string[]) => Promise<void>;
+  /** Refuses when the person is still tied to expenses in the group. */
+  removeGroupMember: (groupId: string, personId: string) => Promise<"ok" | "has-expenses">;
+  setGroupArchived: (groupId: string, archived: boolean) => Promise<void>;
+  deleteGroup: (groupId: string) => Promise<void>;
   markSettled: (groupId: string, step: SettlementStep) => Promise<void>;
   addPerson: (name: string) => Promise<Person | null>;
   renamePerson: (id: string, name: string) => Promise<void>;
@@ -791,6 +803,102 @@ export function PariProvider({ children }: { children: ReactNode }) {
       return groupId;
     };
 
+    const updateGroup = async (groupId: string, patch: UpdateGroupInput) => {
+      if (!userId) return;
+      const groupPatch: { name?: string; default_split_type?: SplitMode } = {};
+      if (patch.name !== undefined) groupPatch.name = patch.name.trim() || "Gruppe";
+      if (patch.defaultSplitType !== undefined) {
+        groupPatch.default_split_type = patch.defaultSplitType;
+      }
+      if (Object.keys(groupPatch).length > 0) {
+        await supabase.from("groups").update(groupPatch).eq("id", groupId);
+      }
+
+      if (patch.percentages !== undefined) {
+        for (const personId of groupPersonIds(groupId)) {
+          await supabase
+            .from("group_members")
+            .update({ default_percentage: patch.percentages?.[personId] ?? null })
+            .eq("group_id", groupId)
+            .eq("person_id", personId);
+        }
+      }
+      await refresh();
+    };
+
+    const addGroupMembers = async (groupId: string, personIds: string[]) => {
+      if (!userId) return;
+      const existing = groupPersonIds(groupId);
+      const rows = personIds
+        .filter((personId) => !existing.includes(personId))
+        .map((personId) => ({
+          owner_user_id: userId,
+          group_id: groupId,
+          person_id: personId,
+          role: "member",
+        }));
+      if (rows.length === 0) return;
+      await supabase.from("group_members").insert(rows);
+      await refresh();
+    };
+
+    const removeGroupMember = async (
+      groupId: string,
+      personId: string,
+    ): Promise<"ok" | "has-expenses"> => {
+      const expenseIds = groupExpenses(groupId).map((expense) => expense.id);
+      const involved =
+        data.expenses.some(
+          (expense) => expense.group_id === groupId && expense.paid_by_person_id === personId,
+        ) ||
+        data.expenseSplits.some(
+          (split) => expenseIds.includes(split.expense_id) && split.person_id === personId,
+        );
+      if (involved) return "has-expenses";
+
+      await supabase
+        .from("group_members")
+        .delete()
+        .eq("group_id", groupId)
+        .eq("person_id", personId);
+      await refresh();
+      return "ok";
+    };
+
+    const setGroupArchived = async (groupId: string, archived: boolean) => {
+      await supabase
+        .from("groups")
+        .update({ archived_at: archived ? nowIso() : null })
+        .eq("id", groupId);
+      await refresh();
+    };
+
+    /** Removes the group and everything that only belongs to it. */
+    const deleteGroup = async (groupId: string) => {
+      const expenseIds = data.expenses
+        .filter((expense) => expense.group_id === groupId)
+        .map((expense) => expense.id);
+
+      if (expenseIds.length > 0) {
+        await supabase.from("item_splits").delete().in(
+          "expense_item_id",
+          data.expenseItems
+            .filter((item) => expenseIds.includes(item.expense_id))
+            .map((item) => item.id),
+        );
+        await supabase.from("expense_splits").delete().in("expense_id", expenseIds);
+        await supabase.from("expense_items").delete().in("expense_id", expenseIds);
+        await supabase.from("expenses").delete().in("id", expenseIds);
+      }
+      await supabase.from("settlements").delete().eq("group_id", groupId);
+      await supabase.from("activity").delete().eq("group_id", groupId);
+      await supabase.from("group_invitations").delete().eq("group_id", groupId);
+      await supabase.from("group_members").delete().eq("group_id", groupId);
+      await supabase.from("groups").delete().eq("id", groupId);
+      await refresh();
+    };
+
+
     const markSettled = async (groupId: string, step: SettlementStep) => {
       if (!userId) return;
       await supabase.from("settlements").insert({
@@ -949,6 +1057,11 @@ export function PariProvider({ children }: { children: ReactNode }) {
       createGroup: isGuest
         ? (notForGuests("create_group") as PariContextValue["createGroup"])
         : createGroup,
+      updateGroup,
+      addGroupMembers,
+      removeGroupMember,
+      setGroupArchived,
+      deleteGroup,
       markSettled: isGuest
         ? (async () => {
             setAccountPrompt("settle");

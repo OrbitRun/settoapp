@@ -35,6 +35,7 @@ function GroupsScreen() {
   const pari = usePari();
   const t = useT();
   const groups = pari.data.groups.filter((group) => !group.archived_at);
+  const archived = pari.data.groups.filter((group) => group.archived_at);
   const navigate = useNavigate();
   const [code, setCode] = useState("");
 
@@ -67,6 +68,28 @@ function GroupsScreen() {
             )}
           </Panel>
 
+          {archived.length > 0 ? (
+            <Panel title={t("groups.archivedTitle")}>
+              {archived.map((group, index) => (
+                <div key={group.id}>
+                  {index > 0 ? <Divider /> : null}
+                  <div className="flex items-center gap-3 px-4 py-3.5">
+                    <span className="min-w-0 flex-1 truncate text-[15px] text-muted-foreground">
+                      {group.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void pari.setGroupArchived(group.id, false)}
+                      className="shrink-0 rounded-full bg-surface-strong px-3.5 py-1.5 text-sm"
+                    >
+                      {t("groups.unarchive")}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </Panel>
+          ) : null}
+
           <Link
             to="/groups/new"
             className="flex items-center justify-center gap-2 rounded-2xl py-4 text-[15px] font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -79,7 +102,7 @@ function GroupsScreen() {
             onSubmit={(event) => {
               event.preventDefault();
               const trimmed = code.trim();
-              if (trimmed) navigate({ to: "/join/$token", params: { token: trimmed } });
+              if (trimmed) navigate({ to: "/invite/$token", params: { token: trimmed } });
             }}
             className="flex items-center gap-2 rounded-2xl bg-surface px-4 py-2.5 shadow-soft"
           >

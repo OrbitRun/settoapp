@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAMID.app.pari.ios"],
+        "components": [{ "/": "/invite/*", "comment": "Group invitations" }]
+      }
+    ]
+  }
+}
