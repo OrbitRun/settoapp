@@ -29,7 +29,8 @@ export function PercentageSplitEditor({
   const balanced = Math.round(sum) === 100;
   const pair = people.length === 2;
 
-  const set = (personId: string, value: number) => {
+  // Committed only (blur / Enter / Done) — never while typing.
+  const commit = (personId: string, value: number) => {
     const next = Math.min(100, Math.max(0, value));
     onChange(personId, next);
     if (pair) {
@@ -37,6 +38,7 @@ export function PercentageSplitEditor({
       if (other) onChange(other.id, Math.round((100 - next) * 100) / 100);
     }
   };
+
 
   const round = (value: number) => value.toFixed(value % 1 === 0 ? 0 : 1);
 
