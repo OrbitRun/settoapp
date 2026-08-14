@@ -12,6 +12,7 @@ import { usePari } from "@/data/store";
 import { formatMinor, toMajor, toMinor } from "@/lib/money";
 import { NumericField } from "@/components/pari/NumericField";
 import { shortDate } from "@/lib/dates";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/split/review")({
   head: () => ({
@@ -31,6 +32,7 @@ function ReviewScreen() {
   const { draft, setDraft } = pari;
   const [selected, setSelected] = useState<string[]>([]);
   const [editing, setEditing] = useState<DraftItem | null>(null);
+  const t = useT();
 
   const itemsTotal = itemsTotalMinor(draft.items);
   const difference = draft.amountMinor - itemsTotal;
@@ -79,6 +81,25 @@ function ReviewScreen() {
         <p className="tnum mt-2 text-[17px] text-muted-foreground">
           {formatMinor(draft.amountMinor, { compact: false })}
         </p>
+      </div>
+
+      <div className="mb-3 flex items-center justify-between px-4">
+        <span className="text-[13px] text-muted-foreground">
+          {selected.length > 0 ? `${selected.length} selected` : `${draft.items.length} items`}
+        </span>
+        <button
+          type="button"
+          onClick={() =>
+            setSelected((prev) =>
+              prev.length === draft.items.length ? [] : draft.items.map((item) => item.id),
+            )
+          }
+          className="text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {selected.length === draft.items.length && draft.items.length > 0
+            ? t("common.deselectAll")
+            : t("common.selectAll")}
+        </button>
       </div>
 
       <div className="rounded-3xl bg-surface p-1.5 shadow-soft">

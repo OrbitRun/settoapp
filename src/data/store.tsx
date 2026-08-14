@@ -1,5 +1,16 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Session } from "@supabase/supabase-js";
 
+import { supabase } from "@/integrations/supabase/client";
 import {
   calculateBalances,
   calculateSettlementPlan,
@@ -8,14 +19,23 @@ import {
   type SettlementStep,
   type SplitMode,
 } from "@/lib/split";
-import { CURRENT_PERSON_ID, CURRENT_PROFILE_ID, createDemoData } from "./demo";
+import { detectLanguage, type Language } from "@/lib/i18n";
 import { emptyDraft, itemTotalMinor, type DraftItem, type SplitDraft } from "./draft";
-import type { ActivityEntry, Expense, PariData, Person } from "./types";
+import {
+  emptyPariData,
+  type ActivityEntry,
+  type ActivityType,
+  type Appearance,
+  type Expense,
+  type ExpenseItem,
+  type PariData,
+  type Person,
+  type Profile,
+} from "./types";
 
-const uid = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
-const now = () => new Date().toISOString();
+const nowIso = () => new Date().toISOString();
 
-type AddExpenseInput = {
+export type AddExpenseInput = {
   groupId: string | null;
   title: string;
   merchant: string | null;
@@ -24,6 +44,7 @@ type AddExpenseInput = {
   allocations: Allocation[];
   source: "manual" | "receipt";
   items?: DraftItem[];
+  expenseDate?: string;
 };
 
 type CreateGroupInput = {
@@ -33,14 +54,31 @@ type CreateGroupInput = {
   percentages?: Record<string, number>;
 };
 
+type UpdateExpenseInput = {
+  title?: string;
+  merchant?: string | null;
+  paidByPersonId?: string;
+  totalMinor?: number;
+  allocations?: Allocation[];
+  expenseDate?: string;
+};
+
 type PariContextValue = {
   data: PariData;
+  loading: boolean;
+  session: Session | null;
+  profile: Profile | null;
+  language: Language;
+  currency: string;
+  appearance: Appearance;
   currentPersonId: string;
   currentProfileName: string;
   personById: (id: string) => Person | undefined;
   personName: (id: string) => string;
   groupPersonIds: (groupId: string) => string[];
   groupExpenses: (groupId: string) => Expense[];
+  expenseById: (id: string) => Expense | undefined;
+  expenseItems: (expenseId: string) => ExpenseItem[];
   expenseAllocations: (expenseId: string) => Allocation[];
   groupBalances: (groupId: string) => Balance[];
   myGroupBalance: (groupId: string) => number;
@@ -49,9 +87,17 @@ type PariContextValue = {
   recentExpenses: (limit?: number) => Expense[];
   activityFeed: () => ActivityEntry[];
   groupDefaultPercentages: (groupId: string) => Record<string, number> | null;
-  addExpense: (input: AddExpenseInput) => Expense;
-  createGroup: (input: CreateGroupInput) => string;
-  markSettled: (groupId: string, step: SettlementStep) => void;
+  addExpense: (input: AddExpenseInput) => Promise<Expense | null>;
+  updateExpense: (id: string, input: UpdateExpenseInput) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
+  createGroup: (input: CreateGroupInput) => Promise<string | null>;
+  markSettled: (groupId: string, step: SettlementStep) => Promise<void>;
+  addPerson: (name: string) => Promise<Person | null>;
+  renamePerson: (id: string, name: string) => Promise<void>;
+  deletePerson: (id: string) => Promise<void>;
+  updateProfile: (patch: Partial<Pick<Profile, "display_name" | "language" | "currency" | "appearance">>) => Promise<void>;
+  signOut: () => Promise<void>;
+  refresh: () => Promise<void>;
   draft: SplitDraft;
   setDraft: (updater: SplitDraft | ((prev: SplitDraft) => SplitDraft)) => void;
   resetDraft: () => void;
@@ -59,13 +105,101 @@ type PariContextValue = {
 
 const PariContext = createContext<PariContextValue | null>(null);
 
+async function fetchAll(userId: string): Promise<PariData> {
+  const [
+    profiles,
+    people,
+    groups,
+    groupMembers,
+    expenses,
+    expenseItems,
+    expenseSplits,
+    itemSplits,
+    settlements,
+    activity,
+  ] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", userId),
+    supabase.from("people").select("*").order("created_at"),
+    supabase.from("groups").select("*").order("created_at", { ascending: false }),
+    supabase.from("group_members").select("*"),
+    supabase.from("expenses").select("*").order("expense_date", { ascending: false }),
+    supabase.from("expense_items").select("*").order("position"),
+    supabase.from("expense_splits").select("*"),
+    supabase.from("item_splits").select("*"),
+    supabase.from("settlements").select("*"),
+    supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(200),
+  ]);
+
+  return {
+    profiles: (profiles.data ?? []) as unknown as Profile[],
+    people: (people.data ?? []) as unknown as Person[],
+    groups: (groups.data ?? []) as unknown as PariData["groups"],
+    groupMembers: (groupMembers.data ?? []) as unknown as PariData["groupMembers"],
+    expenses: (expenses.data ?? []) as unknown as Expense[],
+    expenseItems: (expenseItems.data ?? []) as unknown as ExpenseItem[],
+    expenseSplits: (expenseSplits.data ?? []) as unknown as PariData["expenseSplits"],
+    itemSplits: (itemSplits.data ?? []) as unknown as PariData["itemSplits"],
+    settlements: (settlements.data ?? []) as unknown as PariData["settlements"],
+    activity: (activity.data ?? []) as unknown as ActivityEntry[],
+  };
+}
+
 export function PariProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<PariData>(() => createDemoData());
-  const [draft, setDraftState] = useState<SplitDraft>(() => emptyDraft(CURRENT_PERSON_ID));
+  const queryClient = useQueryClient();
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [draft, setDraftState] = useState<SplitDraft>(() => emptyDraft(""));
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setSession(data.session ?? null);
+      setAuthReady(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") {
+        return;
+      }
+      setSession(next ?? null);
+      if (event === "SIGNED_OUT") queryClient.clear();
+      else queryClient.invalidateQueries({ queryKey: ["pari"] });
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [queryClient]);
+
+  const userId = session?.user?.id ?? null;
+
+  const query = useQuery({
+    queryKey: ["pari", userId],
+    queryFn: () => fetchAll(userId as string),
+    enabled: Boolean(userId),
+    staleTime: 10_000,
+  });
+
+  const data = query.data ?? emptyPariData;
+  const profile = data.profiles[0] ?? null;
+  const selfPerson = data.people.find((p) => p.is_self) ?? data.people[0];
+  const currentPersonId = selfPerson?.id ?? "";
+
+  const refresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["pari"] });
+  }, [queryClient]);
+
+  // Keep the draft payer in sync once the real person id is known.
+  useEffect(() => {
+    if (!currentPersonId) return;
+    setDraftState((prev) =>
+      prev.paidByPersonId ? prev : { ...prev, paidByPersonId: currentPersonId, participants: [currentPersonId] },
+    );
+  }, [currentPersonId]);
 
   const value = useMemo<PariContextValue>(() => {
     const personById = (id: string) => data.people.find((p) => p.id === id);
-    const personName = (id: string) => personById(id)?.name ?? "Ukendt";
+    const personName = (id: string) => personById(id)?.name ?? "—";
 
     const groupPersonIds = (groupId: string) =>
       data.groupMembers.filter((m) => m.group_id === groupId).map((m) => m.person_id);
@@ -74,6 +208,11 @@ export function PariProvider({ children }: { children: ReactNode }) {
       data.expenses
         .filter((e) => e.group_id === groupId)
         .sort((a, b) => b.expense_date.localeCompare(a.expense_date));
+
+    const expenseById = (id: string) => data.expenses.find((e) => e.id === id);
+
+    const expenseItems = (expenseId: string) =>
+      data.expenseItems.filter((i) => i.expense_id === expenseId);
 
     const expenseAllocations = (expenseId: string): Allocation[] =>
       data.expenseSplits
@@ -103,20 +242,15 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const groupBalances = (groupId: string) => {
       const balances = balancesFor(groupExpenses(groupId), groupId);
-      const ids = groupPersonIds(groupId);
-      return ids.map(
-        (personId) =>
-          balances.find((b) => b.personId === personId) ?? { personId, netMinor: 0 },
+      return groupPersonIds(groupId).map(
+        (personId) => balances.find((b) => b.personId === personId) ?? { personId, netMinor: 0 },
       );
     };
 
     const myGroupBalance = (groupId: string) =>
-      groupBalances(groupId).find((b) => b.personId === CURRENT_PERSON_ID)?.netMinor ?? 0;
+      groupBalances(groupId).find((b) => b.personId === currentPersonId)?.netMinor ?? 0;
 
-    const netBalance = data.groups.reduce(
-      (sum, group) => sum + myGroupBalance(group.id),
-      0,
-    );
+    const netBalance = data.groups.reduce((sum, group) => sum + myGroupBalance(group.id), 0);
 
     const settlementPlan = (groupId: string) =>
       calculateSettlementPlan(groupBalances(groupId).filter((b) => b.netMinor !== 0));
@@ -133,192 +267,288 @@ export function PariProvider({ children }: { children: ReactNode }) {
       const group = data.groups.find((g) => g.id === groupId);
       if (!group || group.default_split_type !== "percentage") return null;
       const members = data.groupMembers.filter((m) => m.group_id === groupId);
-      if (members.some((m) => m.default_percentage == null)) return null;
+      if (members.length === 0 || members.some((m) => m.default_percentage == null)) return null;
       return Object.fromEntries(
-        members.map((m) => [m.person_id, m.default_percentage as number]),
+        members.map((m) => [m.person_id, Number(m.default_percentage)]),
       );
     };
 
-    const addExpense = (input: AddExpenseInput): Expense => {
-      const expense: Expense = {
-        id: uid("exp"),
-        group_id: input.groupId,
-        created_by: CURRENT_PROFILE_ID,
-        paid_by_person_id: input.paidByPersonId,
-        title: input.title || input.merchant || "Udgift",
-        merchant: input.merchant,
-        expense_date: now(),
-        currency: "DKK",
-        total_minor: input.totalMinor,
-        source_type: input.source,
-        receipt_image_url: null,
-        created_at: now(),
-        updated_at: now(),
-      };
+    const logActivity = async (
+      type: ActivityType,
+      entityType: "expense" | "settlement" | "group",
+      entityId: string | null,
+      groupId: string | null,
+      metadata: Record<string, string | number>,
+    ) => {
+      if (!userId) return;
+      await supabase.from("activity").insert({
+        owner_user_id: userId,
+        group_id: groupId,
+        actor_person_id: currentPersonId || null,
+        activity_type: type,
+        entity_type: entityType,
+        entity_id: entityId,
+        metadata,
+      });
+    };
 
-      setData((prev) => ({
-        ...prev,
-        expenses: [expense, ...prev.expenses],
-        expenseItems: [
-          ...prev.expenseItems,
-          ...(input.items ?? []).map((item) => ({
-            id: uid("item"),
-            expense_id: expense.id,
-            name: item.name,
-            quantity: item.quantity,
-            unit_price_minor: item.unitPriceMinor,
-            total_minor: itemTotalMinor(item),
-            category: null,
-            is_shared: item.isShared,
-            created_at: now(),
-          })),
-        ],
-        expenseSplits: [
-          ...prev.expenseSplits,
-          ...input.allocations.map((allocation) => ({
-            id: uid("split"),
-            expense_id: expense.id,
+    const addExpense = async (input: AddExpenseInput): Promise<Expense | null> => {
+      if (!userId) return null;
+      const title = input.title || input.merchant || "Udgift";
+      const { data: created, error } = await supabase
+        .from("expenses")
+        .insert({
+          owner_user_id: userId,
+          group_id: input.groupId,
+          paid_by_person_id: input.paidByPersonId,
+          title,
+          merchant: input.merchant,
+          total_minor: input.totalMinor,
+          source_type: input.source,
+          currency: profile?.currency ?? "DKK",
+          expense_date: input.expenseDate ?? nowIso(),
+        })
+        .select()
+        .single();
+      if (error || !created) {
+        console.error("[pari] addExpense", error);
+        return null;
+      }
+
+      const expenseId = created.id as string;
+
+      if (input.allocations.length > 0) {
+        await supabase.from("expense_splits").insert(
+          input.allocations.map((allocation) => ({
+            owner_user_id: userId,
+            expense_id: expenseId,
             person_id: allocation.personId,
             amount_minor: allocation.amountMinor,
             percentage: allocation.percentage ?? null,
             shares: allocation.shares ?? null,
           })),
-        ],
-        activity: [
-          {
-            id: uid("act"),
-            group_id: input.groupId,
-            actor_profile_id: CURRENT_PROFILE_ID,
-            activity_type: "expense_added",
-            entity_type: "expense",
-            entity_id: expense.id,
-            metadata: {
-              actor: "Peter",
-              title: expense.title,
-              amount_minor: expense.total_minor,
-            },
-            created_at: now(),
-          },
-          ...prev.activity,
-        ],
-      }));
+        );
+      }
 
-      return expense;
+      if (input.items && input.items.length > 0) {
+        await supabase.from("expense_items").insert(
+          input.items.map((item, index) => ({
+            owner_user_id: userId,
+            expense_id: expenseId,
+            name: item.name,
+            quantity: item.quantity,
+            unit_price_minor: item.unitPriceMinor,
+            total_minor: itemTotalMinor(item),
+            is_shared: item.isShared,
+            position: index,
+          })),
+        );
+      }
+
+      await logActivity("expense_added", "expense", expenseId, input.groupId, {
+        title,
+        amount_minor: input.totalMinor,
+      });
+      await refresh();
+      return created as unknown as Expense;
     };
 
-    const createGroup = (input: CreateGroupInput) => {
-      const groupId = uid("group");
-      const newPeople: Person[] = [];
-      const memberIds: string[] = [];
+    const updateExpense = async (id: string, input: UpdateExpenseInput) => {
+      if (!userId) return;
+      const patch: {
+        title?: string;
+        merchant?: string | null;
+        paid_by_person_id?: string;
+        total_minor?: number;
+        expense_date?: string;
+      } = {};
+      if (input.title !== undefined) patch.title = input.title;
+      if (input.merchant !== undefined) patch.merchant = input.merchant;
+      if (input.paidByPersonId !== undefined) patch.paid_by_person_id = input.paidByPersonId;
+      if (input.totalMinor !== undefined) patch.total_minor = input.totalMinor;
+      if (input.expenseDate !== undefined) patch.expense_date = input.expenseDate;
 
-      for (const name of input.personNames) {
-        const trimmed = name.trim();
+      if (Object.keys(patch).length > 0) {
+        await supabase.from("expenses").update(patch).eq("id", id);
+      }
+
+      if (input.allocations) {
+        await supabase.from("expense_splits").delete().eq("expense_id", id);
+        if (input.allocations.length > 0) {
+          await supabase.from("expense_splits").insert(
+            input.allocations.map((allocation) => ({
+              owner_user_id: userId,
+              expense_id: id,
+              person_id: allocation.personId,
+              amount_minor: allocation.amountMinor,
+              percentage: allocation.percentage ?? null,
+              shares: allocation.shares ?? null,
+            })),
+          );
+        }
+      }
+
+      const existing = expenseById(id);
+      await logActivity(
+        input.allocations ? "split_changed" : "expense_updated",
+        "expense",
+        id,
+        existing?.group_id ?? null,
+        {
+          title: input.title ?? existing?.title ?? "",
+          amount_minor: input.totalMinor ?? existing?.total_minor ?? 0,
+        },
+      );
+      await refresh();
+    };
+
+    const deleteExpense = async (id: string) => {
+      const existing = expenseById(id);
+      await supabase.from("expenses").delete().eq("id", id);
+      await logActivity("expense_deleted", "expense", null, existing?.group_id ?? null, {
+        title: existing?.title ?? "",
+        amount_minor: existing?.total_minor ?? 0,
+      });
+      await refresh();
+    };
+
+    const addPerson = async (name: string): Promise<Person | null> => {
+      if (!userId) return null;
+      const trimmed = name.trim();
+      if (!trimmed) return null;
+      const existing = data.people.find(
+        (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
+      );
+      if (existing) return existing;
+      const { data: created, error } = await supabase
+        .from("people")
+        .insert({ owner_user_id: userId, name: trimmed })
+        .select()
+        .single();
+      if (error) {
+        console.error("[pari] addPerson", error);
+        return null;
+      }
+      await refresh();
+      return created as unknown as Person;
+    };
+
+    const renamePerson = async (id: string, name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      await supabase.from("people").update({ name: trimmed }).eq("id", id);
+      await refresh();
+    };
+
+    const deletePerson = async (id: string) => {
+      await supabase.from("people").delete().eq("id", id);
+      await refresh();
+    };
+
+    const createGroup = async (input: CreateGroupInput): Promise<string | null> => {
+      if (!userId) return null;
+      const { data: group, error } = await supabase
+        .from("groups")
+        .insert({
+          owner_user_id: userId,
+          name: input.name.trim() || "Ny gruppe",
+          default_split_type: input.defaultSplitType,
+          currency: profile?.currency ?? "DKK",
+        })
+        .select()
+        .single();
+      if (error || !group) {
+        console.error("[pari] createGroup", error);
+        return null;
+      }
+      const groupId = group.id as string;
+
+      const memberIds: string[] = [];
+      for (const rawName of input.personNames) {
+        const trimmed = rawName.trim();
         if (!trimmed) continue;
         const existing = data.people.find(
           (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
         );
         if (existing) {
-          memberIds.push(existing.id);
+          if (!memberIds.includes(existing.id)) memberIds.push(existing.id);
           continue;
         }
-        const created: Person = {
-          id: uid("person"),
-          owner_user_id: CURRENT_PROFILE_ID,
-          linked_profile_id: null,
-          name: trimmed,
-          avatar_url: null,
-          created_at: now(),
-        };
-        newPeople.push(created);
-        memberIds.push(created.id);
+        const { data: created } = await supabase
+          .from("people")
+          .insert({ owner_user_id: userId, name: trimmed })
+          .select()
+          .single();
+        if (created) memberIds.push(created.id as string);
       }
 
-      setData((prev) => ({
-        ...prev,
-        people: [...prev.people, ...newPeople],
-        groups: [
-          {
-            id: groupId,
-            name: input.name.trim() || "Ny gruppe",
-            created_by: CURRENT_PROFILE_ID,
-            default_split_type: input.defaultSplitType,
-            currency: "DKK",
-            created_at: now(),
-            archived_at: null,
-          },
-          ...prev.groups,
-        ],
-        groupMembers: [
-          ...prev.groupMembers,
-          ...memberIds.map((personId, index) => ({
-            id: uid("gm"),
+      if (memberIds.length > 0) {
+        await supabase.from("group_members").insert(
+          memberIds.map((personId, index) => ({
+            owner_user_id: userId,
             group_id: groupId,
             person_id: personId,
-            role: (index === 0 ? "owner" : "member") as "owner" | "member",
-            default_weight: null,
+            role: index === 0 ? "owner" : "member",
             default_percentage: input.percentages?.[personId] ?? null,
-            joined_at: now(),
           })),
-        ],
-        activity: [
-          {
-            id: uid("act"),
-            group_id: groupId,
-            actor_profile_id: CURRENT_PROFILE_ID,
-            activity_type: "group_created",
-            entity_type: "group",
-            entity_id: groupId,
-            metadata: { actor: "Peter", title: input.name },
-            created_at: now(),
-          },
-          ...prev.activity,
-        ],
-      }));
+        );
+      }
 
+      await logActivity("group_created", "group", groupId, groupId, { title: input.name });
+      await refresh();
       return groupId;
     };
 
-    const markSettled = (groupId: string, step: SettlementStep) => {
-      setData((prev) => ({
-        ...prev,
-        settlements: [
-          ...prev.settlements,
-          {
-            id: uid("settle"),
-            group_id: groupId,
-            from_person_id: step.fromPersonId,
-            to_person_id: step.toPersonId,
-            amount_minor: step.amountMinor,
-            currency: "DKK",
-            status: "settled",
-            settled_at: now(),
-            created_at: now(),
-          },
-        ],
-        activity: [
-          {
-            id: uid("act"),
-            group_id: groupId,
-            actor_profile_id: CURRENT_PROFILE_ID,
-            activity_type: "settlement_marked",
-            entity_type: "settlement",
-            entity_id: groupId,
-            metadata: { actor: "Peter", amount_minor: step.amountMinor },
-            created_at: now(),
-          },
-          ...prev.activity,
-        ],
-      }));
+    const markSettled = async (groupId: string, step: SettlementStep) => {
+      if (!userId) return;
+      await supabase.from("settlements").insert({
+        owner_user_id: userId,
+        group_id: groupId,
+        from_person_id: step.fromPersonId,
+        to_person_id: step.toPersonId,
+        amount_minor: step.amountMinor,
+        currency: profile?.currency ?? "DKK",
+        status: "settled",
+        settled_at: nowIso(),
+      });
+      await logActivity("settlement_marked", "settlement", groupId, groupId, {
+        amount_minor: step.amountMinor,
+      });
+      await refresh();
+    };
+
+    const updateProfile = async (
+      patch: Partial<Pick<Profile, "display_name" | "language" | "currency" | "appearance">>,
+    ) => {
+      if (!userId) return;
+      await supabase.from("profiles").update(patch).eq("id", userId);
+      if (patch.display_name && selfPerson) {
+        await supabase.from("people").update({ name: patch.display_name }).eq("id", selfPerson.id);
+      }
+      await refresh();
+    };
+
+    const signOut = async () => {
+      await supabase.auth.signOut();
+      queryClient.clear();
     };
 
     return {
       data,
-      currentPersonId: CURRENT_PERSON_ID,
-      currentProfileName: data.profiles[0]?.display_name ?? "Peter",
+      loading: !authReady || (Boolean(userId) && query.isLoading),
+      session,
+      profile,
+      language: (profile?.language as Language) ?? detectLanguage(),
+      currency: profile?.currency ?? "DKK",
+      appearance: (profile?.appearance as Appearance) ?? "system",
+      currentPersonId,
+      currentProfileName: profile?.display_name ?? selfPerson?.name ?? "PARI",
       personById,
       personName,
       groupPersonIds,
       groupExpenses,
+      expenseById,
+      expenseItems,
       expenseAllocations,
       groupBalances,
       myGroupBalance,
@@ -328,13 +558,33 @@ export function PariProvider({ children }: { children: ReactNode }) {
       activityFeed,
       groupDefaultPercentages,
       addExpense,
+      updateExpense,
+      deleteExpense,
       createGroup,
       markSettled,
+      addPerson,
+      renamePerson,
+      deletePerson,
+      updateProfile,
+      signOut,
+      refresh,
       draft,
       setDraft: setDraftState,
-      resetDraft: () => setDraftState(emptyDraft(CURRENT_PERSON_ID)),
+      resetDraft: () => setDraftState(emptyDraft(currentPersonId)),
     };
-  }, [data, draft]);
+  }, [
+    data,
+    draft,
+    profile,
+    selfPerson,
+    currentPersonId,
+    userId,
+    session,
+    authReady,
+    query.isLoading,
+    queryClient,
+    refresh,
+  ]);
 
   return <PariContext.Provider value={value}>{children}</PariContext.Provider>;
 }

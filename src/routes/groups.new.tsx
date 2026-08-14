@@ -51,12 +51,13 @@ function CreateGroupScreen() {
     setNewPerson("");
   };
 
-  const create = () => {
-    const groupId = pari.createGroup({
+  const create = async () => {
+    const groupId = await pari.createGroup({
       name,
       personNames: people,
       defaultSplitType: defaultSplit,
     });
+    if (!groupId) return;
     navigate({ to: "/groups/$groupId", params: { groupId } });
   };
 

@@ -5,6 +5,15 @@
 
 export const MINOR_PER_MAJOR = 100;
 
+/** App-wide currency/locale, set once from the signed-in profile. */
+let defaultCurrency = "DKK";
+let defaultLocale = "da-DK";
+
+export function setMoneyDefaults(currency: string, locale: string) {
+  defaultCurrency = currency;
+  defaultLocale = locale;
+}
+
 export function toMinor(major: number): number {
   return Math.round(major * MINOR_PER_MAJOR);
 }
@@ -29,8 +38,8 @@ type FormatOptions = {
 };
 
 export function formatMinor(minor: number, options: FormatOptions = {}): string {
-  const { currency = "DKK", compact = true, showSign = false } = options;
-  return formatMoney(minor, currency, "da-DK", { compact, showSign });
+  const { currency = defaultCurrency, compact = true, showSign = false } = options;
+  return formatMoney(minor, currency, defaultLocale, { compact, showSign });
 }
 
 export function formatMinorNumber(minor: number, compact = true): string {
@@ -43,8 +52,8 @@ export function formatMinorNumber(minor: number, compact = true): string {
  */
 export function formatMoney(
   amountMinor: number,
-  currency = "DKK",
-  locale = "da-DK",
+  currency = defaultCurrency,
+  locale = defaultLocale,
   options: { compact?: boolean; showSign?: boolean } = {},
 ): string {
   const { compact = true, showSign = false } = options;

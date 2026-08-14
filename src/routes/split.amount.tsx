@@ -66,8 +66,8 @@ function ManualExpenseScreen() {
     }));
   };
 
-  const save = () => {
-    const expense = pari.addExpense({
+  const save = async () => {
+    const expense = await pari.addExpense({
       groupId: draft.groupId,
       title: draft.title,
       merchant: draft.merchant,
@@ -76,6 +76,7 @@ function ManualExpenseScreen() {
       allocations,
       source: "manual",
     });
+    if (!expense) return;
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
   };
 

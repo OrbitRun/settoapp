@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ExpenseExpenseIdRouteImport } from './routes/expense.$expenseId'
 import { Route as GroupsIndexRouteImport } from './routes/groups.index'
 import { Route as GroupsGroupIdRouteImport } from './routes/groups.$groupId'
 import { Route as GroupsNewRouteImport } from './routes/groups.new'
@@ -34,6 +36,11 @@ const ActivityRoute = ActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -42,6 +49,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpenseExpenseIdRoute = ExpenseExpenseIdRouteImport.update({
+  id: '/expense/$expenseId',
+  path: '/expense/$expenseId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GroupsIndexRoute = GroupsIndexRouteImport.update({
@@ -98,8 +110,10 @@ const SplitShareRoute = SplitShareRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
@@ -114,8 +128,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
@@ -131,8 +147,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
   '/settle/$groupId': typeof SettleGroupIdRoute
@@ -149,8 +167,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activity'
+    | '/auth'
     | '/onboarding'
     | '/profile'
+    | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
     | '/settle/$groupId'
@@ -165,8 +185,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/activity'
+    | '/auth'
     | '/onboarding'
     | '/profile'
+    | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
     | '/settle/$groupId'
@@ -181,8 +203,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/activity'
+    | '/auth'
     | '/onboarding'
     | '/profile'
+    | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
     | '/settle/$groupId'
@@ -198,8 +222,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
+  AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
+  ExpenseExpenseIdRoute: typeof ExpenseExpenseIdRoute
   GroupsGroupIdRoute: typeof GroupsGroupIdRoute
   GroupsNewRoute: typeof GroupsNewRoute
   SettleGroupIdRoute: typeof SettleGroupIdRoute
@@ -228,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -240,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expense/$expenseId': {
+      id: '/expense/$expenseId'
+      path: '/expense/$expenseId'
+      fullPath: '/expense/$expenseId'
+      preLoaderRoute: typeof ExpenseExpenseIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/groups/': {
@@ -318,8 +358,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
+  AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
+  ExpenseExpenseIdRoute: ExpenseExpenseIdRoute,
   GroupsGroupIdRoute: GroupsGroupIdRoute,
   GroupsNewRoute: GroupsNewRoute,
   SettleGroupIdRoute: SettleGroupIdRoute,

@@ -4,6 +4,8 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useNavigate,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -11,7 +13,10 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { PariProvider } from "@/data/store";
+import { PariProvider, usePari } from "@/data/store";
+import { I18nProvider } from "@/lib/i18n";
+import { setMoneyDefaults } from "@/lib/money";
+import { setDateLanguage } from "@/lib/dates";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -115,14 +120,52 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AppFrame({ children }: { children: ReactNode }) {
+  const pari = usePari();
+  const navigate = useNavigate();
+  const routerState = useRouterState();
+  const path = routerState.location.pathname;
+  const isPublic = path === "/auth" || path === "/onboarding";
+
+  useEffect(() => {
+    if (!pari.loading && !pari.session && !isPublic) {
+      navigate({ to: "/auth" });
+    }
+  }, [pari.loading, pari.session, isPublic, navigate]);
+
+  setMoneyDefaults(pari.currency, pari.language === "da" ? "da-DK" : "en-GB");
+  setDateLanguage(pari.language);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const prefersDark =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const dark = pari.appearance === "dark" || (pari.appearance === "system" && prefersDark);
+    document.documentElement.classList.toggle("dark", dark);
+  }, [pari.appearance]);
+
+  if (pari.loading && !isPublic) {
+    return <div className="min-h-svh bg-background" />;
+  }
+
+  if (!pari.session && !isPublic) {
+    return <div className="min-h-svh bg-background" />;
+  }
+
+  return <I18nProvider language={pari.language}>{children}</I18nProvider>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
       <PariProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+        <AppFrame>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </AppFrame>
         <Toaster position="top-center" />
       </PariProvider>
     </QueryClientProvider>

@@ -12,6 +12,7 @@ import { usePari } from "@/data/store";
 import { formatMinor } from "@/lib/money";
 import { calculateEqualSplit } from "@/lib/split";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/split/items")({
   head: () => ({
@@ -32,6 +33,7 @@ function ItemSplitScreen() {
   const [selected, setSelected] = useState<string[]>([]);
   const [assignOpen, setAssignOpen] = useState(false);
   const [bulkPeople, setBulkPeople] = useState<string[]>([]);
+  const t = useT();
 
   const people = useMemo(
     () => draft.participants.map((id) => ({ id, name: pari.personName(id) })),
@@ -69,8 +71,8 @@ function ItemSplitScreen() {
     setAssignOpen(false);
   };
 
-  const confirm = () => {
-    const expense = pari.addExpense({
+  const confirm = async () => {
+    const expense = await pari.addExpense({
       groupId: draft.groupId,
       title: draft.title || draft.merchant || "Receipt",
       merchant: draft.merchant,
@@ -80,12 +82,32 @@ function ItemSplitScreen() {
       source: "receipt",
       items: draft.items,
     });
+    if (!expense) return;
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
   };
 
   return (
     <Screen className="pb-48">
       <FlowHeader title="Split by item" subtitle={draft.merchant ?? undefined} />
+
+      <div className="mb-3 flex items-center justify-between px-4">
+        <span className="text-[13px] text-muted-foreground">
+          {selected.length > 0 ? `${selected.length} selected` : `${items.length} items`}
+        </span>
+        <button
+          type="button"
+          onClick={() =>
+            setSelected((prev) =>
+              prev.length === items.length ? [] : items.map((item) => item.id),
+            )
+          }
+          className="text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {selected.length === items.length && items.length > 0
+            ? t("common.deselectAll")
+            : t("common.selectAll")}
+        </button>
+      </div>
 
       <div className="space-y-2">
         {items.map((item) => {

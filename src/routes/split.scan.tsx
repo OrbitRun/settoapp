@@ -7,6 +7,7 @@ import { FlowHeader } from "@/components/pari/FlowHeader";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { parseReceipt } from "@/lib/receipt/parseReceipt";
 import { usePari } from "@/data/store";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/split/scan")({
   head: () => ({
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/split/scan")({
 
 function ScanScreen() {
   const pari = usePari();
+  const t = useT();
   const navigate = useNavigate();
   const cameraRef = useRef<HTMLInputElement>(null);
   const libraryRef = useRef<HTMLInputElement>(null);
@@ -49,7 +51,7 @@ function ScanScreen() {
     event.target.value = "";
     if (!next) return;
     if (!next.type.startsWith("image/")) {
-      setError("That file isn't an image. Choose a photo of the receipt.");
+      setError(t("scan.notImage"));
       return;
     }
     setError(null);
@@ -82,13 +84,13 @@ function ScanScreen() {
       navigate({ to: "/split/review" });
     } catch {
       setReading(false);
-      setError("We couldn't read that receipt. Try another photo.");
+      setError(t("scan.failed"));
     }
   };
 
   return (
     <Screen className="pb-16">
-      <FlowHeader title="Scan receipt" variant="close" onClose={() => navigate({ to: "/" })} />
+      <FlowHeader title={t("split.scan")} variant="close" onClose={() => navigate({ to: "/" })} />
 
       <input
         ref={cameraRef}
@@ -144,17 +146,17 @@ function ScanScreen() {
 
         <p className="mt-8 text-[17px] font-medium tracking-tight">
           {reading
-            ? "Reading receipt…"
+            ? t("scan.reading")
             : previewUrl
-              ? "Looks good?"
-              : "Add a photo of the receipt"}
+              ? t("scan.looksGood")
+              : t("scan.addPhoto")}
         </p>
         <p className="mt-2 max-w-[30ch] text-sm text-muted-foreground">
           {reading
-            ? "Finding merchant, total and items."
+            ? t("scan.readingHint")
             : previewUrl
-              ? "Make sure the total and the lines are readable."
-              : "Take a new photo or choose one from your library."}
+              ? t("scan.looksGoodHint")
+              : t("scan.addPhotoHint")}
         </p>
 
         {error ? (
@@ -167,29 +169,29 @@ function ScanScreen() {
           {previewUrl ? (
             <>
               <PrimaryButton onClick={read} disabled={!file}>
-                Read receipt
+                {t("scan.read")}
               </PrimaryButton>
               <SecondaryButton onClick={openCamera}>
                 <Camera className="h-4 w-4" strokeWidth={1.8} />
-                Retake photo
+                {t("scan.retake")}
               </SecondaryButton>
               <button
                 type="button"
                 onClick={() => libraryRef.current?.click()}
                 className="mx-auto block pt-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                Choose another photo
+                {t("scan.another")}
               </button>
             </>
           ) : (
             <>
               <PrimaryButton onClick={openCamera}>
                 <Camera className="h-4 w-4" strokeWidth={1.8} />
-                Take photo
+                {t("scan.take")}
               </PrimaryButton>
               <SecondaryButton onClick={() => libraryRef.current?.click()}>
                 <ImageUp className="h-4 w-4" strokeWidth={1.8} />
-                Choose photo
+                {t("scan.choose")}
               </SecondaryButton>
             </>
           )}

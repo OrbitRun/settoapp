@@ -44,8 +44,8 @@ function ShareScreen() {
     setDraft((prev) => ({ ...prev, groupId, participants: ids }));
   };
 
-  const confirm = () => {
-    const expense = pari.addExpense({
+  const confirm = async () => {
+    const expense = await pari.addExpense({
       groupId: draft.groupId,
       title: draft.title || draft.merchant || "Receipt",
       merchant: draft.merchant,
@@ -55,6 +55,7 @@ function ShareScreen() {
       source: "receipt",
       items: draft.items,
     });
+    if (!expense) return;
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
   };
 
