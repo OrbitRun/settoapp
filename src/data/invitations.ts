@@ -13,6 +13,7 @@ export type GroupInvitation = {
   join_code: string;
   expires_at: string;
   revoked_at: string | null;
+  status?: string;
 };
 
 export type InvitationPreview = {
