@@ -18,6 +18,7 @@ import { setMoneyDefaults } from "@/lib/money";
 import { setDateLanguage } from "@/lib/dates";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountSheet } from "@/components/pari/AccountSheet";
+import { useScrollToTopOnNavigate } from "@/hooks/useScrollToTopOnNavigate";
 
 
 function NotFoundComponent() {
@@ -123,6 +124,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function AppFrame({ children }: { children: ReactNode }) {
   const pari = usePari();
+  useScrollToTopOnNavigate();
 
   setMoneyDefaults(pari.currency, pari.language === "da" ? "da-DK" : "en-GB");
   setDateLanguage(pari.language);

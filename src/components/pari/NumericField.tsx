@@ -25,6 +25,7 @@ export function NumericField({
   style,
   inputClassName,
   format,
+  showZero = false,
 }: {
   value: number;
   onChange: (value: number) => void;
@@ -42,15 +43,17 @@ export function NumericField({
   inputClassName?: string;
   /** Optional display formatting applied on blur only. */
   format?: (value: number) => string;
+  /** Render a real "0" at rest instead of leaving the field empty. */
+  showZero?: boolean;
 }) {
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const [text, setText] = useState(() => toText(value, format));
+  const [text, setText] = useState(() => toText(value, format, showZero));
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
     if (focused) return;
-    setText(toText(value, format));
+    setText(toText(value, format, showZero));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, focused]);
 
@@ -93,7 +96,12 @@ export function NumericField({
           });
         }}
         onChange={(event) => {
-          const raw = event.target.value.replace(/[^\d.,]/g, "");
+          let raw = event.target.value.replace(/[^\d.,]/g, "");
+          // Typing over the resting "0" replaces it, wherever the caret sat.
+          if (text === "0" && raw !== "0" && raw.includes("0")) {
+            raw = raw.replace("0", "");
+          }
+          raw = raw.replace(/^0+(?=\d)/, "");
           setText(raw);
           if (raw.trim() === "") return; // allow temporary blank, don't force 0
           onChange(clamp(parse(raw)));
@@ -103,7 +111,7 @@ export function NumericField({
           const next = text.trim() === "" ? clamp(min ?? 0) : clamp(parse(text));
           onChange(next);
           onCommit?.(next);
-          setText(toText(next, format));
+          setText(toText(next, format, showZero));
         }}
         className={cn(
           "tnum w-full min-w-0 bg-transparent outline-none placeholder:text-muted-foreground/40",
@@ -119,7 +127,7 @@ function stripFormat(raw: string) {
   return raw.replace(/[^\d.,]/g, "");
 }
 
-function toText(value: number, format?: (value: number) => string) {
-  if (value === 0) return "";
+function toText(value: number, format?: (value: number) => string, showZero = false) {
+  if (value === 0) return showZero ? "0" : "";
   return format ? format(value) : String(value);
 }
