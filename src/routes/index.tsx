@@ -27,12 +27,52 @@ export const Route = createFileRoute("/")({
   component: HomeScreen,
 });
 
+function WelcomeScreen() {
+  const t = useT();
+  return (
+    <div className="min-h-svh bg-background">
+      <div className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col px-7 pb-12 pt-16">
+        <div className="animate-rise flex flex-1 flex-col justify-center">
+          <p className="text-sm text-muted-foreground">PARI</p>
+          <h1 className="mt-4 whitespace-pre-line text-[38px] font-semibold leading-[1.08] tracking-[-0.035em]">
+            {t("welcome.title")}
+          </h1>
+          <p className="mt-4 max-w-[28ch] text-[17px] text-muted-foreground">
+            {t("welcome.subtitle")}
+          </p>
+        </div>
+        <div className="space-y-3">
+          <Link
+            to="/split/amount"
+            className="flex h-14 w-full items-center justify-center rounded-2xl bg-primary text-[15px] font-medium text-primary-foreground"
+          >
+            {t("welcome.primary")}
+          </Link>
+          <Link
+            to="/auth"
+            search={{}}
+            className="flex h-14 w-full items-center justify-center rounded-2xl bg-surface-strong text-[15px] font-medium"
+          >
+            {t("welcome.secondary")}
+          </Link>
+          <p className="pt-2 text-center text-xs text-muted-foreground">{t("welcome.note")}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HomeScreen() {
   const pari = usePari();
   const t = useT();
   const groups = pari.data.groups.filter((group) => !group.archived_at);
   const active = groups.filter((group) => pari.groupExpenses(group.id).length > 0);
   const recent = pari.recentExpenses(4);
+
+  // A brand-new guest gets the welcome screen, not an empty dashboard.
+  if (pari.isGuest && pari.data.expenses.length === 0) return <WelcomeScreen />;
+
+
 
   return (
     <>
