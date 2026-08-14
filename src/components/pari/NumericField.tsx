@@ -43,10 +43,12 @@ export function NumericField({
   inputClassName?: string;
   /** Optional display formatting applied on blur only. */
   format?: (value: number) => string;
+  /** Render a real "0" at rest instead of leaving the field empty. */
+  showZero?: boolean;
 }) {
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const [text, setText] = useState(() => toText(value, format));
+  const [text, setText] = useState(() => toText(value, format, showZero));
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
