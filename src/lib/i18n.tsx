@@ -125,6 +125,15 @@ const en: Dict = {
   "expense.deleted": "Expense deleted",
   "expense.saved": "Expense updated",
   "expense.gone": "This expense no longer exists",
+  "expense.saveChanges": "Save changes",
+  "expense.settledWarning": "This expense is part of a completed settlement.",
+  "expense.settledHint":
+    "Changes become a new outstanding adjustment. The old settlement is kept.",
+  "expense.editAnyway": "Edit anyway",
+  "expense.groupChangeWarning": "Changing group replaces participants and the split.",
+  "expense.participants": "Participants",
+  "groups.nothingToSettle": "Nothing to settle",
+
 
   "profile.title": "Profile",
   "profile.overall": "Overall",
@@ -476,6 +485,15 @@ const da: Dict = {
   "expense.deleted": "Udgift slettet",
   "expense.saved": "Udgift opdateret",
   "expense.gone": "Denne udgift findes ikke længere",
+  "expense.saveChanges": "Gem ændringer",
+  "expense.settledWarning": "Denne udgift indgår i en afsluttet opgørelse.",
+  "expense.settledHint":
+    "Ændringer bliver til en ny udestående regulering. Den gamle opgørelse bliver ikke slettet.",
+  "expense.editAnyway": "Redigér alligevel",
+  "expense.groupChangeWarning": "Skift af gruppe erstatter deltagere og fordeling.",
+  "expense.participants": "Deltagere",
+  "groups.nothingToSettle": "Intet at gøre op",
+
 
   "profile.title": "Profil",
   "profile.overall": "Samlet",

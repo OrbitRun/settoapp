@@ -10,9 +10,18 @@ import { EmptyState } from "@/components/pari/EmptyState";
 import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { NumericField } from "@/components/pari/NumericField";
 import { ParticipantSelector } from "@/components/pari/ParticipantSelector";
+import { GroupPicker } from "@/components/pari/GroupPicker";
+import { SplitSelector } from "@/components/pari/SplitSelector";
+import {
+  SplitRuleEditor,
+  isRuleComplete,
+  previewAllocations,
+  seedRule,
+  type SplitRule,
+} from "@/components/pari/SplitRuleEditor";
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { usePari } from "@/data/store";
-import { calculateEqualSplit } from "@/lib/split";
+import type { Allocation, SplitMode } from "@/lib/split";
 import { toMajor, toMinor } from "@/lib/money";
 import { shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
@@ -37,6 +46,33 @@ export const Route = createFileRoute("/expense/$expenseId")({
   ),
 });
 
+/** Reads the saved split back into the shared rule shape used by the create flow. */
+function ruleFromAllocations(allocations: Allocation[], totalMinor: number): SplitRule {
+  const percentages: Record<string, number> = {};
+  const shares: Record<string, number> = {};
+  const exact: Record<string, number> = {};
+  for (const allocation of allocations) {
+    if (allocation.percentage != null) percentages[allocation.personId] = allocation.percentage;
+    if (allocation.shares != null) shares[allocation.personId] = allocation.shares;
+    exact[allocation.personId] = allocation.amountMinor;
+  }
+
+  let mode: SplitMode = "equal";
+  if (allocations.length > 0 && allocations.every((a) => a.percentage != null)) {
+    mode = "percentage";
+  } else if (allocations.length > 0 && allocations.every((a) => a.shares != null)) {
+    mode = "shares";
+  } else if (allocations.length > 0) {
+    const each = Math.floor(totalMinor / allocations.length);
+    const uniform = allocations.every(
+      (a) => Math.abs(a.amountMinor - each) <= 1,
+    );
+    mode = uniform ? "equal" : "exact";
+  }
+
+  return { mode, percentages, shares, exact };
+}
+
 function ExpenseDetailScreen() {
   const { expenseId } = Route.useParams();
   const pari = usePari();
@@ -49,20 +85,27 @@ function ExpenseDetailScreen() {
 
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmSettled, setConfirmSettled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState(expense?.title ?? "");
   const [amount, setAmount] = useState(toMajor(expense?.total_minor ?? 0));
   const [paidBy, setPaidBy] = useState(expense?.paid_by_person_id ?? "");
+  const [groupId, setGroupId] = useState<string | null>(expense?.group_id ?? null);
+  const [groupChanged, setGroupChanged] = useState(false);
   const [participants, setParticipants] = useState<string[]>(
     allocations.map((allocation) => allocation.personId),
   );
+  const [rule, setRule] = useState<SplitRule>(() =>
+    ruleFromAllocations(allocations, expense?.total_minor ?? 0),
+  );
 
   const candidates = useMemo(() => {
-    const ids = expense?.group_id
-      ? pari.groupPersonIds(expense.group_id)
+    const ids = groupId
+      ? pari.groupPersonIds(groupId)
       : pari.data.people.map((person) => person.id);
     return ids.map((id) => ({ id, name: pari.personName(id) }));
-  }, [expense?.group_id, pari]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId, pari]);
 
   if (!expense) {
     return (
@@ -77,18 +120,83 @@ function ExpenseDetailScreen() {
     ? pari.data.groups.find((g) => g.id === expense.group_id)
     : undefined;
 
+  /** The expense is historical once its group already has a completed settlement. */
+  const inSettlement =
+    expense.group_id != null &&
+    pari.data.settlements.some(
+      (s) => s.group_id === expense.group_id && s.status === "settled",
+    );
+
+  const people = participants.map((id) => ({ id, name: pari.personName(id) }));
+  const totalMinor = toMinor(amount);
+  const canSave =
+    totalMinor > 0 &&
+    participants.length > 0 &&
+    isRuleComplete(rule, people, totalMinor);
+
+  const startEditing = () => {
+    setTitle(expense.title);
+    setAmount(toMajor(expense.total_minor));
+    setPaidBy(expense.paid_by_person_id);
+    setGroupId(expense.group_id);
+    setGroupChanged(false);
+    setParticipants(allocations.map((a) => a.personId));
+    setRule(ruleFromAllocations(allocations, expense.total_minor));
+    if (inSettlement) setConfirmSettled(true);
+    else setEditing(true);
+  };
+
+  // Switching group loads that group's members and its saved default rule.
+  const changeGroup = (nextGroupId: string | null) => {
+    if (nextGroupId === groupId) return;
+    const ids = nextGroupId ? pari.groupPersonIds(nextGroupId) : participants;
+    const groupDefault = nextGroupId ? pari.groupRule(nextGroupId) : null;
+    setGroupId(nextGroupId);
+    setGroupChanged(nextGroupId !== expense.group_id);
+    setParticipants(ids);
+    setPaidBy((prev) => (ids.includes(prev) ? prev : (ids[0] ?? prev)));
+    setRule(
+      seedRule(
+        {
+          mode: groupDefault?.mode ?? "equal",
+          percentages: groupDefault?.percentages ?? {},
+          shares: groupDefault?.shares ?? {},
+          exact: {},
+        },
+        ids.map((id) => ({ id, name: pari.personName(id) })),
+        groupDefault?.mode ?? "equal",
+      ),
+    );
+  };
+
+  const toggleParticipant = (personId: string) => {
+    const next = participants.includes(personId)
+      ? participants.filter((id) => id !== personId)
+      : [...participants, personId];
+    setParticipants(next);
+    setRule((prev) =>
+      seedRule(prev, next.map((id) => ({ id, name: pari.personName(id) })), prev.mode),
+    );
+  };
+
   const save = async () => {
+    if (busy || !canSave) return;
     setBusy(true);
-    const totalMinor = toMinor(amount);
-    await pari.updateExpense(expense.id, {
-      title: title.trim() || expense.title,
-      totalMinor,
-      paidByPersonId: paidBy,
-      allocations: calculateEqualSplit(totalMinor, participants),
-    });
-    setBusy(false);
-    setEditing(false);
-    toast.success(t("expense.saved"));
+    try {
+      await pari.updateExpense(expense.id, {
+        title: title.trim() || expense.title,
+        totalMinor,
+        paidByPersonId: paidBy,
+        groupId,
+        allocations: previewAllocations(rule, people, totalMinor),
+      });
+      setEditing(false);
+      toast.success(t("expense.saved"));
+    } catch {
+      toast.error(t("common.saveFailed"));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const remove = async () => {
@@ -101,10 +209,7 @@ function ExpenseDetailScreen() {
 
   return (
     <Screen className="pb-32">
-      <FlowHeader
-        title={expense.title}
-        subtitle={group?.name ?? undefined}
-      />
+      <FlowHeader title={expense.title} subtitle={group?.name ?? undefined} />
 
       <div className="px-1 pb-8 text-center">
         <MoneyAmount
@@ -144,22 +249,30 @@ function ExpenseDetailScreen() {
             />
           </section>
 
+          {pari.data.groups.length > 0 ? (
+            <section className="space-y-2">
+              <GroupPicker groupId={groupId} onChange={changeGroup} />
+              {groupChanged ? (
+                <p className="px-1 text-xs text-muted-foreground">
+                  {t("expense.groupChangeWarning")}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+
           <ParticipantSelector
             label={t("split.splitBetween")}
             people={candidates}
             selected={participants}
-            onToggle={(personId) =>
-              setParticipants((prev) =>
-                prev.includes(personId)
-                  ? prev.filter((id) => id !== personId)
-                  : [...prev, personId],
-              )
-            }
-            onSelectAll={() =>
-              setParticipants((prev) =>
-                prev.length === candidates.length ? [] : candidates.map((p) => p.id),
-              )
-            }
+            onToggle={toggleParticipant}
+            onSelectAll={() => {
+              const next =
+                participants.length === candidates.length ? [] : candidates.map((p) => p.id);
+              setParticipants(next);
+              setRule((prev) =>
+                seedRule(prev, next.map((id) => ({ id, name: pari.personName(id) })), prev.mode),
+              );
+            }}
           />
 
           <section className="space-y-3">
@@ -183,9 +296,25 @@ function ExpenseDetailScreen() {
             </Panel>
           </section>
 
+          <section className="space-y-4 rounded-3xl bg-surface p-5 shadow-soft">
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-muted-foreground">{t("split.distribution")}</p>
+              <SplitSelector
+                mode={rule.mode}
+                onChange={(mode) => setRule((prev) => seedRule(prev, people, mode))}
+              />
+            </div>
+            <SplitRuleEditor
+              rule={rule}
+              people={people}
+              totalMinor={totalMinor}
+              onChange={(patch) => setRule((prev) => ({ ...prev, ...patch }))}
+            />
+          </section>
+
           <div className="space-y-2">
-            <PrimaryButton onClick={save} disabled={busy || participants.length === 0}>
-              {t("common.save")}
+            <PrimaryButton onClick={() => void save()} disabled={busy || !canSave}>
+              {t("expense.saveChanges")}
             </PrimaryButton>
             <SecondaryButton onClick={() => setEditing(false)} disabled={busy}>
               {t("common.cancel")}
@@ -199,7 +328,14 @@ function ExpenseDetailScreen() {
               <div key={allocation.personId}>
                 {index > 0 ? <Divider /> : null}
                 <div className="flex items-center justify-between px-4 py-4 text-[15px]">
-                  <span>{pari.personName(allocation.personId)}</span>
+                  <span>
+                    {pari.personName(allocation.personId)}
+                    {allocation.percentage != null ? (
+                      <span className="ml-2 text-[13px] text-muted-foreground">
+                        {allocation.percentage}%
+                      </span>
+                    ) : null}
+                  </span>
                   <MoneyAmount minor={allocation.amountMinor} />
                 </div>
               </div>
@@ -224,7 +360,7 @@ function ExpenseDetailScreen() {
           ) : null}
 
           <div className="space-y-2">
-            <PrimaryButton onClick={() => setEditing(true)}>{t("common.edit")}</PrimaryButton>
+            <PrimaryButton onClick={startEditing}>{t("common.edit")}</PrimaryButton>
             <SecondaryButton onClick={() => setConfirmDelete(true)} className="text-negative">
               <Trash2 className="h-4 w-4" strokeWidth={1.8} />
               {t("common.delete")}
@@ -232,6 +368,30 @@ function ExpenseDetailScreen() {
           </div>
         </div>
       )}
+
+      <BottomSheet open={confirmSettled} onClose={() => setConfirmSettled(false)}>
+        <div className="space-y-5 px-1">
+          <div>
+            <h2 className="text-[19px] font-semibold tracking-tight">
+              {t("expense.settledWarning")}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">{t("expense.settledHint")}</p>
+          </div>
+          <div className="space-y-2">
+            <PrimaryButton
+              onClick={() => {
+                setConfirmSettled(false);
+                setEditing(true);
+              }}
+            >
+              {t("expense.editAnyway")}
+            </PrimaryButton>
+            <SecondaryButton onClick={() => setConfirmSettled(false)}>
+              {t("common.cancel")}
+            </SecondaryButton>
+          </div>
+        </div>
+      </BottomSheet>
 
       <BottomSheet open={confirmDelete} onClose={() => setConfirmDelete(false)}>
         <div className="space-y-5 px-1">

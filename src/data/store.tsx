@@ -108,7 +108,9 @@ type UpdateExpenseInput = {
   totalMinor?: number;
   allocations?: Allocation[];
   expenseDate?: string;
+  groupId?: string | null;
 };
+
 
 type PariContextValue = {
   data: PariData;
@@ -578,8 +580,29 @@ export function PariProvider({ children }: { children: ReactNode }) {
         .sort((a, b) => b.expense_date.localeCompare(a.expense_date))
         .slice(0, limit);
 
-    const activityFeed = () =>
-      [...data.activity].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    /**
+     * The default feed hides audit noise: deletions stay in the database but
+     * never surface, entries pointing at expenses that no longer exist are
+     * dropped, and repeated edits of the same expense collapse into one row.
+     */
+    const activityFeed = () => {
+      const sorted = [...data.activity].sort((a, b) =>
+        b.created_at.localeCompare(a.created_at),
+      );
+      const seenEdits = new Set<string>();
+      return sorted.filter((entry) => {
+        if (entry.activity_type === "expense_deleted") return false;
+        if (entry.entity_type === "expense") {
+          if (!entry.entity_id || !expenseById(entry.entity_id)) return false;
+          if (entry.activity_type === "expense_updated" || entry.activity_type === "split_changed") {
+            if (seenEdits.has(entry.entity_id)) return false;
+            seenEdits.add(entry.entity_id);
+          }
+        }
+        return true;
+      });
+    };
+
 
     const groupRule = (groupId: string): GroupRule | null => {
       const group = data.groups.find((g) => g.id === groupId);
@@ -707,12 +730,14 @@ export function PariProvider({ children }: { children: ReactNode }) {
         paid_by_person_id?: string;
         total_minor?: number;
         expense_date?: string;
+        group_id?: string | null;
       } = {};
       if (input.title !== undefined) patch.title = input.title;
       if (input.merchant !== undefined) patch.merchant = input.merchant;
       if (input.paidByPersonId !== undefined) patch.paid_by_person_id = input.paidByPersonId;
       if (input.totalMinor !== undefined) patch.total_minor = input.totalMinor;
       if (input.expenseDate !== undefined) patch.expense_date = input.expenseDate;
+      if (input.groupId !== undefined) patch.group_id = input.groupId;
 
       if (Object.keys(patch).length > 0) {
         await supabase.from("expenses").update(patch).eq("id", id);
@@ -734,17 +759,19 @@ export function PariProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // One meaningful activity entry per edit — never one per changed field.
       const existing = expenseById(id);
       await logActivity(
-        input.allocations ? "split_changed" : "expense_updated",
+        "expense_updated",
         "expense",
         id,
-        existing?.group_id ?? null,
+        input.groupId !== undefined ? input.groupId : (existing?.group_id ?? null),
         {
           title: input.title ?? existing?.title ?? "",
           amount_minor: input.totalMinor ?? existing?.total_minor ?? 0,
         },
       );
+
       await refresh();
     };
 
