@@ -34,6 +34,12 @@ const en: Dict = {
   "common.people": "people",
   "common.members": "members",
 
+  "balance.owed": "You're owed",
+  "balance.owe": "You owe",
+  "balance.settled": "Settled",
+  "balance.allSettled": "All settled",
+  "common.memberCount": "{count} members",
+
   "home.settled": "Everything is settled.",
   "home.acrossGroups": "Across {count} groups",
   "home.yourGroups": "Your groups",
@@ -166,6 +172,12 @@ const da: Dict = {
   "common.unknown": "Ukendt",
   "common.people": "personer",
   "common.members": "medlemmer",
+
+  "balance.owed": "Du har til gode",
+  "balance.owe": "Du skylder",
+  "balance.settled": "Gjort op",
+  "balance.allSettled": "Alt er gjort op",
+  "common.memberCount": "{count} medlemmer",
 
   "home.settled": "Alt er gjort op.",
   "home.acrossGroups": "På tværs af {count} grupper",

@@ -1,5 +1,6 @@
 import { formatMinor } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useT, type Translate } from "@/lib/i18n";
 
 type Size = "sm" | "md" | "lg" | "hero";
 
@@ -57,10 +58,11 @@ export function balanceTone(minor: number) {
   return "muted" as const;
 }
 
-export function balanceLabel(minor: number) {
-  if (minor > 0) return "You're owed";
-  if (minor < 0) return "You owe";
-  return "All settled";
+export function balanceLabel(minor: number, t?: Translate) {
+  const translate: Translate = t ?? ((key: string) => key);
+  if (minor > 0) return translate("balance.owed");
+  if (minor < 0) return translate("balance.owe");
+  return translate("balance.allSettled");
 }
 
 export function BalanceDisplay({
@@ -74,9 +76,10 @@ export function BalanceDisplay({
   hint?: string;
   className?: string;
 }) {
+  const t = useT();
   return (
     <div className={cn("space-y-1", className)}>
-      <p className="text-sm text-muted-foreground">{label ?? balanceLabel(minor)}</p>
+      <p className="text-sm text-muted-foreground">{label ?? balanceLabel(minor, t)}</p>
       <MoneyAmount minor={Math.abs(minor)} size="hero" tone={balanceTone(minor)} />
       {hint ? <p className="pt-1 text-sm text-muted-foreground">{hint}</p> : null}
     </div>
