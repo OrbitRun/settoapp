@@ -46,7 +46,7 @@ export function PersonChip({
           name={name}
           size="sm"
           imageUrl={imageUrl ?? null}
-          label={initialsLabel ?? undefined}
+          {...(initialsLabel ? { label: initialsLabel } : {})}
           className="h-7 w-7"
         />
       )}
