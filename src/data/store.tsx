@@ -126,8 +126,11 @@ type PariContextValue = {
   draft: SplitDraft;
   setDraft: (updater: SplitDraft | ((prev: SplitDraft) => SplitDraft)) => void;
   resetDraft: () => void;
+  /** True once the Supabase session check has resolved. */
+  authReady: boolean;
   /** True when nobody is signed in — PARI runs as a local, device-only workspace. */
   isGuest: boolean;
+
   /** Opens the contextual "create an account" sheet instead of redirecting. */
   requireAccount: (reason: AccountPromptReason) => void;
   accountPrompt: AccountPromptReason | null;
