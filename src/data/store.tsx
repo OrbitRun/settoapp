@@ -872,7 +872,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       session,
       profile,
 
-      language: (profile?.language as Language) ?? detectLanguage(),
+      language: (profile?.language as Language) ?? deviceLanguage,
       currency: profile?.currency ?? "DKK",
       appearance: (profile?.appearance as Appearance) ?? "system",
       currentPersonId,
