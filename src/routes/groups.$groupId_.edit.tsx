@@ -66,6 +66,7 @@ function EditGroupScreen() {
   const split = rule.mode;
   const [newMember, setNewMember] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   if (!group) {
     return (
@@ -82,6 +83,9 @@ function EditGroupScreen() {
   const ruleReady = rule.mode === "equal" || isRuleComplete(rule, ruleMembers, 0);
 
   const save = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
     await pari.updateGroup(groupId, {
       name,
       defaultSplitType: split,
@@ -90,6 +94,11 @@ function EditGroupScreen() {
     });
     toast.success(t("groups.saved"));
     navigate({ to: "/groups/$groupId", params: { groupId } });
+    } catch {
+      toast.error(t("common.saveFailed"));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const addNamedMember = async () => {
@@ -235,7 +244,7 @@ function EditGroupScreen() {
             ) : null}
           </section>
 
-          <PrimaryButton onClick={() => void save()} disabled={!name.trim() || !ruleReady}>
+          <PrimaryButton onClick={() => void save()} disabled={!name.trim() || !ruleReady || busy}>
             {t("common.save")}
           </PrimaryButton>
 

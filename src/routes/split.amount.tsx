@@ -40,6 +40,7 @@ function ManualExpenseScreen() {
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
   const [showPaidBy, setShowPaidBy] = useState(false);
+  const [busy, setBusy] = useState(false);
   const amountText =
     draft.amountMinor > 0 ? formatMinorNumber(draft.amountMinor) : "0";
   const heroSize =
@@ -87,6 +88,9 @@ function ManualExpenseScreen() {
   };
 
   const save = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
     const expense = await pari.addExpense({
       groupId: draft.groupId,
       title: draft.title,
@@ -98,6 +102,11 @@ function ManualExpenseScreen() {
     });
     if (!expense) return;
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
+    } catch {
+      toast.error(t("common.saveFailed"));
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -236,7 +245,7 @@ function ManualExpenseScreen() {
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center bg-gradient-to-t from-background via-background to-transparent pb-8 pt-10">
         <div className="pointer-events-auto w-full max-w-[430px] px-5">
-          <PrimaryButton onClick={save} disabled={!canSave}>
+          <PrimaryButton onClick={() => void save()} disabled={!canSave || busy}>
             {t("split.finish")}
             {draft.amountMinor > 0
               ? ` · ${formatMinor(draft.amountMinor, { compact: false })}`
