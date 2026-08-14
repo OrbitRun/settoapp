@@ -16,7 +16,13 @@ import { computeDraftAllocations } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { currencyLabel, formatMinor, toMajor, toMinor } from "@/lib/money";
+import {
+  currencyLabel,
+  formatMinor,
+  formatMinorNumber,
+  toMajor,
+  toMinor,
+} from "@/lib/money";
 
 
 export const Route = createFileRoute("/split/amount")({
