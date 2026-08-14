@@ -9,9 +9,9 @@ import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode: search['mode'] === "signup" ? ("signup" as const) : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { mode?: "signup" } =>
+    search['mode'] === "signup" ? { mode: "signup" } : {},
+
 
 
   head: () => ({
