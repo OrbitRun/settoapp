@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { toast } from "sonner";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
@@ -31,6 +33,7 @@ function ShareScreen() {
   const t = useT();
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
+  const [busy, setBusy] = useState(false);
 
   const showGroups = !pari.isGuest && pari.data.groups.length > 0;
 

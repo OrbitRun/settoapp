@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
 
 import { Screen } from "@/components/pari/AppShell";
