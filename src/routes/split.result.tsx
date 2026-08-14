@@ -90,7 +90,10 @@ function ResultScreen() {
       navigate({ to: "/groups/$groupId", params: { groupId: expense.group_id } });
       return;
     }
-    navigate({ to: "/groups/new" });
+    const names = allocations
+      .map((allocation) => pari.personName(allocation.personId))
+      .filter((name) => name && name !== "—");
+    navigate({ to: "/groups/new", search: { people: names.join("|") } });
   };
 
   const newSplit = () => {
