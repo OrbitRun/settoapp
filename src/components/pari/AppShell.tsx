@@ -21,7 +21,7 @@ export function Screen({
     <div className="min-h-svh bg-background">
       <div
         className={cn(
-          "mx-auto w-full max-w-[430px] pb-32",
+          "mx-auto w-full max-w-[430px] pb-[calc(6.5rem+env(safe-area-inset-bottom))]",
           padded && "px-5 pt-4",
           className,
         )}
@@ -212,7 +212,7 @@ function NavItem({
     <Link
       to={to}
       className={cn(
-        "flex flex-col items-center gap-1 py-1 text-[10px] transition-opacity",
+        "flex min-h-[44px] flex-col items-center justify-center gap-1 text-[10px] transition-opacity",
         active ? "opacity-100" : "opacity-55",
       )}
     >
