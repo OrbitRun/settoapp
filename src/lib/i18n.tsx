@@ -545,6 +545,45 @@ const da: Dict = {
   "start.manual": "Indtast beløb",
   "start.manualHint": "Skriv beløbet selv",
 
+  "sheet.title": "Del en udgift",
+  "sheet.subtitle": "Klar på få tryk.",
+  "sheet.scan": "Scan kvittering",
+  "sheet.scanHint": "Tag et billede eller vælg et",
+  "sheet.manual": "Indtast beløb",
+  "sheet.manualHint": "Opret en udgift manuelt",
+  "sheet.multiple": "Flere kvitteringer",
+  "common.profileSettings": "Profil og indstillinger",
+  "common.remove": "Fjern",
+  "common.groupName": "Gruppenavn",
+  "common.currency": "Valuta",
+
+  "onboarding.shareTitle": "Del alt.",
+  "onboarding.shareBody": "Middag, husleje, indkøb eller en weekendtur.",
+  "onboarding.splitTitle": "Split på din måde.",
+  "onboarding.splitBody": "Lige over, 60/40 eller helt ned på varelinjer.",
+  "onboarding.settleTitle": "Gør nemt op.",
+  "onboarding.settleBody": "PARI holder styr på, hvem der skylder hvad.",
+  "onboarding.getStarted": "Kom i gang",
+
+  "groups.defaultSplit": "Standardfordeling",
+  "groups.noExpensesHint": "Tilføj den første, så holder PARI styr på balancen.",
+  "groups.peopleHint": "Ingen e-mail nødvendig. De kan koble deres profil på senere.",
+
+  "settle.hint": "PARI finder de færreste betalinger, der gør alle kvit.",
+  "settle.nothingPending": "Der skal ikke betales noget i gruppen lige nu.",
+  "settle.pays": "{from} betaler {to}",
+  "settle.copyAmount": "Kopiér beløb",
+  "settle.markPaid": "Markér som betalt",
+
+  "scan.noCamera": "Kameraet er ikke tilgængeligt her. Vælg et billede i stedet.",
+  "scan.selectedAlt": "Valgt kvittering",
+  "scan.removeImage": "Fjern billede",
+
+  "auth.error": "Noget gik galt",
+  "auth.googleFailed": "Google-login mislykkedes",
+
+
+
   "guest.badge": "Gæst",
   "guest.yourSplits": "Dine splits",
   "guest.saveCta": "Opret en konto for at gemme",
