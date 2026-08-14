@@ -47,6 +47,7 @@ import {
   withSelfPerson,
   type GuestState,
 } from "./guest";
+import { acceptInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
@@ -324,6 +325,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
   const [migrating, setMigrating] = useState(false);
   const [migrationFailed, setMigrationFailed] = useState(false);
   const migratedRef = useRef(false);
+  const inviteRef = useRef(false);
   const navigate = useNavigate();
 
 
