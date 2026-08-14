@@ -125,6 +125,15 @@ const en: Dict = {
   "expense.deleted": "Expense deleted",
   "expense.saved": "Expense updated",
   "expense.gone": "This expense no longer exists",
+  "expense.saveChanges": "Save changes",
+  "expense.settledWarning": "This expense is part of a completed settlement.",
+  "expense.settledHint":
+    "Changes become a new outstanding adjustment. The old settlement is kept.",
+  "expense.editAnyway": "Edit anyway",
+  "expense.groupChangeWarning": "Changing group replaces participants and the split.",
+  "expense.participants": "Participants",
+  "groups.nothingToSettle": "Nothing to settle",
+
 
   "profile.title": "Profile",
   "profile.overall": "Overall",
