@@ -30,19 +30,32 @@ type FormatOptions = {
 
 export function formatMinor(minor: number, options: FormatOptions = {}): string {
   const { currency = "DKK", compact = true, showSign = false } = options;
-  const abs = Math.abs(minor);
-  const whole = abs % MINOR_PER_MAJOR === 0;
-  const digits = compact && whole ? 0 : 2;
-
-  const number = new Intl.NumberFormat("da-DK", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  }).format(toMajor(abs));
-
-  const sign = showSign ? (minor < 0 ? "−" : "+") : minor < 0 ? "−" : "";
-  return `${sign}${number}${currency ? ` ${currency}` : ""}`;
+  return formatMoney(minor, currency, "da-DK", { compact, showSign });
 }
 
 export function formatMinorNumber(minor: number, compact = true): string {
   return formatMinor(minor, { currency: "", compact }).trim();
+}
+
+/**
+ * Central money formatter. All currency output in the app goes through here
+ * (directly, or via formatMinor which delegates to it).
+ */
+export function formatMoney(
+  amountMinor: number,
+  currency = "DKK",
+  locale = "da-DK",
+  options: { compact?: boolean; showSign?: boolean } = {},
+): string {
+  const { compact = true, showSign = false } = options;
+  const abs = Math.abs(amountMinor);
+  const digits = compact && abs % MINOR_PER_MAJOR === 0 ? 0 : 2;
+
+  const number = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(toMajor(abs));
+
+  const sign = showSign ? (amountMinor < 0 ? "−" : "+") : amountMinor < 0 ? "−" : "";
+  return `${sign}${number}${currency ? ` ${currency}` : ""}`;
 }
