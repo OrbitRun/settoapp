@@ -60,7 +60,7 @@ type PariContextValue = {
 const PariContext = createContext<PariContextValue | null>(null);
 
 export function PariProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<PariData>(demoData);
+  const [data, setData] = useState<PariData>(() => createDemoData());
   const [draft, setDraftState] = useState<SplitDraft>(() => emptyDraft(CURRENT_PERSON_ID));
 
   const value = useMemo<PariContextValue>(() => {
