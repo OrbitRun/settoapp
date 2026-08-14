@@ -1,10 +1,33 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+export type ReceiptErrorCode =
+  | "IMAGE_MISSING"
+  | "IMAGE_TOO_LARGE"
+  | "AI_NOT_CONFIGURED"
+  | "AI_REQUEST_FAILED"
+  | "AI_TIMEOUT"
+  | "AI_RATE_LIMITED"
+  | "AI_CREDITS_EXHAUSTED"
+  | "AI_INVALID_RESPONSE"
+  | "SCHEMA_VALIDATION_FAILED"
+  | "NO_RECEIPT_DETECTED";
+
+/** Errors cross the wire as "CODE: message" so the client can branch on the code. */
+export function receiptError(code: ReceiptErrorCode, message: string): Error {
+  return new Error(`${code}: ${message}`);
+}
+
+export function receiptErrorCode(error: unknown): ReceiptErrorCode | null {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  const code = message.split(":")[0]?.trim();
+  return code && /^[A-Z_]+$/.test(code) ? (code as ReceiptErrorCode) : null;
+}
 
 export type ParsedReceiptLine = {
   name: string;
   quantity: number;
   unitPriceMinor: number;
+  uncertain: boolean;
 };
 
 export type ParsedReceiptPayload = {
@@ -13,140 +36,263 @@ export type ParsedReceiptPayload = {
   dateIso: string | null;
   currency: string | null;
   items: ParsedReceiptLine[];
+  warnings: string[];
+  confidence: number;
 };
 
-const SYSTEM_PROMPT = `You read photos of retail receipts and return structured data.
-Rules:
-- Return every purchased line item you can read, in the order printed.
-- Prices are per unit, in MAJOR currency units (e.g. 24.95), not cents.
-- Ignore discounts lines, loyalty text, VAT summaries, payment lines and totals as items.
-- If a line has a quantity (e.g. "2 x"), set quantity and the per-unit price.
-- "total" is the final amount actually paid, in MAJOR units.
-- date is the receipt date as YYYY-MM-DD when visible, otherwise null.
-- If the image is not a receipt, return an empty items array and total 0.`;
+const SYSTEM_PROMPT = `You are parsing a retail or restaurant receipt from a photo.
+Read the actual image carefully.
+- Extract every visible purchased item you can identify. Do not invent items.
+- Preserve quantities, discounts and final line totals when visible.
+- Prices are per unit, in MAJOR currency units (e.g. 24.95), never cents.
+- Receipt text may be Danish, English, Swedish, Norwegian, German or another European
+  language. Do not require English terminology. Danish receipts commonly use
+  TOTAL, I ALT, AT BETALE, NETTO, MOMS (tax), RABAT (discount), PRIS, VARE, ANTAL, KORT, KR.
+- MOMS, RABAT lines, loyalty text, payment/card lines and totals are not items.
+- The most important financial field is the final amount actually paid ("total").
+- Return uncertain information with lower confidence and a warning rather than failing.
+  Mark an item you are unsure about with "uncertain": true.
+- If a field cannot be read, return null and add a short warning. Never fabricate values.
+- Only return an empty items array and total null if the image is genuinely not a receipt.
+- "confidence" is 0-1 for the overall read.`;
+
+const TIMEOUT_MS = 60_000;
+const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
 type GatewayResponse = {
   choices?: { message?: { content?: string } }[];
   error?: { message?: string };
 };
 
-function toMinor(value: unknown): number {
-  const number = typeof value === "number" ? value : Number.parseFloat(String(value ?? "0"));
-  if (!Number.isFinite(number)) return 0;
+function toMinor(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const number = typeof value === "number" ? value : Number.parseFloat(String(value));
+  if (!Number.isFinite(number)) return null;
   return Math.round(number * 100);
 }
 
+const nullableNumber = { type: ["number", "null"] } as const;
+const nullableString = { type: ["string", "null"] } as const;
+
 export const parseReceiptImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: { dataUrl: string }) => {
     if (!input?.dataUrl?.startsWith("data:image/")) {
-      throw new Error("An image is required");
+      throw receiptError("IMAGE_MISSING", "No image data URL supplied");
     }
     return input;
   })
   .handler(async ({ data }): Promise<ParsedReceiptPayload> => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("AI is not configured");
+    const startedAt = Date.now();
+    const mime = data.dataUrl.slice(5, data.dataUrl.indexOf(";"));
+    const base64Length = data.dataUrl.length - (data.dataUrl.indexOf(",") + 1);
+    const bytes = Math.round(base64Length * 0.75);
+    console.log("[receipt] receipt_parse_started", { mime, bytes });
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-5.6-sol",
-        reasoning_effort: "none",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Read this receipt." },
-              { type: "image_url", image_url: { url: data.dataUrl } },
-            ],
-          },
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "receipt",
-            strict: true,
-            schema: {
-              type: "object",
-              additionalProperties: false,
-              required: ["merchant", "total", "currency", "date", "items"],
-              properties: {
-                merchant: { type: ["string", "null"] },
-                total: { type: "number" },
-                currency: { type: ["string", "null"] },
-                date: { type: ["string", "null"] },
-                items: {
-                  type: "array",
+    if (bytes > MAX_IMAGE_BYTES) {
+      console.error("[receipt] IMAGE_TOO_LARGE", { bytes });
+      throw receiptError("IMAGE_TOO_LARGE", `Image is ${bytes} bytes`);
+    }
+
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) {
+      console.error("[receipt] AI_NOT_CONFIGURED");
+      throw receiptError("AI_NOT_CONFIGURED", "LOVABLE_API_KEY is missing");
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    let response: Response;
+    console.log("[receipt] ai_request_started");
+    try {
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-5.6-sol",
+          reasoning_effort: "low",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Read this receipt." },
+                { type: "image_url", image_url: { url: data.dataUrl } },
+              ],
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "receipt",
+              strict: true,
+              schema: {
+                type: "object",
+                additionalProperties: false,
+                required: [
+                  "merchant",
+                  "total",
+                  "currency",
+                  "date",
+                  "subtotal",
+                  "tax",
+                  "discount",
+                  "items",
+                  "warnings",
+                  "confidence",
+                ],
+                properties: {
+                  merchant: nullableString,
+                  total: nullableNumber,
+                  currency: nullableString,
+                  date: nullableString,
+                  subtotal: nullableNumber,
+                  tax: nullableNumber,
+                  discount: nullableNumber,
+                  confidence: nullableNumber,
+                  warnings: { type: "array", items: { type: "string" } },
                   items: {
-                    type: "object",
-                    additionalProperties: false,
-                    required: ["name", "quantity", "unit_price"],
-                    properties: {
-                      name: { type: "string" },
-                      quantity: { type: "number" },
-                      unit_price: { type: "number" },
+                    type: "array",
+                    items: {
+                      type: "object",
+                      additionalProperties: false,
+                      required: ["name", "quantity", "unit_price", "uncertain"],
+                      properties: {
+                        name: { type: "string" },
+                        quantity: nullableNumber,
+                        unit_price: nullableNumber,
+                        uncertain: { type: ["boolean", "null"] },
+                      },
                     },
                   },
                 },
               },
             },
           },
-        },
-      }),
+        }),
+      });
+    } catch (error) {
+      clearTimeout(timer);
+      const aborted = error instanceof Error && error.name === "AbortError";
+      console.error("[receipt]", aborted ? "AI_TIMEOUT" : "AI_REQUEST_FAILED", String(error));
+      throw aborted
+        ? receiptError("AI_TIMEOUT", `No answer within ${TIMEOUT_MS}ms`)
+        : receiptError("AI_REQUEST_FAILED", String(error));
+    }
+    clearTimeout(timer);
+    console.log("[receipt] ai_response_received", {
+      status: response.status,
+      ms: Date.now() - startedAt,
     });
 
     if (!response.ok) {
-      const detail = await response.text();
-      console.error("[parseReceipt] gateway error", response.status, detail);
-      if (response.status === 429) throw new Error("Rate limited, try again shortly");
-      if (response.status === 402) throw new Error("AI credits exhausted");
-      throw new Error("Receipt reading failed");
+      const detail = (await response.text()).slice(0, 600);
+      console.error("[receipt] AI_REQUEST_FAILED", response.status, detail);
+      if (response.status === 429) throw receiptError("AI_RATE_LIMITED", detail);
+      if (response.status === 402) throw receiptError("AI_CREDITS_EXHAUSTED", detail);
+      throw receiptError("AI_REQUEST_FAILED", `status ${response.status}`);
     }
 
     const payload = (await response.json()) as GatewayResponse;
     const content = payload.choices?.[0]?.message?.content;
-    if (!content) throw new Error("Receipt reading returned nothing");
+    if (!content) {
+      console.error("[receipt] AI_INVALID_RESPONSE empty content", payload.error?.message ?? "");
+      throw receiptError("AI_INVALID_RESPONSE", "Model returned no content");
+    }
 
     let parsed: {
       merchant?: string | null;
-      total?: number;
+      total?: number | null;
       currency?: string | null;
       date?: string | null;
-      items?: { name?: string; quantity?: number; unit_price?: number }[];
+      subtotal?: number | null;
+      confidence?: number | null;
+      warnings?: string[] | null;
+      items?: {
+        name?: string;
+        quantity?: number | null;
+        unit_price?: number | null;
+        uncertain?: boolean | null;
+      }[];
     };
     try {
-      parsed = JSON.parse(content);
+      parsed = JSON.parse(stripFence(content));
     } catch {
-      console.error("[parseReceipt] unparsable content", content.slice(0, 400));
-      throw new Error("Receipt reading failed");
+      console.error("[receipt] SCHEMA_VALIDATION_FAILED unparsable", content.slice(0, 400));
+      throw receiptError("SCHEMA_VALIDATION_FAILED", "Model output was not JSON");
     }
+    if (typeof parsed !== "object" || parsed === null) {
+      console.error("[receipt] SCHEMA_VALIDATION_FAILED not an object");
+      throw receiptError("SCHEMA_VALIDATION_FAILED", "Model output was not an object");
+    }
+    console.log("[receipt] schema_validated");
+
+    const warnings = (parsed.warnings ?? []).filter(
+      (warning): warning is string => typeof warning === "string" && warning.trim().length > 0,
+    );
 
     const items: ParsedReceiptLine[] = (parsed.items ?? [])
       .filter((item) => (item?.name ?? "").trim().length > 0)
-      .map((item) => ({
-        name: String(item.name).trim(),
-        quantity: Math.max(1, Math.round(Number(item.quantity ?? 1)) || 1),
-        unitPriceMinor: Math.max(0, toMinor(item.unit_price)),
-      }));
+      .map((item) => {
+        const unit = toMinor(item.unit_price);
+        return {
+          name: String(item.name).trim(),
+          quantity: Math.max(1, Math.round(Number(item.quantity ?? 1)) || 1),
+          unitPriceMinor: Math.max(0, unit ?? 0),
+          uncertain: Boolean(item.uncertain) || unit === null,
+        };
+      });
 
-    const itemsTotal = items.reduce(
-      (sum, item) => sum + item.unitPriceMinor * item.quantity,
-      0,
-    );
+    const itemsTotal = items.reduce((sum, item) => sum + item.unitPriceMinor * item.quantity, 0);
+    const reportedTotal = toMinor(parsed.total) ?? toMinor(parsed.subtotal);
 
-    const total = toMinor(parsed.total);
+    // Partial results are useful: a total without items, or items without a total,
+    // both open the review screen. Only a fully empty read is a failure.
+    if (!reportedTotal && itemsTotal === 0 && items.length === 0) {
+      console.error("[receipt] NO_RECEIPT_DETECTED", { warnings });
+      throw receiptError("NO_RECEIPT_DETECTED", "No financial information found");
+    }
+
+    const totalMinor = reportedTotal && reportedTotal > 0 ? reportedTotal : itemsTotal;
+
+    if (items.length === 0) warnings.push("NO_ITEMS_DETECTED");
+    if (!reportedTotal) warnings.push("TOTAL_NOT_FOUND");
+    if (items.some((item) => item.uncertain)) warnings.push("UNCERTAIN_ITEMS");
+    if (reportedTotal && itemsTotal > 0 && Math.abs(reportedTotal - itemsTotal) > 100) {
+      warnings.push("TOTAL_MISMATCH");
+    }
+
+    const confidence =
+      typeof parsed.confidence === "number" && Number.isFinite(parsed.confidence)
+        ? Math.min(1, Math.max(0, parsed.confidence))
+        : warnings.length > 0
+          ? 0.6
+          : 0.9;
+
+    console.log("[receipt] receipt_parse_success", {
+      items: items.length,
+      totalMinor,
+      warnings: warnings.length,
+      confidence,
+      ms: Date.now() - startedAt,
+    });
 
     return {
       merchant: parsed.merchant?.trim() || null,
-      totalMinor: total > 0 ? total : itemsTotal,
+      totalMinor,
       dateIso: parsed.date ?? null,
       currency: parsed.currency?.trim() || null,
       items,
+      warnings,
+      confidence,
     };
   });
+
+function stripFence(content: string): string {
+  const trimmed = content.trim();
+  if (!trimmed.startsWith("```")) return trimmed;
+  return trimmed.replace(/^```(?:json)?\s*/i, "").replace(/```$/, "");
+}

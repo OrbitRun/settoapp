@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, ImageUp, X } from "lucide-react";
+import { Camera, ImageUp, RotateCw, X } from "lucide-react";
 
 import { Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
-import { parseReceipt } from "@/lib/receipt/parseReceipt";
+import { parseReceipt, receiptErrorCode } from "@/lib/receipt/parseReceipt";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
+
 
 export const Route = createFileRoute("/split/scan")({
   head: () => ({
@@ -80,13 +81,28 @@ function ScanScreen() {
         title: parsed.merchant,
         amountMinor: parsed.totalMinor,
         items: parsed.items,
+        receiptWarnings: parsed.warnings,
       }));
       navigate({ to: "/split/review" });
-    } catch {
+    } catch (caught) {
       setReading(false);
-      setError(t("scan.failed"));
+      const code = receiptErrorCode(caught);
+      const key =
+        code === "AI_TIMEOUT"
+          ? "scan.errorTimeout"
+          : code === "AI_RATE_LIMITED"
+            ? "scan.errorBusy"
+            : code === "AI_CREDITS_EXHAUSTED"
+              ? "scan.errorCredits"
+              : code === "IMAGE_TOO_LARGE"
+                ? "scan.errorTooLarge"
+                : code === "NO_RECEIPT_DETECTED"
+                  ? "scan.errorNoReceipt"
+                  : "scan.failed";
+      setError(t(key));
     }
   };
+
 
   return (
     <Screen className="pb-16">
@@ -169,7 +185,14 @@ function ScanScreen() {
           {previewUrl ? (
             <>
               <PrimaryButton onClick={read} disabled={!file}>
-                {t("scan.read")}
+                {error ? (
+                  <>
+                    <RotateCw className="h-4 w-4" strokeWidth={1.8} />
+                    {t("scan.tryAgain")}
+                  </>
+                ) : (
+                  t("scan.read")
+                )}
               </PrimaryButton>
               <SecondaryButton onClick={openCamera}>
                 <Camera className="h-4 w-4" strokeWidth={1.8} />
@@ -182,8 +205,18 @@ function ScanScreen() {
               >
                 {t("scan.another")}
               </button>
+              {error ? (
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/split/amount" })}
+                  className="mx-auto block pt-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {t("scan.enterManually")}
+                </button>
+              ) : null}
             </>
           ) : (
+
             <>
               <PrimaryButton onClick={openCamera}>
                 <Camera className="h-4 w-4" strokeWidth={1.8} />
