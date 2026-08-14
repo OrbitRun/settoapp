@@ -476,6 +476,15 @@ const da: Dict = {
   "expense.deleted": "Udgift slettet",
   "expense.saved": "Udgift opdateret",
   "expense.gone": "Denne udgift findes ikke længere",
+  "expense.saveChanges": "Gem ændringer",
+  "expense.settledWarning": "Denne udgift indgår i en afsluttet opgørelse.",
+  "expense.settledHint":
+    "Ændringer bliver til en ny udestående regulering. Den gamle opgørelse bliver ikke slettet.",
+  "expense.editAnyway": "Redigér alligevel",
+  "expense.groupChangeWarning": "Skift af gruppe erstatter deltagere og fordeling.",
+  "expense.participants": "Deltagere",
+  "groups.nothingToSettle": "Intet at gøre op",
+
 
   "profile.title": "Profil",
   "profile.overall": "Samlet",
