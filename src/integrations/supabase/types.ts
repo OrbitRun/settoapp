@@ -486,20 +486,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      pari_seed_expense: {
-        Args: {
-          _date: string
-          _group: string
-          _merchant: string
-          _payer: string
-          _people: string[]
-          _title: string
-          _total: number
-          _user_id: string
-        }
-        Returns: string
-      }
-      pari_seed_starter_data: { Args: { _user_id: string }; Returns: undefined }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
