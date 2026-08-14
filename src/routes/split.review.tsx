@@ -9,7 +9,8 @@ import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { ReceiptItemRow } from "@/components/pari/ReceiptItem";
 import { itemTotalMinor, itemsTotalMinor, type DraftItem } from "@/data/draft";
 import { usePari } from "@/data/store";
-import { formatMinor, parseAmountToMinor, toMajor } from "@/lib/money";
+import { formatMinor, toMajor, toMinor } from "@/lib/money";
+import { NumericField } from "@/components/pari/NumericField";
 import { shortDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/split/review")({
@@ -167,36 +168,25 @@ function ReviewScreen() {
               aria-label="Item name"
             />
             <div className="flex gap-2">
-              <div className="flex h-12 flex-1 items-center rounded-2xl bg-surface-strong px-4">
-                <input
-                  inputMode="decimal"
-                  aria-label="Price"
-                  value={String(toMajor(editing.unitPriceMinor))}
-                  onChange={(event) =>
-                    setEditing({
-                      ...editing,
-                      unitPriceMinor: parseAmountToMinor(event.target.value),
-                    })
-                  }
-                  className="tnum w-full bg-transparent text-[15px] outline-none"
-                />
-                <span className="text-xs text-muted-foreground">DKK</span>
-              </div>
-              <div className="flex h-12 w-28 items-center rounded-2xl bg-surface-strong px-4">
-                <input
-                  inputMode="numeric"
-                  aria-label="Quantity"
-                  value={String(editing.quantity)}
-                  onChange={(event) =>
-                    setEditing({
-                      ...editing,
-                      quantity: Math.max(1, Number(event.target.value) || 1),
-                    })
-                  }
-                  className="tnum w-full bg-transparent text-[15px] outline-none"
-                />
-                <span className="text-xs text-muted-foreground">qty</span>
-              </div>
+              <NumericField
+                value={toMajor(editing.unitPriceMinor)}
+                onChange={(next) => setEditing({ ...editing, unitPriceMinor: toMinor(next) })}
+                min={0}
+                ariaLabel="Price"
+                suffix={<span className="text-xs">DKK</span>}
+                className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
+                inputClassName="text-[15px]"
+              />
+              <NumericField
+                value={editing.quantity}
+                onChange={(next) => setEditing({ ...editing, quantity: Math.max(1, Math.round(next)) })}
+                min={1}
+                decimals={0}
+                ariaLabel="Quantity"
+                suffix={<span className="text-xs">qty</span>}
+                className="h-12 w-28 rounded-2xl bg-surface-strong px-4"
+                inputClassName="text-[15px]"
+              />
             </div>
 
             <PrimaryButton
