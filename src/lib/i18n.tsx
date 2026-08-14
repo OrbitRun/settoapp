@@ -199,7 +199,11 @@ const en: Dict = {
   "guest.migrated": "Your split was saved to your account.",
   "guest.migrationFailed": "We couldn't move your split. It's still on this device.",
   "account.title": "Create an account",
+  "account.saveTitle": "Save your split",
+  "account.save_split":
+    "Create an account to keep the expense, the people and your history in PARI.",
   "account.save_expense": "Create an account to save this expense and keep your history.",
+
   "account.create_group": "Groups need an account so balances stay in sync.",
   "account.balances": "Running balances need an account.",
   "account.history": "Your history is saved once you have an account.",
