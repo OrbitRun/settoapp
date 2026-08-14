@@ -108,7 +108,9 @@ type UpdateExpenseInput = {
   totalMinor?: number;
   allocations?: Allocation[];
   expenseDate?: string;
+  groupId?: string | null;
 };
+
 
 type PariContextValue = {
   data: PariData;
