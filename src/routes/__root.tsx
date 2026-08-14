@@ -18,6 +18,8 @@ import { I18nProvider } from "@/lib/i18n";
 import { setMoneyDefaults } from "@/lib/money";
 import { setDateLanguage } from "@/lib/dates";
 import { Toaster } from "@/components/ui/sonner";
+import { AccountSheet } from "@/components/pari/AccountSheet";
+
 
 function NotFoundComponent() {
   return (
