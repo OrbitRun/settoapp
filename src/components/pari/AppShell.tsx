@@ -5,6 +5,7 @@ import { Clock, Home, Plus, ScanLine, User, Users } from "lucide-react";
 import { usePari } from "@/data/store";
 import { emptyDraft } from "@/data/draft";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 import { Avatar } from "./Avatar";
 import { BottomSheet } from "./BottomSheet";
 
@@ -206,6 +207,7 @@ function NavItem({
   exact: boolean;
   pathname: string;
 }) {
+  const t = useT();
   const active = exact ? pathname === to : pathname.startsWith(to);
 
   return (
