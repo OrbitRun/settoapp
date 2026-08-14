@@ -11,6 +11,7 @@ import type {
 export const CURRENT_PROFILE_ID = "profile_peter";
 export const CURRENT_PERSON_ID = "person_peter";
 
+export function createDemoData(): PariData {
 const iso = (daysAgo: number, hour = 18) => {
   const d = new Date();
   d.setHours(hour, 5, 0, 0);
@@ -308,7 +309,7 @@ const activity: ActivityEntry[] = [
   },
 ];
 
-export const demoData: PariData = {
+return {
   profiles: [
     {
       id: CURRENT_PROFILE_ID,
@@ -370,3 +371,4 @@ export const demoData: PariData = {
   settlements: [],
   activity,
 };
+}
