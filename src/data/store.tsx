@@ -942,7 +942,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
     accountPrompt,
     migrating,
     migrationFailed,
+    deviceLanguage,
   ]);
+
 
 
 
