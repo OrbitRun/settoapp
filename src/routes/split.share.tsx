@@ -1,11 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
-
 import { Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { GroupPicker } from "@/components/pari/GroupPicker";
-import { ParticipantSelector } from "@/components/pari/ParticipantSelector";
+import { ParticipantPicker } from "@/components/pari/ParticipantPicker";
 import { computeDraftAllocations, draftSharedTotalMinor, sharedItems } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
@@ -29,12 +27,7 @@ function ShareScreen() {
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
 
-  const people = useMemo(() => {
-    const ids = draft.groupId
-      ? pari.groupPersonIds(draft.groupId)
-      : pari.data.people.map((p) => p.id);
-    return ids.map((id) => ({ id, name: pari.personName(id) }));
-  }, [draft.groupId, pari]);
+  const showGroups = !pari.isGuest && pari.data.groups.length > 0;
 
   const sharedTotal = draftSharedTotalMinor({ ...draft, splitByItem: false });
   const allocations = computeDraftAllocations({ ...draft, splitByItem: false, mode: "equal" });
@@ -67,55 +60,43 @@ function ShareScreen() {
 
       <div className="px-1 pb-8">
         <h1 className="text-[26px] font-semibold leading-[1.2] tracking-[-0.03em]">
-          How should this receipt be shared?
+          {t("split.receiptShareTitle")}
         </h1>
         {partial ? (
           <p className="mt-3 text-sm text-muted-foreground">
-            Sharing {sharedItems(draft.items).length} of {draft.items.length} items ·{" "}
-            {formatMinor(sharedTotal, { compact: false })}. The rest stays private.
+            {t("split.sharingPartial", {
+              shared: sharedItems(draft.items).length,
+              total: draft.items.length,
+              amount: formatMinor(sharedTotal, { compact: false }),
+            })}
           </p>
         ) : null}
       </div>
 
       <div className="space-y-7">
-        <GroupPicker groupId={draft.groupId} onChange={setGroup} />
+        {showGroups ? <GroupPicker groupId={draft.groupId} onChange={setGroup} /> : null}
 
-        <ParticipantSelector
-          people={people}
+        <ParticipantPicker
           selected={draft.participants}
-          onToggle={(personId) =>
-            setDraft((prev) => ({
-              ...prev,
-              participants: prev.participants.includes(personId)
-                ? prev.participants.filter((id) => id !== personId)
-                : [...prev.participants, personId],
-            }))
-          }
-          onSelectAll={() =>
-            setDraft((prev) => ({
-              ...prev,
-              participants:
-                prev.participants.length === people.length ? [] : people.map((p) => p.id),
-            }))
-          }
+          onChange={(ids) => setDraft((prev) => ({ ...prev, participants: ids }))}
         />
 
         <section className="rounded-3xl bg-surface px-5 py-7 text-center shadow-soft">
           <p className="text-sm text-muted-foreground">
-            {formatMinor(sharedTotal, { compact: false })} · {draft.participants.length}{" "}
-            {draft.participants.length === 1 ? "person" : "people"}
+            {formatMinor(sharedTotal, { compact: false })} ·{" "}
+            {t("participants.peopleCount", { count: draft.participants.length })}
           </p>
           <p className="mt-3 text-[34px] font-semibold tracking-[-0.035em]">
             {formatMinor(perPerson, { compact: false })}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">each</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("participants.each")}</p>
         </section>
       </div>
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center bg-gradient-to-t from-background via-background to-transparent pb-8 pt-10">
         <div className="pointer-events-auto w-full max-w-[430px] space-y-2 px-5">
           <PrimaryButton onClick={confirm} disabled={draft.participants.length === 0}>
-            Confirm split
+            {t("receipt.confirmSplit")}
           </PrimaryButton>
           {draft.items.length > 0 ? (
             <SecondaryButton
@@ -124,7 +105,7 @@ function ShareScreen() {
                 navigate({ to: "/split/items" });
               }}
             >
-              Split by item
+              {t("split.splitByItem")}
             </SecondaryButton>
           ) : null}
         </div>
