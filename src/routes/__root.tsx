@@ -123,6 +123,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function AppFrame({ children }: { children: ReactNode }) {
   const pari = usePari();
+  useScrollToTopOnNavigate();
 
   setMoneyDefaults(pari.currency, pari.language === "da" ? "da-DK" : "en-GB");
   setDateLanguage(pari.language);
