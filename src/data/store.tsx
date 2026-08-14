@@ -441,7 +441,26 @@ export function PariProvider({ children }: { children: ReactNode }) {
         setMigrationFailed(true);
       })
       .finally(() => setMigrating(false));
-  }, [userId, guestReady, queryClient, navigate]);
+
+  // An invitation opened while signed out is applied right after auth.
+  useEffect(() => {
+    if (!userId || inviteRef.current) return;
+    const code = readPendingInvite();
+    if (!code) return;
+    inviteRef.current = true;
+    void acceptInvitation(code)
+      .then(async (groupId) => {
+        clearPendingInvite();
+        if (!groupId) return;
+        await queryClient.invalidateQueries({ queryKey: ["pari"] });
+        if (loadGuestState().expenses.length === 0) {
+          navigate({ to: "/groups/$groupId", params: { groupId } });
+        }
+      })
+      .catch((error) => console.error("[pari] pending invite", error));
+  }, [userId, queryClient, navigate]);
+
+
 
 
 
