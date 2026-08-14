@@ -10,6 +10,12 @@ import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { EmptyState } from "@/components/pari/EmptyState";
 import { AuthGate } from "@/components/pari/AuthGate";
+import {
+  SplitRuleEditor,
+  isRuleComplete,
+  seedRule,
+  type SplitRule,
+} from "@/components/pari/SplitRuleEditor";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -34,10 +40,12 @@ export const Route = createFileRoute("/groups/$groupId_/edit")({
   ),
 });
 
+// Group defaults survive across expenses, so only rules that are independent
+// of a total are offered here. Exact amounts stay per expense.
 const OPTIONS: { value: SplitMode; labelKey: string }[] = [
   { value: "equal", labelKey: "split.equal" },
   { value: "percentage", labelKey: "split.percentage" },
-  { value: "exact", labelKey: "groups.custom" },
+  { value: "shares", labelKey: "split.shares" },
 ];
 
 function EditGroupScreen() {
@@ -48,7 +56,14 @@ function EditGroupScreen() {
 
   const group = pari.data.groups.find((g) => g.id === groupId);
   const [name, setName] = useState(group?.name ?? "");
-  const [split, setSplit] = useState<SplitMode>((group?.default_split_type as SplitMode) ?? "equal");
+  const saved = pari.groupRule(groupId);
+  const [rule, setRule] = useState<SplitRule>({
+    mode: (group?.default_split_type as SplitMode) ?? "equal",
+    percentages: saved?.percentages ?? {},
+    shares: saved?.shares ?? {},
+    exact: {},
+  });
+  const split = rule.mode;
   const [newMember, setNewMember] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -63,9 +78,16 @@ function EditGroupScreen() {
 
   const memberIds = pari.groupPersonIds(groupId);
   const candidates = pari.data.people.filter((person) => !memberIds.includes(person.id));
+  const ruleMembers = memberIds.map((id) => ({ id, name: pari.personName(id) }));
+  const ruleReady = rule.mode === "equal" || isRuleComplete(rule, ruleMembers, 0);
 
   const save = async () => {
-    await pari.updateGroup(groupId, { name, defaultSplitType: split });
+    await pari.updateGroup(groupId, {
+      name,
+      defaultSplitType: split,
+      percentages: split === "percentage" ? rule.percentages : null,
+      shares: split === "shares" ? rule.shares : null,
+    });
     toast.success(t("groups.saved"));
     navigate({ to: "/groups/$groupId", params: { groupId } });
   };
@@ -187,7 +209,7 @@ function EditGroupScreen() {
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => setSplit(option.value)}
+                  onClick={() => setRule((prev) => seedRule(prev, ruleMembers, option.value))}
                   className={cn(
                     "flex-1 rounded-2xl py-3 text-sm font-medium transition-colors",
                     split === option.value
@@ -199,9 +221,21 @@ function EditGroupScreen() {
                 </button>
               ))}
             </div>
+
+            {rule.mode !== "equal" ? (
+              <div className="rounded-3xl bg-surface p-5 shadow-soft">
+                <SplitRuleEditor
+                  rule={rule}
+                  people={ruleMembers}
+                  totalMinor={0}
+                  showAmounts={false}
+                  onChange={(patch) => setRule((prev) => ({ ...prev, ...patch }))}
+                />
+              </div>
+            ) : null}
           </section>
 
-          <PrimaryButton onClick={() => void save()} disabled={!name.trim()}>
+          <PrimaryButton onClick={() => void save()} disabled={!name.trim() || !ruleReady}>
             {t("common.save")}
           </PrimaryButton>
 
