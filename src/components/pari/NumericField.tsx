@@ -90,15 +90,15 @@ export function NumericField({
         onFocus={(event) => {
           setFocused(true);
           setText(value === 0 ? "" : stripFormat(event.target.value));
-          const el = event.target;
-          requestAnimationFrame(() => {
-            try {
-              el.select();
-            } catch {
-              el.setSelectionRange(el.value.length, el.value.length);
-            }
-          });
+          selectAll(event.target);
         }}
+        onMouseUp={(event) => {
+          // Keep the select-all instead of the browser placing a caret.
+          event.preventDefault();
+          selectAll(event.currentTarget);
+        }}
+        onTouchEnd={(event) => selectAll(event.currentTarget)}
+
         onChange={(event) => {
           let raw = event.target.value.replace(/[^\d.,]/g, "");
           // Typing over the resting "0" replaces it, wherever the caret sat.
