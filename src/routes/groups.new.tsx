@@ -183,7 +183,7 @@ function CreateGroupScreen() {
           ) : null}
         </section>
 
-        <PrimaryButton onClick={create} disabled={!name.trim() || people.length < 2}>
+        <PrimaryButton onClick={create} disabled={!name.trim() || people.length < 1}>
           {t("groups.create")}
         </PrimaryButton>
       </div>
