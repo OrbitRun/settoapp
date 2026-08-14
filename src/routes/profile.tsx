@@ -38,11 +38,8 @@ function ProfileScreen() {
   const t = useT();
   const navigate = useNavigate();
 
-  const [sheet, setSheet] = useState<null | "name" | "language" | "currency" | "appearance" | "person">(
-    null,
-  );
+  const [sheet, setSheet] = useState<null | "name" | "language" | "currency" | "appearance">(null);
   const [nameValue, setNameValue] = useState(pari.currentProfileName);
-  const [personName, setPersonName] = useState("");
 
   const close = () => setSheet(null);
 
