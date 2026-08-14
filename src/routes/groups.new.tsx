@@ -6,6 +6,12 @@ import { Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
 import { PrimaryButton } from "@/components/pari/Buttons";
 import { Avatar } from "@/components/pari/Avatar";
+import {
+  SplitRuleEditor,
+  isRuleComplete,
+  seedRule,
+  type SplitRule,
+} from "@/components/pari/SplitRuleEditor";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -38,10 +44,12 @@ export const Route = createFileRoute("/groups/new")({
   ),
 });
 
+// Exact amounts depend on a total, so they stay expense-specific.
+// Group defaults are the rules that survive across expenses.
 const OPTIONS: { value: SplitMode; labelKey: string }[] = [
   { value: "equal", labelKey: "split.equal" },
   { value: "percentage", labelKey: "split.percentage" },
-  { value: "exact", labelKey: "groups.custom" },
+  { value: "shares", labelKey: "split.shares" },
 ];
 
 function CreateGroupScreen() {
@@ -62,10 +70,24 @@ function CreateGroupScreen() {
   );
   const [newPerson, setNewPerson] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [defaultSplit, setDefaultSplit] = useState<SplitMode>("equal");
+  const [rule, setRule] = useState<SplitRule>({
+    mode: "equal",
+    percentages: {},
+    shares: {},
+    exact: {},
+  });
+  const defaultSplit = rule.mode;
 
   const selfName = pari.currentProfileName;
   const people = others.filter((person) => person.toLowerCase() !== selfName.toLowerCase());
+
+  // Members do not have ids yet, so the rule is keyed by "self" / lowercased name
+  // and resolved to real people the moment the group is created.
+  const ruleMembers = [
+    { id: "self", name: selfName },
+    ...people.map((person) => ({ id: person.toLowerCase(), name: person })),
+  ];
+  const ruleReady = rule.mode === "equal" || isRuleComplete(rule, ruleMembers, 0);
 
   const addPerson = () => {
     const trimmed = newPerson.trim();
@@ -79,6 +101,8 @@ function CreateGroupScreen() {
       name,
       personNames: people,
       defaultSplitType: defaultSplit,
+      percentages: rule.percentages,
+      shares: rule.shares,
     });
     if (!groupId) return;
     navigate({ to: "/groups/$groupId", params: { groupId } });
@@ -163,27 +187,41 @@ function CreateGroupScreen() {
           </button>
 
           {showAdvanced ? (
-            <div className="flex gap-2">
-              {OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setDefaultSplit(option.value)}
-                  className={cn(
-                    "flex-1 rounded-2xl py-3 text-sm font-medium transition-colors",
-                    defaultSplit === option.value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-surface-strong text-muted-foreground",
-                  )}
-                >
-                  {t(option.labelKey)}
-                </button>
-              ))}
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                {OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setRule((prev) => seedRule(prev, ruleMembers, option.value))}
+                    className={cn(
+                      "flex-1 rounded-2xl py-3 text-sm font-medium transition-colors",
+                      defaultSplit === option.value
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-surface-strong text-muted-foreground",
+                    )}
+                  >
+                    {t(option.labelKey)}
+                  </button>
+                ))}
+              </div>
+
+              {rule.mode !== "equal" ? (
+                <div className="rounded-3xl bg-surface p-5 shadow-soft">
+                  <SplitRuleEditor
+                    rule={rule}
+                    people={ruleMembers}
+                    totalMinor={0}
+                    showAmounts={false}
+                    onChange={(patch) => setRule((prev) => ({ ...prev, ...patch }))}
+                  />
+                </div>
+              ) : null}
             </div>
           ) : null}
         </section>
 
-        <PrimaryButton onClick={create} disabled={!name.trim() || people.length < 1}>
+        <PrimaryButton onClick={create} disabled={!name.trim() || people.length < 1 || !ruleReady}>
           {t("groups.create")}
         </PrimaryButton>
       </div>
