@@ -768,6 +768,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
       const groupId = group.id as string;
 
       const memberIds: string[] = [];
+      // The owner is always a member — match by identity, never by name.
+      if (currentPersonId) memberIds.push(currentPersonId);
+
       for (const rawName of input.personNames) {
         const trimmed = rawName.trim();
         if (!trimmed) continue;
@@ -778,16 +781,20 @@ export function PariProvider({ children }: { children: ReactNode }) {
           if (!memberIds.includes(existing.id)) memberIds.push(existing.id);
           continue;
         }
-        const { data: created } = await supabase
+        const { data: created, error: personError } = await supabase
           .from("people")
           .insert({ owner_user_id: userId, name: trimmed })
           .select()
           .single();
-        if (created) memberIds.push(created.id as string);
+        if (personError || !created) {
+          console.error("[pari] createGroup person", personError);
+          continue;
+        }
+        memberIds.push(created.id as string);
       }
 
       if (memberIds.length > 0) {
-        await supabase.from("group_members").insert(
+        const { error: memberError } = await supabase.from("group_members").insert(
           memberIds.map((personId, index) => ({
             owner_user_id: userId,
             group_id: groupId,
@@ -796,7 +803,13 @@ export function PariProvider({ children }: { children: ReactNode }) {
             default_percentage: input.percentages?.[personId] ?? null,
           })),
         );
+        if (memberError) {
+          console.error("[pari] createGroup members", memberError);
+          await supabase.from("groups").delete().eq("id", groupId);
+          return null;
+        }
       }
+
 
       await logActivity("group_created", "group", groupId, groupId, { title: input.name });
       await refresh();
@@ -1036,7 +1049,10 @@ export function PariProvider({ children }: { children: ReactNode }) {
       currency: profile?.currency ?? "DKK",
       appearance: (profile?.appearance as Appearance) ?? "system",
       currentPersonId,
-      currentProfileName: profile?.display_name ?? selfPerson?.name ?? "PARI",
+      // The "me" person is the identity used in every split, so it wins over
+      // the generic profile default.
+      currentProfileName: selfPerson?.name || profile?.display_name || "PARI",
+
       personById,
       personName,
       groupPersonIds,

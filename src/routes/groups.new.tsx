@@ -52,25 +52,25 @@ function CreateGroupScreen() {
   // Coming from a finished split: reuse exactly the people who shared it.
   const { people: carried } = Route.useSearch();
   const [name, setName] = useState("");
-  const [people, setPeople] = useState<string[]>(() => {
-    const fromSplit = (carried ?? "")
+  // Only the other people — "you" is always a member and comes from the account.
+  const [others, setOthers] = useState<string[]>(() =>
+    (carried ?? "")
       .split("|")
       .map((value) => value.trim())
-      .filter(Boolean);
-    if (fromSplit.length === 0) return [pari.currentProfileName];
-    const rest = fromSplit.filter(
-      (value) => value.toLowerCase() !== pari.currentProfileName.toLowerCase(),
-    );
-    return [pari.currentProfileName, ...rest];
-  });
+      .filter(Boolean)
+      .filter((value) => value.toLowerCase() !== "mig" && value.toLowerCase() !== "me"),
+  );
   const [newPerson, setNewPerson] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [defaultSplit, setDefaultSplit] = useState<SplitMode>("equal");
 
+  const selfName = pari.currentProfileName;
+  const people = others.filter((person) => person.toLowerCase() !== selfName.toLowerCase());
+
   const addPerson = () => {
     const trimmed = newPerson.trim();
     if (!trimmed) return;
-    setPeople((prev) => [...prev, trimmed]);
+    setOthers((prev) => [...prev, trimmed]);
     setNewPerson("");
   };
 
@@ -83,6 +83,7 @@ function CreateGroupScreen() {
     if (!groupId) return;
     navigate({ to: "/groups/$groupId", params: { groupId } });
   };
+
 
   return (
     <Screen>
@@ -105,24 +106,27 @@ function CreateGroupScreen() {
         <section className="space-y-3">
           <p className="px-1 text-[13px] text-muted-foreground">{t("groups.people")}</p>
           <div className="rounded-3xl bg-surface p-2 shadow-soft">
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <Avatar name={selfName} size="sm" />
+              <span className="min-w-0 flex-1 truncate text-[15px]">{selfName}</span>
+              <span className="text-xs text-muted-foreground">{t("common.you")}</span>
+            </div>
+
             {people.map((person, index) => (
               <div key={`${person}-${index}`} className="flex items-center gap-3 px-3 py-2.5">
                 <Avatar name={person} size="sm" />
                 <span className="min-w-0 flex-1 truncate text-[15px]">{person}</span>
-                {index === 0 ? (
-                  <span className="text-xs text-muted-foreground">{t("common.you")}</span>
-                ) : (
-                  <button
-                    type="button"
-                    aria-label={`${t("common.remove")} ${person}`}
-                    onClick={() => setPeople((prev) => prev.filter((_, i) => i !== index))}
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" strokeWidth={1.8} />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  aria-label={`${t("common.remove")} ${person}`}
+                  onClick={() => setOthers((prev) => prev.filter((value) => value !== person))}
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <X className="h-4 w-4" strokeWidth={1.8} />
+                </button>
               </div>
             ))}
+
 
             <div className="flex items-center gap-3 px-3 py-2.5">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-strong">
@@ -179,7 +183,7 @@ function CreateGroupScreen() {
           ) : null}
         </section>
 
-        <PrimaryButton onClick={create} disabled={!name.trim() || people.length < 2}>
+        <PrimaryButton onClick={create} disabled={!name.trim() || people.length < 1}>
           {t("groups.create")}
         </PrimaryButton>
       </div>
