@@ -201,7 +201,45 @@ const en: Dict = {
   "account.signIn": "I already have an account",
   "account.later": "Not now",
 
+  "participants.title": "Who shares this?",
+  "participants.count": "Number of people",
+  "participants.add": "Add person",
+  "participants.name": "Name",
+  "participants.namePlaceholder": "e.g. Mads",
+  "participants.remove": "Remove",
+  "participants.rename": "Rename",
+  "participants.person": "Person {index}",
+  "participants.each": "each",
+  "participants.peopleCount": "{count} people",
+
+  "split.distribution": "Split",
+  "split.equalHint": "Everyone pays the same",
+  "split.percentageHint": "For example 60 / 40",
+  "split.sharesHint": "Give some people a bigger share",
+  "split.exactHint": "Type each amount yourself",
+  "split.allocated": "{allocated} / {total} allocated",
+  "split.remaining": "{amount} left to allocate",
+  "split.over": "{amount} too much",
+  "split.finish": "Finish",
+  "split.saveAsGroup": "Save as group",
+  "split.shareResult": "Share result",
+  "split.copyResult": "Copy result",
+  "split.done": "Done",
+  "split.goHome": "Go home",
+  "split.receiptShareTitle": "How should this receipt be shared?",
+  "split.sharingPartial":
+    "Sharing {shared} of {total} items · {amount}. The rest stays private.",
+  "split.splitEqually": "Split equally",
+  "split.splitByItem": "Split by item",
+  "split.apply": "Apply",
+  "split.shares.unit": "shares",
+
+  "group.label": "Group",
+  "group.none": "No group",
+  "group.choose": "Choose a group",
+  "group.noneOption": "No group — just these people",
 };
+
 
 const da: Dict = {
   "app.tagline": "Del alt. Gør op med et tryk.",
