@@ -378,6 +378,28 @@ const da: Dict = {
   "auth.toSignUp": "Ny her? Opret en konto",
   "auth.toSignIn": "Har du allerede en konto? Log ind",
   "auth.checkEmail": "Tjek din mail for at bekræfte kontoen.",
+
+  "welcome.title": "Del alt.\nGør op med et tryk.",
+  "welcome.subtitle": "Split en regning på sekunder — helt uden konto.",
+  "welcome.primary": "Split en regning",
+  "welcome.secondary": "Log ind",
+  "welcome.note": "Opret en konto senere, hvis du vil gemme dine splits.",
+  "guest.badge": "Gæst",
+  "guest.yourSplits": "Dine splits",
+  "guest.saveCta": "Opret en konto for at gemme",
+  "guest.migrated": "Dit split er gemt på din konto.",
+  "guest.migrationFailed": "Vi kunne ikke flytte dit split. Det ligger stadig på denne enhed.",
+  "account.title": "Opret en konto",
+  "account.save_expense": "Opret en konto for at gemme udgiften og din historik.",
+  "account.create_group": "Grupper kræver en konto, så saldi holdes opdateret.",
+  "account.balances": "Løbende saldi kræver en konto.",
+  "account.history": "Din historik gemmes, når du har en konto.",
+  "account.settle": "At gøre op kræver en konto.",
+  "account.collaborate": "At dele med andre kræver en konto.",
+  "account.cta": "Opret konto",
+  "account.signIn": "Jeg har allerede en konto",
+  "account.later": "Ikke nu",
+
 };
 
 const DICTS: Record<Language, Dict> = { en, da };
