@@ -100,12 +100,20 @@ export function computeDraftAllocations(draft: SplitDraft): Allocation[] {
   }
 }
 
-export const splitModeLabel: Record<SplitMode, string> = {
-  equal: "Split equally",
-  percentage: "Percentage",
-  shares: "Shares",
-  exact: "Exact amounts",
+export const splitModeLabelKey: Record<SplitMode, string> = {
+  equal: "split.equal",
+  percentage: "split.percentage",
+  shares: "split.shares",
+  exact: "split.exact",
 };
+
+export const splitModeHintKey: Record<SplitMode, string> = {
+  equal: "split.equalHint",
+  percentage: "split.percentageHint",
+  shares: "split.sharesHint",
+  exact: "split.exactHint",
+};
+
 
 export function emptyDraft(paidByPersonId: string): SplitDraft {
   return {

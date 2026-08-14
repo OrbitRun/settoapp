@@ -201,7 +201,46 @@ const en: Dict = {
   "account.signIn": "I already have an account",
   "account.later": "Not now",
 
+  "participants.title": "Who shares this?",
+  "participants.count": "Number of people",
+  "participants.add": "Add person",
+  "participants.name": "Name",
+  "participants.namePlaceholder": "e.g. Mads",
+  "participants.remove": "Remove",
+  "participants.rename": "Rename",
+  "participants.person": "Person {index}",
+  "participants.each": "each",
+  "participants.peopleCount": "{count} people",
+  "participants.personCount": "{count} person",
+
+  "split.distribution": "Split",
+  "split.equalHint": "Everyone pays the same",
+  "split.percentageHint": "For example 60 / 40",
+  "split.sharesHint": "Give some people a bigger share",
+  "split.exactHint": "Type each amount yourself",
+  "split.allocated": "{allocated} / {total} allocated",
+  "split.remaining": "{amount} left to allocate",
+  "split.over": "{amount} too much",
+  "split.finish": "Finish",
+  "split.saveAsGroup": "Save as group",
+  "split.shareResult": "Share result",
+  "split.copyResult": "Copy result",
+  "split.done": "Done",
+  "split.goHome": "Go home",
+  "split.receiptShareTitle": "How should this receipt be shared?",
+  "split.sharingPartial":
+    "Sharing {shared} of {total} items · {amount}. The rest stays private.",
+  "split.splitEqually": "Split equally",
+  "split.splitByItem": "Split by item",
+  "split.apply": "Apply",
+  "split.shares.unit": "shares",
+
+  "group.label": "Group",
+  "group.none": "No group",
+  "group.choose": "Choose a group",
+  "group.noneOption": "No group — just these people",
 };
+
 
 const da: Dict = {
   "app.tagline": "Del alt. Gør op med et tryk.",
@@ -400,7 +439,46 @@ const da: Dict = {
   "account.signIn": "Jeg har allerede en konto",
   "account.later": "Ikke nu",
 
+  "participants.title": "Hvem deler denne?",
+  "participants.count": "Antal personer",
+  "participants.add": "Tilføj person",
+  "participants.name": "Navn",
+  "participants.namePlaceholder": "fx Mads",
+  "participants.remove": "Fjern",
+  "participants.rename": "Omdøb",
+  "participants.person": "Person {index}",
+  "participants.each": "hver",
+  "participants.peopleCount": "{count} personer",
+  "participants.personCount": "{count} person",
+
+  "split.distribution": "Fordeling",
+  "split.equalHint": "Alle betaler det samme",
+  "split.percentageHint": "For eksempel 60 / 40",
+  "split.sharesHint": "Giv nogle en større andel",
+  "split.exactHint": "Skriv hvert beløb selv",
+  "split.allocated": "{allocated} / {total} fordelt",
+  "split.remaining": "{amount} mangler at blive fordelt",
+  "split.over": "{amount} for meget",
+  "split.finish": "Færdig",
+  "split.saveAsGroup": "Gem som gruppe",
+  "split.shareResult": "Del resultat",
+  "split.copyResult": "Kopiér resultat",
+  "split.done": "Færdig",
+  "split.goHome": "Til forsiden",
+  "split.receiptShareTitle": "Hvordan skal kvitteringen deles?",
+  "split.sharingPartial":
+    "Deler {shared} af {total} varer · {amount}. Resten er privat.",
+  "split.splitEqually": "Del ligeligt",
+  "split.splitByItem": "Del pr. vare",
+  "split.apply": "Anvend",
+  "split.shares.unit": "dele",
+
+  "group.label": "Gruppe",
+  "group.none": "Ingen gruppe",
+  "group.choose": "Vælg gruppe",
+  "group.noneOption": "Ingen gruppe — kun disse personer",
 };
+
 
 const DICTS: Record<Language, Dict> = { en, da };
 

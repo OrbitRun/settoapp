@@ -215,7 +215,7 @@ function ItemSplitScreen() {
           ))}
         </div>
         <PrimaryButton onClick={applyBulk} disabled={bulkPeople.length === 0}>
-          Apply
+          {t("split.apply")}
         </PrimaryButton>
       </BottomSheet>
     </Screen>

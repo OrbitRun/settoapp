@@ -1,18 +1,12 @@
 import { useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 
-import { splitModeLabel } from "@/data/draft";
+import { splitModeHintKey, splitModeLabelKey } from "@/data/draft";
+import { useT } from "@/lib/i18n";
 import type { SplitMode } from "@/lib/split";
 import { BottomSheet } from "./BottomSheet";
 
 const MODES: SplitMode[] = ["equal", "percentage", "shares", "exact"];
-
-const HINTS: Record<SplitMode, string> = {
-  equal: "Everyone pays the same",
-  percentage: "For example 60 / 40",
-  shares: "Give some people a bigger share",
-  exact: "Type each amount yourself",
-};
 
 export function SplitSelector({
   mode,
@@ -22,20 +16,21 @@ export function SplitSelector({
   onChange: (mode: SplitMode) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-foreground"
       >
-        {splitModeLabel[mode]}
+        {t(splitModeLabelKey[mode])}
         <ChevronDown className="h-4 w-4" strokeWidth={1.8} />
       </button>
 
-      <BottomSheet open={open} onClose={() => setOpen(false)} title="How to split">
-        <div className="space-y-1">
+      <BottomSheet open={open} onClose={() => setOpen(false)} title={t("split.howToSplit")}>
+        <div className="space-y-1 pb-4">
           {MODES.map((option) => (
             <button
               key={option}
@@ -48,10 +43,10 @@ export function SplitSelector({
             >
               <span>
                 <span className="block text-[15px] font-medium tracking-tight">
-                  {splitModeLabel[option]}
+                  {t(splitModeLabelKey[option])}
                 </span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
-                  {HINTS[option]}
+                  {t(splitModeHintKey[option])}
                 </span>
               </span>
               {mode === option ? (

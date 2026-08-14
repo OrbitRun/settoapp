@@ -42,7 +42,7 @@ function ResultScreen() {
           description={t("split.noLongerAvailable")}
           action={
             <Link to="/" className="text-sm underline underline-offset-4">
-              Go home
+              {t("split.goHome")}
             </Link>
           }
         />
@@ -54,12 +54,51 @@ function ResultScreen() {
     .expenseAllocations(expense.id)
     .sort((a, b) => b.amountMinor - a.amountMinor);
 
+  const shareText = [
+    `${expense.title} — ${formatMinor(expense.total_minor, { compact: false })}`,
+    "",
+    ...allocations.map(
+      (allocation) =>
+        `${pari.personName(allocation.personId)}: ${formatMinor(allocation.amountMinor, { compact: false })}`,
+    ),
+    "",
+    "PARI",
+  ].join("\n");
+
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  const share = async () => {
+    if (canShare) {
+      try {
+        await navigator.share({ title: expense.title, text: shareText });
+        return;
+      } catch {
+        /* user dismissed — fall through to copy */
+      }
+    }
+    await navigator.clipboard?.writeText(shareText);
+    toast.success(t("split.copied"));
+  };
+
+  const saveAsGroup = () => {
+    if (pari.isGuest) {
+      pari.requireAccount("create_group");
+      return;
+    }
+    pari.resetDraft();
+    if (expense.group_id) {
+      navigate({ to: "/groups/$groupId", params: { groupId: expense.group_id } });
+      return;
+    }
+    navigate({ to: "/groups/new" });
+  };
+
   return (
     <Screen>
-      <div className="animate-rise px-1 pb-8 pt-16 text-center">
-        <p className="text-sm text-muted-foreground">Done</p>
-        <h1 className="mt-2 text-[26px] font-semibold tracking-[-0.03em]">{expense.title}</h1>
-        <p className="tnum mt-2 text-[17px] text-muted-foreground">
+      <div className="animate-rise px-1 pb-5 pt-8 text-center">
+        <p className="text-sm text-muted-foreground">{t("split.done")}</p>
+        <h1 className="mt-1.5 text-[26px] font-semibold tracking-[-0.03em]">{expense.title}</h1>
+        <p className="tnum mt-1 text-[34px] font-semibold tracking-[-0.035em]">
           {formatMinor(expense.total_minor, { compact: false })}
         </p>
       </div>
@@ -68,7 +107,7 @@ function ResultScreen() {
         {allocations.map((allocation, index) => (
           <div key={allocation.personId}>
             {index > 0 ? <Divider /> : null}
-            <div className="flex items-center gap-3 px-4 py-3.5">
+            <div className="flex items-center gap-3 px-4 py-3">
               <Avatar name={pari.personName(allocation.personId)} size="sm" />
               <span className="min-w-0 flex-1 truncate text-[15px]">
                 {pari.personName(allocation.personId)}
@@ -79,41 +118,12 @@ function ResultScreen() {
         ))}
       </Panel>
 
-      <div className="mt-8 space-y-2">
-        {expense.group_id ? (
-          <PrimaryButton
-            onClick={() => {
-              pari.resetDraft();
-              navigate({ to: "/groups/$groupId", params: { groupId: expense.group_id! } });
-            }}
-          >
-            Open group
-          </PrimaryButton>
-        ) : (
-          <PrimaryButton
-            onClick={() => {
-              pari.resetDraft();
-              navigate({ to: "/groups/new" });
-            }}
-          >
-            Save these people as a group
-          </PrimaryButton>
-        )}
+      <div className="mt-6 space-y-2">
+        <PrimaryButton onClick={() => void share()}>
+          {canShare ? t("split.shareResult") : t("split.copyResult")}
+        </PrimaryButton>
 
-        <SecondaryButton
-          onClick={() => {
-            const lines = allocations
-              .map(
-                (allocation) =>
-                  `${pari.personName(allocation.personId)}: ${formatMinor(allocation.amountMinor, { compact: false })}`,
-              )
-              .join("\n");
-            void navigator.clipboard?.writeText(`${expense.title}\n${lines}`);
-            toast.success(t("split.copied"));
-          }}
-        >
-          Share result
-        </SecondaryButton>
+        <SecondaryButton onClick={saveAsGroup}>{t("split.saveAsGroup")}</SecondaryButton>
 
         <button
           type="button"
@@ -123,7 +133,7 @@ function ResultScreen() {
           }}
           className="mx-auto block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
-          Done
+          {t("split.done")}
         </button>
       </div>
     </Screen>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, ChevronRight } from "lucide-react";
 
 import { usePari } from "@/data/store";
+import { useT } from "@/lib/i18n";
 import { AvatarStack } from "./Avatar";
 import { BottomSheet } from "./BottomSheet";
 
@@ -9,7 +10,7 @@ export function GroupPicker({
   groupId,
   onChange,
   allowNone = true,
-  label = "Group",
+  label,
 }: {
   groupId: string | null;
   onChange: (groupId: string | null) => void;
@@ -17,6 +18,7 @@ export function GroupPicker({
   label?: string;
 }) {
   const pari = usePari();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const group = pari.data.groups.find((g) => g.id === groupId);
 
@@ -27,16 +29,16 @@ export function GroupPicker({
         onClick={() => setOpen(true)}
         className="flex w-full items-center justify-between rounded-2xl bg-surface px-4 py-4 text-left shadow-soft"
       >
-        <span className="text-[15px] text-muted-foreground">{label}</span>
+        <span className="text-[15px] text-muted-foreground">{label ?? t("group.label")}</span>
         <span className="flex items-center gap-2">
           <span className="text-[15px] font-medium tracking-tight">
-            {group ? group.name : "No group"}
+            {group ? group.name : t("group.none")}
           </span>
           <ChevronRight className="h-4 w-4 text-muted-foreground/60" strokeWidth={1.6} />
         </span>
       </button>
 
-      <BottomSheet open={open} onClose={() => setOpen(false)} title="Choose a group">
+      <BottomSheet open={open} onClose={() => setOpen(false)} title={t("group.choose")}>
         <div className="space-y-1">
           {pari.data.groups.map((option) => (
             <button
@@ -73,7 +75,7 @@ export function GroupPicker({
               }}
               className="w-full rounded-2xl px-4 py-4 text-left text-[15px] text-muted-foreground transition-colors hover:bg-surface-strong/70"
             >
-              No group — just these people
+              {t("group.noneOption")}
             </button>
           ) : null}
         </div>

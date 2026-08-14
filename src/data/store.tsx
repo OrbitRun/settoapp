@@ -309,6 +309,10 @@ export function PariProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [draft, setDraftState] = useState<SplitDraft>(() => emptyDraft(""));
+  // Detected after mount only — the server can't know the device language.
+  const [deviceLanguage, setDeviceLanguage] = useState<Language>("da");
+  useEffect(() => setDeviceLanguage(detectLanguage()), []);
+
   const [guest, setGuestRaw] = useState<GuestState>(emptyGuestState);
   const [guestReady, setGuestReady] = useState(false);
   const [accountPrompt, setAccountPrompt] = useState<AccountPromptReason | null>(null);
@@ -790,6 +794,27 @@ export function PariProvider({ children }: { children: ReactNode }) {
       return person;
     };
 
+    const guestRenamePerson = async (id: string, name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      setGuest((prev) => ({
+        ...prev,
+        people: prev.people.map((p) => (p.id === id ? { ...p, name: trimmed } : p)),
+      }));
+    };
+
+    const guestDeletePerson = async (id: string) => {
+      setGuest((prev) => ({
+        ...prev,
+        people: prev.people.filter((p) => p.id === id ? false : true),
+      }));
+      setDraftState((prev) => ({
+        ...prev,
+        participants: prev.participants.filter((personId) => personId !== id),
+      }));
+    };
+
+
     const guestAddExpense = async (input: AddExpenseInput): Promise<Expense | null> => {
       const expense = makeGuestExpense({
         title: input.title || input.merchant || "Split",
@@ -851,7 +876,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       session,
       profile,
 
-      language: (profile?.language as Language) ?? detectLanguage(),
+      language: (profile?.language as Language) ?? deviceLanguage,
       currency: profile?.currency ?? "DKK",
       appearance: (profile?.appearance as Appearance) ?? "system",
       currentPersonId,
@@ -882,8 +907,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
           })
         : markSettled,
       addPerson: isGuest ? guestAddPerson : addPerson,
-      renamePerson,
-      deletePerson,
+      renamePerson: isGuest ? guestRenamePerson : renamePerson,
+      deletePerson: isGuest ? guestDeletePerson : deletePerson,
+
       updateProfile,
       signOut,
       refresh,
@@ -916,7 +942,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
     accountPrompt,
     migrating,
     migrationFailed,
+    deviceLanguage,
   ]);
+
 
 
 
