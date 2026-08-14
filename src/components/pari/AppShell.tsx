@@ -195,13 +195,13 @@ export function BottomNav() {
 
 function NavItem({
   to,
-  label,
+  labelKey,
   icon: Icon,
   exact,
   pathname,
 }: {
   to: string;
-  label: string;
+  labelKey: string;
   icon: typeof Home;
   exact: boolean;
   pathname: string;
@@ -217,7 +217,7 @@ function NavItem({
       )}
     >
       <Icon className="h-5 w-5" strokeWidth={active ? 2 : 1.6} />
-      {label}
+      {t(labelKey)}
     </Link>
   );
 }
