@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { BottomNav, Divider, Panel, Screen, TopBar } from "@/components/pari/AppShell";
@@ -68,6 +69,9 @@ function HomeScreen() {
   const groups = pari.data.groups.filter((group) => !group.archived_at);
   const active = groups.filter((group) => pari.groupExpenses(group.id).length > 0);
   const recent = pari.recentExpenses(4);
+  // Greeting depends on the device clock — render it only after hydration.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
 
   // A brand-new guest gets the welcome screen, not an empty dashboard.
   if (pari.isGuest && pari.data.expenses.length === 0) return <WelcomeScreen />;
@@ -77,7 +81,7 @@ function HomeScreen() {
   return (
     <>
       <Screen>
-        <TopBar title={timeOfDayGreeting(pari.currentProfileName)} />
+        <TopBar title={hydrated ? timeOfDayGreeting(pari.currentProfileName) : ""} />
 
         <div className="animate-rise px-1 pb-9">
           <BalanceDisplay
