@@ -8,7 +8,7 @@ import {
   type SettlementStep,
   type SplitMode,
 } from "@/lib/split";
-import { CURRENT_PERSON_ID, CURRENT_PROFILE_ID, demoData } from "./demo";
+import { CURRENT_PERSON_ID, CURRENT_PROFILE_ID, createDemoData } from "./demo";
 import { emptyDraft, itemTotalMinor, type DraftItem, type SplitDraft } from "./draft";
 import type { ActivityEntry, Expense, PariData, Person } from "./types";
 
