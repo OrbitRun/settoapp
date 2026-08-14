@@ -53,7 +53,7 @@ export function NumericField({
 
   useEffect(() => {
     if (focused) return;
-    setText(toText(value, format));
+    setText(toText(value, format, showZero));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, focused]);
 
@@ -106,7 +106,7 @@ export function NumericField({
           const next = text.trim() === "" ? clamp(min ?? 0) : clamp(parse(text));
           onChange(next);
           onCommit?.(next);
-          setText(toText(next, format));
+          setText(toText(next, format, showZero));
         }}
         className={cn(
           "tnum w-full min-w-0 bg-transparent outline-none placeholder:text-muted-foreground/40",
@@ -122,7 +122,7 @@ function stripFormat(raw: string) {
   return raw.replace(/[^\d.,]/g, "");
 }
 
-function toText(value: number, format?: (value: number) => string) {
-  if (value === 0) return "";
+function toText(value: number, format?: (value: number) => string, showZero = false) {
+  if (value === 0) return showZero ? "0" : "";
   return format ? format(value) : String(value);
 }
