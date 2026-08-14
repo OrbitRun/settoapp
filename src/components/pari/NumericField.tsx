@@ -107,16 +107,21 @@ export function NumericField({
           }
           raw = raw.replace(/^0+(?=\d)/, "");
           setText(raw);
+          if (commitOnly) return; // draft only — report on commit
           if (raw.trim() === "") return; // allow temporary blank, don't force 0
           onChange(clamp(parse(raw)));
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
         }}
         onBlur={() => {
           setFocused(false);
           const next = text.trim() === "" ? clamp(min ?? 0) : clamp(parse(text));
-          onChange(next);
+          if (!commitOnly) onChange(next);
           onCommit?.(next);
           setText(toText(next, format, showZero));
         }}
+
         className={cn(
           "tnum w-full min-w-0 bg-transparent outline-none placeholder:text-muted-foreground/40",
           inputClassName,
