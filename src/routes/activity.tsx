@@ -123,19 +123,37 @@ function ActivityScreen() {
                           {expense ? (
                             <>
                               <div className="flex justify-between">
-                                <span>{t("expense.total")}</span>
-                                <MoneyAmount minor={expense.total_minor} tone="muted" />
+                                <span className="text-foreground">{expense.title}</span>
+                                <MoneyAmount minor={expense.total_minor} />
                               </div>
+                              {group ? (
+                                <div className="flex justify-between">
+                                  <span>{t("expense.group")}</span>
+                                  <span>{group.name}</span>
+                                </div>
+                              ) : null}
                               <div className="flex justify-between">
                                 <span>{t("split.paidBy")}</span>
                                 <span>{pari.personName(expense.paid_by_person_id)}</span>
                               </div>
-                              {pari.expenseAllocations(expense.id).map((allocation) => (
-                                <div key={allocation.personId} className="flex justify-between">
-                                  <span>{pari.personName(allocation.personId)}</span>
-                                  <MoneyAmount minor={allocation.amountMinor} tone="muted" />
-                                </div>
-                              ))}
+                              <div className="pt-1">
+                                {pari.expenseAllocations(expense.id).map((allocation) => (
+                                  <div
+                                    key={allocation.personId}
+                                    className="flex justify-between py-0.5"
+                                  >
+                                    <span>
+                                      {pari.personName(allocation.personId)}
+                                      {allocation.percentage != null
+                                        ? ` · ${allocation.percentage}%`
+                                        : allocation.shares != null
+                                          ? ` · ${allocation.shares}`
+                                          : ""}
+                                    </span>
+                                    <MoneyAmount minor={allocation.amountMinor} tone="muted" />
+                                  </div>
+                                ))}
+                              </div>
                               <button
                                 type="button"
                                 onClick={() =>
@@ -150,10 +168,16 @@ function ActivityScreen() {
                               </button>
                             </>
                           ) : (
-                            <p>{t("activity.emptyHint")}</p>
+                            <div className="flex justify-between">
+                              <span>{group ? group.name : t("activity.title")}</span>
+                              {amount !== undefined ? (
+                                <MoneyAmount minor={amount} tone="muted" />
+                              ) : null}
+                            </div>
                           )}
                         </div>
                       ) : null}
+
                     </div>
                   );
                 })}
