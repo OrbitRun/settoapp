@@ -223,6 +223,45 @@ const en: Dict = {
   "start.manual": "Enter amount",
   "start.manualHint": "Add the amount yourself",
 
+  "sheet.title": "Split an expense",
+  "sheet.subtitle": "Two taps and you're done.",
+  "sheet.scan": "Scan receipt",
+  "sheet.scanHint": "Take a photo or upload one",
+  "sheet.manual": "Add amount",
+  "sheet.manualHint": "Enter an expense manually",
+  "sheet.multiple": "Multiple receipts",
+  "common.profileSettings": "Profile and settings",
+  "common.remove": "Remove",
+  "common.groupName": "Group name",
+  "common.currency": "Currency",
+
+  "onboarding.shareTitle": "Share anything.",
+  "onboarding.shareBody": "Dinner, rent, groceries or a weekend away.",
+  "onboarding.splitTitle": "Split it your way.",
+  "onboarding.splitBody": "Equal, 60/40 or down to individual items.",
+  "onboarding.settleTitle": "Settle easily.",
+  "onboarding.settleBody": "PARI keeps track of who owes what.",
+  "onboarding.getStarted": "Get started",
+
+  "groups.defaultSplit": "Default split",
+  "groups.noExpensesHint": "Add the first one and PARI keeps the balance.",
+  "groups.peopleHint": "No email needed. They can connect their profile later.",
+
+  "settle.hint": "PARI works out the fewest payments that clear everyone.",
+  "settle.nothingPending": "No payments needed in this group right now.",
+  "settle.pays": "{from} pays {to}",
+  "settle.copyAmount": "Copy amount",
+  "settle.markPaid": "Mark as paid",
+
+  "scan.noCamera": "Camera isn't available here. Choose a photo instead.",
+  "scan.selectedAlt": "Selected receipt",
+  "scan.removeImage": "Remove image",
+
+  "auth.error": "Something went wrong",
+  "auth.googleFailed": "Google sign-in failed",
+
+
+
   "guest.badge": "Guest",
   "guest.yourSplits": "Your splits",
   "guest.saveCta": "Create an account to save this",
