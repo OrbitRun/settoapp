@@ -33,7 +33,10 @@ export type SplitDraft = {
   items: DraftItem[];
   splitByItem: boolean;
   usingGroupDefault: boolean;
+  /** Soft warnings from the receipt reader, shown on the review screen. */
+  receiptWarnings?: string[];
 };
+
 
 export const itemTotalMinor = (item: DraftItem) => item.unitPriceMinor * item.quantity;
 

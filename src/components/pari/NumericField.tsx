@@ -22,6 +22,7 @@ export function NumericField({
   ariaLabel,
   autoFocus,
   className,
+  style,
   inputClassName,
   format,
 }: {
@@ -37,10 +38,12 @@ export function NumericField({
   ariaLabel?: string;
   autoFocus?: boolean;
   className?: string;
+  style?: React.CSSProperties;
   inputClassName?: string;
   /** Optional display formatting applied on blur only. */
   format?: (value: number) => string;
 }) {
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(() => toText(value, format));
   const [focused, setFocused] = useState(false);
@@ -67,7 +70,7 @@ export function NumericField({
   };
 
   return (
-    <div className={cn("flex items-center gap-1", className)}>
+    <div className={cn("flex items-center gap-1", className)} style={style}>
       {prefix ? <span className="shrink-0 text-muted-foreground">{prefix}</span> : null}
       <input
         ref={inputRef}

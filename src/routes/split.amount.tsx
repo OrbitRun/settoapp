@@ -15,7 +15,9 @@ import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { computeDraftAllocations } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { currencyLabel, formatMinor, toMajor, toMinor } from "@/lib/money";
+
 
 export const Route = createFileRoute("/split/amount")({
   head: () => ({
@@ -35,6 +37,17 @@ function ManualExpenseScreen() {
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
   const [showPaidBy, setShowPaidBy] = useState(false);
+  const amountChars = draft.amountMinor > 0 ? `${toMajor(draft.amountMinor)}` : "0";
+  const heroClass = cn(
+    "font-semibold tracking-[-0.04em]",
+    amountChars.length <= 5
+      ? "text-[60px] leading-[1.05]"
+      : amountChars.length <= 7
+        ? "text-[50px] leading-[1.08]"
+        : "text-[38px] leading-[1.12]",
+  );
+
+
 
   const people = useMemo(
     () => pari.data.people.map((person) => ({ id: person.id, name: person.name })),
@@ -100,17 +113,25 @@ function ManualExpenseScreen() {
 
       <div className="px-1 pb-8 pt-2 text-center">
         <div className="flex items-baseline justify-center gap-2">
-          <NumericField
-            autoFocus
-            value={toMajor(draft.amountMinor)}
-            onChange={(next) => setDraft((prev) => ({ ...prev, amountMinor: toMinor(next) }))}
-            min={0}
-            ariaLabel={t("split.amount")}
-            className="w-full max-w-[70%]"
-            inputClassName="text-right text-[52px] font-semibold tracking-[-0.04em]"
-          />
-          <span className="text-[22px] font-medium text-muted-foreground">{currencyLabel()}</span>
+          {/* An invisible mirror sizes the field to its content so the amount and
+              the currency stay centered as one unit at any length. */}
+          <span className="relative inline-block">
+            <span aria-hidden className={cn(heroClass, "invisible whitespace-pre px-[0.3em]")}>
+              {amountChars}
+            </span>
+            <NumericField
+              autoFocus
+              value={toMajor(draft.amountMinor)}
+              onChange={(next) => setDraft((prev) => ({ ...prev, amountMinor: toMinor(next) }))}
+              min={0}
+              ariaLabel={t("split.amount")}
+              className="absolute inset-0"
+              inputClassName={cn(heroClass, "text-center")}
+            />
+          </span>
+          <span className="text-[20px] font-medium text-muted-foreground">{currencyLabel()}</span>
         </div>
+
 
         <input
           value={draft.title}
@@ -119,6 +140,7 @@ function ManualExpenseScreen() {
           className="mt-4 w-full bg-transparent text-center text-[17px] tracking-tight outline-none placeholder:text-muted-foreground/60"
         />
       </div>
+
 
       <div className="space-y-6">
         {showGroups ? (
