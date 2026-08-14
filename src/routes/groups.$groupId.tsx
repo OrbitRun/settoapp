@@ -34,13 +34,17 @@ export const Route = createFileRoute("/groups/$groupId")({
   ),
 });
 
-const TABS = ["Expenses", "People", "Rules"] as const;
+const TABS = [
+  { value: "Expenses", labelKey: "groups.expenses" },
+  { value: "People", labelKey: "groups.people" },
+  { value: "Rules", labelKey: "groups.rules" },
+] as const;
 
 function GroupDetailScreen() {
   const { groupId } = Route.useParams();
   const pari = usePari();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Expenses");
+  const [tab, setTab] = useState<(typeof TABS)[number]["value"]>("Expenses");
   const [inviteOpen, setInviteOpen] = useState(false);
   const t = useT();
 
@@ -75,7 +79,7 @@ function GroupDetailScreen() {
   return (
     <>
       <Screen>
-        <FlowHeader title={group.name} subtitle={`${memberIds.length} members`} />
+        <FlowHeader title={group.name} subtitle={t("common.memberCount", { count: memberIds.length })} />
 
         <div className="animate-rise px-1 pb-8">
           <BalanceDisplay
@@ -115,7 +119,7 @@ function GroupDetailScreen() {
               {expenses.length === 0 ? (
                 <EmptyState
                   title={t("groups.noExpenses")}
-                  description="Add the first one and PARI keeps the balance."
+                  description={t("groups.noExpensesHint")}
                 />
               ) : (
                 expenses.map((expense, index) => (
@@ -123,7 +127,7 @@ function GroupDetailScreen() {
                     {index > 0 ? <Divider /> : null}
                     <ExpenseRow
                       title={expense.title}
-                      subtitle={`Paid by ${pari.personName(expense.paid_by_person_id)}`}
+                      subtitle={t("home.paidBy", { name: pari.personName(expense.paid_by_person_id) })}
                       dateIso={expense.expense_date}
                       amountMinor={expense.total_minor}
                     />
@@ -139,7 +143,7 @@ function GroupDetailScreen() {
                 className="flex items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-[15px] font-medium text-primary-foreground transition-transform active:scale-[0.99]"
               >
                 <Plus className="h-4 w-4" strokeWidth={2} />
-                Add expense
+                {t("groups.addExpense")}
               </button>
               <button
                 type="button"
@@ -154,7 +158,7 @@ function GroupDetailScreen() {
                 params={{ groupId }}
                 className="py-3 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                Settle up
+                {t("groups.settleUp")}
               </Link>
             </div>
           </div>
@@ -170,7 +174,7 @@ function GroupDetailScreen() {
                   <span className="min-w-0 flex-1 truncate text-[15px]">
                     {pari.personName(balance.personId)}
                     {balance.personId === pari.currentPersonId ? (
-                      <span className="ml-2 text-xs text-muted-foreground">You</span>
+                      <span className="ml-2 text-xs text-muted-foreground">{t("common.you")}</span>
                     ) : null}
                   </span>
                   <MoneyAmount
@@ -200,7 +204,7 @@ function GroupDetailScreen() {
         {tab === "Rules" ? (
           <Panel>
             <div className="space-y-1 px-4 py-4">
-              <p className="text-[15px] font-medium tracking-tight">Default split</p>
+              <p className="text-[15px] font-medium tracking-tight">{t("groups.defaultSplit")}</p>
               <p className="text-sm text-muted-foreground">
                 {defaults
                   ? memberIds
@@ -211,7 +215,7 @@ function GroupDetailScreen() {
             </div>
             <Divider />
             <div className="space-y-1 px-4 py-4">
-              <p className="text-[15px] font-medium tracking-tight">Currency</p>
+              <p className="text-[15px] font-medium tracking-tight">{t("common.currency")}</p>
               <p className="text-sm text-muted-foreground">{group.currency}</p>
             </div>
           </Panel>
