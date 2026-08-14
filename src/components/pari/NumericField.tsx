@@ -26,6 +26,7 @@ export function NumericField({
   inputClassName,
   format,
   showZero = false,
+  commitOnly = false,
 }: {
   value: number;
   onChange: (value: number) => void;
@@ -45,7 +46,10 @@ export function NumericField({
   format?: (value: number) => string;
   /** Render a real "0" at rest instead of leaving the field empty. */
   showZero?: boolean;
+  /** Never report while typing — only on blur/Enter, through onCommit. */
+  commitOnly?: boolean;
 }) {
+
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(() => toText(value, format, showZero));
