@@ -201,7 +201,7 @@ function ManualExpenseScreen() {
                   </span>
                 </p>
                 <p className="mt-1 text-[13px] text-muted-foreground">
-                  {t("participants.peopleCount", { count: draft.participants.length })}
+                  {t(draft.participants.length === 1 ? "participants.personCount" : "participants.peopleCount", { count: draft.participants.length })}
                 </p>
               </div>
             ) : (

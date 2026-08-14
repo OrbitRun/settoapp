@@ -211,6 +211,7 @@ const en: Dict = {
   "participants.person": "Person {index}",
   "participants.each": "each",
   "participants.peopleCount": "{count} people",
+  "participants.personCount": "{count} person",
 
   "split.distribution": "Split",
   "split.equalHint": "Everyone pays the same",
@@ -448,6 +449,7 @@ const da: Dict = {
   "participants.person": "Person {index}",
   "participants.each": "hver",
   "participants.peopleCount": "{count} personer",
+  "participants.personCount": "{count} person",
 
   "split.distribution": "Fordeling",
   "split.equalHint": "Alle betaler det samme",

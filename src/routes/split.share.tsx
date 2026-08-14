@@ -84,7 +84,7 @@ function ShareScreen() {
         <section className="rounded-3xl bg-surface px-5 py-7 text-center shadow-soft">
           <p className="text-sm text-muted-foreground">
             {formatMinor(sharedTotal, { compact: false })} ·{" "}
-            {t("participants.peopleCount", { count: draft.participants.length })}
+            {t(draft.participants.length === 1 ? "participants.personCount" : "participants.peopleCount", { count: draft.participants.length })}
           </p>
           <p className="mt-3 text-[34px] font-semibold tracking-[-0.035em]">
             {formatMinor(perPerson, { compact: false })}
