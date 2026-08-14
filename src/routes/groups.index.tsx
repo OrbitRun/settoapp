@@ -35,6 +35,7 @@ function GroupsScreen() {
   const pari = usePari();
   const t = useT();
   const groups = pari.data.groups.filter((group) => !group.archived_at);
+  const archived = pari.data.groups.filter((group) => group.archived_at);
   const navigate = useNavigate();
   const [code, setCode] = useState("");
 
