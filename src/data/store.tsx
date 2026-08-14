@@ -578,8 +578,29 @@ export function PariProvider({ children }: { children: ReactNode }) {
         .sort((a, b) => b.expense_date.localeCompare(a.expense_date))
         .slice(0, limit);
 
-    const activityFeed = () =>
-      [...data.activity].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    /**
+     * The default feed hides audit noise: deletions stay in the database but
+     * never surface, entries pointing at expenses that no longer exist are
+     * dropped, and repeated edits of the same expense collapse into one row.
+     */
+    const activityFeed = () => {
+      const sorted = [...data.activity].sort((a, b) =>
+        b.created_at.localeCompare(a.created_at),
+      );
+      const seenEdits = new Set<string>();
+      return sorted.filter((entry) => {
+        if (entry.activity_type === "expense_deleted") return false;
+        if (entry.entity_type === "expense") {
+          if (!entry.entity_id || !expenseById(entry.entity_id)) return false;
+          if (entry.activity_type === "expense_updated" || entry.activity_type === "split_changed") {
+            if (seenEdits.has(entry.entity_id)) return false;
+            seenEdits.add(entry.entity_id);
+          }
+        }
+        return true;
+      });
+    };
+
 
     const groupRule = (groupId: string): GroupRule | null => {
       const group = data.groups.find((g) => g.id === groupId);
