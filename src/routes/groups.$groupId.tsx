@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, UserPlus } from "lucide-react";
 
 import { BottomNav, Divider, Panel, Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
@@ -13,6 +13,7 @@ import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { AuthGate } from "@/components/pari/AuthGate";
+import { InviteSheet } from "@/components/pari/InviteSheet";
 
 export const Route = createFileRoute("/groups/$groupId")({
   head: () => ({
@@ -40,6 +41,7 @@ function GroupDetailScreen() {
   const pari = usePari();
   const navigate = useNavigate();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Expenses");
+  const [inviteOpen, setInviteOpen] = useState(false);
   const t = useT();
 
   const group = pari.data.groups.find((g) => g.id === groupId);
@@ -139,6 +141,14 @@ function GroupDetailScreen() {
                 <Plus className="h-4 w-4" strokeWidth={2} />
                 Add expense
               </button>
+              <button
+                type="button"
+                onClick={() => setInviteOpen(true)}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
+              >
+                <UserPlus className="h-4 w-4" strokeWidth={2} />
+                {t("invite.title")}
+              </button>
               <Link
                 to="/settle/$groupId"
                 params={{ groupId }}
@@ -174,6 +184,19 @@ function GroupDetailScreen() {
           </Panel>
         ) : null}
 
+        {tab === "People" ? (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => setInviteOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
+            >
+              <UserPlus className="h-4 w-4" strokeWidth={2} />
+              {t("invite.title")}
+            </button>
+          </div>
+        ) : null}
+
         {tab === "Rules" ? (
           <Panel>
             <div className="space-y-1 px-4 py-4">
@@ -195,6 +218,12 @@ function GroupDetailScreen() {
         ) : null}
       </Screen>
       <BottomNav />
+      <InviteSheet
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        groupId={groupId}
+        groupName={group.name}
+      />
     </>
   );
 }

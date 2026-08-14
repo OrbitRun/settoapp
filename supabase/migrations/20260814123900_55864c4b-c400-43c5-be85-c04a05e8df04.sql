@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.is_group_participant(uuid, uuid) FROM anon, authenticated, PUBLIC;

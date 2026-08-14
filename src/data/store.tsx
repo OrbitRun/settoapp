@@ -47,6 +47,7 @@ import {
   withSelfPerson,
   type GuestState,
 } from "./guest";
+import { acceptInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
@@ -324,6 +325,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
   const [migrating, setMigrating] = useState(false);
   const [migrationFailed, setMigrationFailed] = useState(false);
   const migratedRef = useRef(false);
+  const inviteRef = useRef(false);
   const navigate = useNavigate();
 
 
@@ -442,6 +444,27 @@ export function PariProvider({ children }: { children: ReactNode }) {
       })
       .finally(() => setMigrating(false));
   }, [userId, guestReady, queryClient, navigate]);
+
+
+  // An invitation opened while signed out is applied right after auth.
+  useEffect(() => {
+    if (!userId || inviteRef.current) return;
+    const code = readPendingInvite();
+    if (!code) return;
+    inviteRef.current = true;
+    void acceptInvitation(code)
+      .then(async (groupId) => {
+        clearPendingInvite();
+        if (!groupId) return;
+        await queryClient.invalidateQueries({ queryKey: ["pari"] });
+        if (loadGuestState().expenses.length === 0) {
+          navigate({ to: "/groups/$groupId", params: { groupId } });
+        }
+      })
+      .catch((error) => console.error("[pari] pending invite", error));
+  }, [userId, queryClient, navigate]);
+
+
 
 
 

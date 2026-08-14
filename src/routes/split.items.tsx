@@ -6,7 +6,7 @@ import { FlowHeader } from "@/components/pari/FlowHeader";
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { PersonChip } from "@/components/pari/PersonChip";
-import { Avatar } from "@/components/pari/Avatar";
+import { disambiguateInitials } from "@/components/pari/Avatar";
 import { computeDraftAllocations, itemTotalMinor } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { formatMinor } from "@/lib/money";
@@ -35,10 +35,19 @@ function ItemSplitScreen() {
   const [bulkPeople, setBulkPeople] = useState<string[]>([]);
   const t = useT();
 
-  const people = useMemo(
-    () => draft.participants.map((id) => ({ id, name: pari.personName(id) })),
-    [draft.participants, pari],
-  );
+  const people = useMemo(() => {
+    const names = draft.participants.map((id) => pari.personName(id));
+    const labels = disambiguateInitials(names);
+    return draft.participants.map((id) => {
+      const name = pari.personName(id);
+      return {
+        id,
+        name,
+        label: labels[name] ?? name.slice(0, 2).toUpperCase(),
+        avatarUrl: pari.data.people.find((person) => person.id === id)?.avatar_url ?? null,
+      };
+    });
+  }, [draft.participants, pari]);
 
   const items = draft.items.filter((item) => item.isShared);
   const allocations = computeDraftAllocations(draft);
@@ -153,20 +162,19 @@ function ItemSplitScreen() {
 
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {people.map((person) => (
-                  <button
+                  <PersonChip
                     key={person.id}
-                    type="button"
+                    name={person.name}
+                    compact
+                    initialsLabel={person.label}
+                    imageUrl={person.avatarUrl}
+                    selected={assigned.includes(person.id)}
                     onClick={() => toggleAssignment(item.id, person.id)}
-                    aria-label={`${person.name} shares ${item.name}`}
-                    className="rounded-full"
-                  >
-                    <Avatar
-                      name={person.name}
-                      size="sm"
-                      selected={assigned.includes(person.id)}
-                      className={cn(!assigned.includes(person.id) && "opacity-40")}
-                    />
-                  </button>
+                    className={cn(
+                      "py-1 pl-1 pr-3 text-[13px]",
+                      !assigned.includes(person.id) && "opacity-55",
+                    )}
+                  />
                 ))}
               </div>
             </div>
@@ -203,6 +211,8 @@ function ItemSplitScreen() {
             <PersonChip
               key={person.id}
               name={person.name}
+              initialsLabel={person.label}
+              imageUrl={person.avatarUrl}
               selected={bulkPeople.includes(person.id)}
               onClick={() =>
                 setBulkPeople((prev) =>
