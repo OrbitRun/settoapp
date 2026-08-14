@@ -182,9 +182,17 @@ const en: Dict = {
 
   "welcome.title": "Share anything.\nSettle easily.",
   "welcome.subtitle": "Split a bill in seconds — no account needed.",
-  "welcome.primary": "Split a bill",
+  "welcome.primary": "Split an expense",
   "welcome.secondary": "Sign in",
+  "welcome.createAccount": "Create account",
   "welcome.note": "Create an account later to save your splits.",
+  "start.title": "Split",
+  "start.heading": "How do you want to split?",
+  "start.scan": "Scan receipt",
+  "start.scanHint": "Take a photo — PARI finds the items",
+  "start.manual": "Enter amount",
+  "start.manualHint": "Add the amount yourself",
+
   "guest.badge": "Guest",
   "guest.yourSplits": "Your splits",
   "guest.saveCta": "Create an account to save this",
