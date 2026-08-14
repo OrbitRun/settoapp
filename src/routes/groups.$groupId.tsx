@@ -161,6 +161,13 @@ function GroupDetailScreen() {
               >
                 {t("groups.settleUp")}
               </Link>
+              <Link
+                to="/groups/$groupId/edit"
+                params={{ groupId }}
+                className="pb-2 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {t("groups.edit")}
+              </Link>
             </div>
           </div>
         ) : null}

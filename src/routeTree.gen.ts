@@ -29,6 +29,7 @@ import { Route as SplitReviewRouteImport } from './routes/split.review'
 import { Route as SplitScanRouteImport } from './routes/split.scan'
 import { Route as SplitShareRouteImport } from './routes/split.share'
 import { Route as SplitStartRouteImport } from './routes/split.start'
+import { Route as GroupsGroupIdEditRouteImport } from './routes/groups.$groupId_.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -130,6 +131,11 @@ const SplitStartRoute = SplitStartRouteImport.update({
   path: '/split/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GroupsGroupIdEditRoute = GroupsGroupIdEditRouteImport.update({
+  id: '/groups/$groupId_/edit',
+  path: '/groups/$groupId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/split/share': typeof SplitShareRoute
   '/split/start': typeof SplitStartRoute
   '/groups/': typeof GroupsIndexRoute
+  '/groups/$groupId/edit': typeof GroupsGroupIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/split/share': typeof SplitShareRoute
   '/split/start': typeof SplitStartRoute
   '/groups': typeof GroupsIndexRoute
+  '/groups/$groupId/edit': typeof GroupsGroupIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/split/share': typeof SplitShareRoute
   '/split/start': typeof SplitStartRoute
   '/groups/': typeof GroupsIndexRoute
+  '/groups/$groupId_/edit': typeof GroupsGroupIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/split/share'
     | '/split/start'
     | '/groups/'
+    | '/groups/$groupId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/split/share'
     | '/split/start'
     | '/groups'
+    | '/groups/$groupId/edit'
   id:
     | '__root__'
     | '/'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/split/share'
     | '/split/start'
     | '/groups/'
+    | '/groups/$groupId_/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -288,6 +300,7 @@ export interface RootRouteChildren {
   SplitShareRoute: typeof SplitShareRoute
   SplitStartRoute: typeof SplitStartRoute
   GroupsIndexRoute: typeof GroupsIndexRoute
+  GroupsGroupIdEditRoute: typeof GroupsGroupIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -432,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplitStartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/groups/$groupId_/edit': {
+      id: '/groups/$groupId_/edit'
+      path: '/groups/$groupId/edit'
+      fullPath: '/groups/$groupId/edit'
+      preLoaderRoute: typeof GroupsGroupIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -456,6 +476,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplitShareRoute: SplitShareRoute,
   SplitStartRoute: SplitStartRoute,
   GroupsIndexRoute: GroupsIndexRoute,
+  GroupsGroupIdEditRoute: GroupsGroupIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
