@@ -50,12 +50,14 @@ export function PercentageSplitEditor({
             <div key={person.id} className="flex items-center gap-3">
               <Avatar name={person.name} size="sm" />
               <span className="min-w-0 flex-1 truncate text-[15px]">{person.name}</span>
-              <MoneyAmount
-                minor={amount}
-                tone="muted"
-                size="sm"
-                className="w-24 shrink-0 text-right"
-              />
+              {showAmounts ? (
+                <MoneyAmount
+                  minor={amount}
+                  tone="muted"
+                  size="sm"
+                  className="w-24 shrink-0 text-right"
+                />
+              ) : null}
               <NumericField
                 value={value}
                 onChange={(next) => set(person.id, next)}
