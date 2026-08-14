@@ -84,7 +84,7 @@ export async function ensureGroupInvitation(
 export async function revokeInvitation(id: string) {
   await supabase
     .from("group_invitations")
-    .update({ revoked_at: new Date().toISOString() })
+    .update({ revoked_at: new Date().toISOString(), status: "revoked" })
     .eq("id", id);
 }
 
