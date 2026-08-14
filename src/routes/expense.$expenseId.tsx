@@ -16,6 +16,7 @@ import { calculateEqualSplit } from "@/lib/split";
 import { toMajor, toMinor } from "@/lib/money";
 import { shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
+import { AuthGate } from "@/components/pari/AuthGate";
 
 export const Route = createFileRoute("/expense/$expenseId")({
   head: () => ({
@@ -29,7 +30,11 @@ export const Route = createFileRoute("/expense/$expenseId")({
       },
     ],
   }),
-  component: ExpenseDetailScreen,
+  component: () => (
+    <AuthGate>
+      <ExpenseDetailScreen />
+    </AuthGate>
+  ),
 });
 
 function ExpenseDetailScreen() {
@@ -91,7 +96,7 @@ function ExpenseDetailScreen() {
     await pari.deleteExpense(expense.id);
     setBusy(false);
     toast.success(t("expense.deleted"));
-    navigate({ to: "/" });
+    navigate({ to: "/home" });
   };
 
   return (

@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/pari/EmptyState";
 import { GroupRow } from "@/components/pari/rows";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
+import { AuthGate } from "@/components/pari/AuthGate";
 
 export const Route = createFileRoute("/groups/")({
   head: () => ({
@@ -22,7 +23,11 @@ export const Route = createFileRoute("/groups/")({
       },
     ],
   }),
-  component: GroupsScreen,
+  component: () => (
+    <AuthGate>
+      <GroupsScreen />
+    </AuthGate>
+  ),
 });
 
 function GroupsScreen() {

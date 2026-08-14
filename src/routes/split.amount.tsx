@@ -95,7 +95,7 @@ function ManualExpenseScreen() {
       <FlowHeader
         title={t("split.newExpense")}
         variant="close"
-        onClose={() => navigate({ to: "/" })}
+        onClose={() => navigate({ to: pari.isGuest ? "/" : "/home" })}
       />
 
       <div className="px-1 pb-8 pt-2 text-center">

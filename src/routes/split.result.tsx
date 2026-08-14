@@ -80,9 +80,9 @@ function ResultScreen() {
     toast.success(t("split.copied"));
   };
 
-  const saveAsGroup = () => {
+  const saveInPari = () => {
     if (pari.isGuest) {
-      pari.requireAccount("create_group");
+      pari.requireAccount("save_split");
       return;
     }
     pari.resetDraft();
@@ -92,6 +92,17 @@ function ResultScreen() {
     }
     navigate({ to: "/groups/new" });
   };
+
+  const newSplit = () => {
+    pari.resetDraft();
+    navigate({ to: "/split/start" });
+  };
+
+  const finish = () => {
+    pari.resetDraft();
+    navigate({ to: pari.isGuest ? "/" : "/home" });
+  };
+
 
   return (
     <Screen>
@@ -123,18 +134,20 @@ function ResultScreen() {
           {canShare ? t("split.shareResult") : t("split.copyResult")}
         </PrimaryButton>
 
-        <SecondaryButton onClick={saveAsGroup}>{t("split.saveAsGroup")}</SecondaryButton>
+        <SecondaryButton onClick={saveInPari}>
+          {pari.isGuest ? t("split.saveInPari") : t("split.saveAsGroup")}
+        </SecondaryButton>
+
+        <SecondaryButton onClick={newSplit}>{t("split.newSplit")}</SecondaryButton>
 
         <button
           type="button"
-          onClick={() => {
-            pari.resetDraft();
-            navigate({ to: "/" });
-          }}
+          onClick={finish}
           className="mx-auto block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           {t("split.done")}
         </button>
+
       </div>
     </Screen>
   );

@@ -25,8 +25,9 @@ export function AccountSheet() {
     <BottomSheet
       open={Boolean(reason)}
       onClose={pari.dismissAccountPrompt}
-      title={t("account.title")}
+      title={reason === "save_split" ? t("account.saveTitle") : t("account.title")}
     >
+
       <p className="text-[15px] text-muted-foreground">
         {reason ? t(`account.${reason}`) : ""}
       </p>

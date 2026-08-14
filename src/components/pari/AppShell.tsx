@@ -98,7 +98,7 @@ export function Divider() {
 }
 
 const NAV_LEFT = [
-  { to: "/", labelKey: "nav.home", icon: Home, exact: true },
+  { to: "/home", labelKey: "nav.home", icon: Home, exact: true },
   { to: "/groups", labelKey: "nav.groups", icon: Users, exact: false },
 ] as const;
 
@@ -110,7 +110,7 @@ const NAV_RIGHT = [
 export function BottomNav() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const { setDraft, currentPersonId } = usePari();
+  const { setDraft, currentPersonId, isGuest } = usePari();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   const start = (target: "/split/amount" | "/split/scan") => {
@@ -118,6 +118,10 @@ export function BottomNav() {
     setOpen(false);
     navigate({ to: target });
   };
+
+  // Guest mode has no app shell — the welcome screen and the split flow only.
+  if (isGuest) return null;
+
 
   return (
     <>

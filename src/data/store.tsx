@@ -50,12 +50,14 @@ import {
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
+  | "save_split"
   | "save_expense"
   | "create_group"
   | "balances"
   | "history"
   | "settle"
   | "collaborate";
+
 
 const nowIso = () => new Date().toISOString();
 
@@ -126,8 +128,11 @@ type PariContextValue = {
   draft: SplitDraft;
   setDraft: (updater: SplitDraft | ((prev: SplitDraft) => SplitDraft)) => void;
   resetDraft: () => void;
+  /** True once the Supabase session check has resolved. */
+  authReady: boolean;
   /** True when nobody is signed in — PARI runs as a local, device-only workspace. */
   isGuest: boolean;
+
   /** Opens the contextual "create an account" sheet instead of redirecting. */
   requireAccount: (reason: AccountPromptReason) => void;
   accountPrompt: AccountPromptReason | null;
@@ -916,7 +921,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
       draft,
       setDraft: setDraftState,
       resetDraft: () => setDraftState(emptyDraft(currentPersonId)),
+      authReady,
       isGuest,
+
       requireAccount: (reason: AccountPromptReason) => setAccountPrompt(reason),
       accountPrompt,
       dismissAccountPrompt: () => setAccountPrompt(null),

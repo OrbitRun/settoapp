@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as HomeRouteImport } from './routes/home'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ExpenseExpenseIdRouteImport } from './routes/expense.$expenseId'
@@ -25,6 +26,7 @@ import { Route as SplitResultRouteImport } from './routes/split.result'
 import { Route as SplitReviewRouteImport } from './routes/split.review'
 import { Route as SplitScanRouteImport } from './routes/split.scan'
 import { Route as SplitShareRouteImport } from './routes/split.share'
+import { Route as SplitStartRouteImport } from './routes/split.start'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,6 +41,11 @@ const ActivityRoute = ActivityRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeRoute = HomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -106,11 +113,17 @@ const SplitShareRoute = SplitShareRouteImport.update({
   path: '/split/share',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplitStartRoute = SplitStartRouteImport.update({
+  id: '/split/start',
+  path: '/split/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/auth': typeof AuthRoute
+  '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
@@ -123,12 +136,14 @@ export interface FileRoutesByFullPath {
   '/split/review': typeof SplitReviewRoute
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
+  '/split/start': typeof SplitStartRoute
   '/groups/': typeof GroupsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/auth': typeof AuthRoute
+  '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
@@ -141,6 +156,7 @@ export interface FileRoutesByTo {
   '/split/review': typeof SplitReviewRoute
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
+  '/split/start': typeof SplitStartRoute
   '/groups': typeof GroupsIndexRoute
 }
 export interface FileRoutesById {
@@ -148,6 +164,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/auth': typeof AuthRoute
+  '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
@@ -160,6 +177,7 @@ export interface FileRoutesById {
   '/split/review': typeof SplitReviewRoute
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
+  '/split/start': typeof SplitStartRoute
   '/groups/': typeof GroupsIndexRoute
 }
 export interface FileRouteTypes {
@@ -168,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activity'
     | '/auth'
+    | '/home'
     | '/onboarding'
     | '/profile'
     | '/expense/$expenseId'
@@ -180,12 +199,14 @@ export interface FileRouteTypes {
     | '/split/review'
     | '/split/scan'
     | '/split/share'
+    | '/split/start'
     | '/groups/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/activity'
     | '/auth'
+    | '/home'
     | '/onboarding'
     | '/profile'
     | '/expense/$expenseId'
@@ -198,12 +219,14 @@ export interface FileRouteTypes {
     | '/split/review'
     | '/split/scan'
     | '/split/share'
+    | '/split/start'
     | '/groups'
   id:
     | '__root__'
     | '/'
     | '/activity'
     | '/auth'
+    | '/home'
     | '/onboarding'
     | '/profile'
     | '/expense/$expenseId'
@@ -216,6 +239,7 @@ export interface FileRouteTypes {
     | '/split/review'
     | '/split/scan'
     | '/split/share'
+    | '/split/start'
     | '/groups/'
   fileRoutesById: FileRoutesById
 }
@@ -223,6 +247,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
   AuthRoute: typeof AuthRoute
+  HomeRoute: typeof HomeRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
   ExpenseExpenseIdRoute: typeof ExpenseExpenseIdRoute
@@ -235,6 +260,7 @@ export interface RootRouteChildren {
   SplitReviewRoute: typeof SplitReviewRoute
   SplitScanRoute: typeof SplitScanRoute
   SplitShareRoute: typeof SplitShareRoute
+  SplitStartRoute: typeof SplitStartRoute
   GroupsIndexRoute: typeof GroupsIndexRoute
 }
 
@@ -259,6 +285,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -352,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplitShareRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/split/start': {
+      id: '/split/start'
+      path: '/split/start'
+      fullPath: '/split/start'
+      preLoaderRoute: typeof SplitStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -359,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
   AuthRoute: AuthRoute,
+  HomeRoute: HomeRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
   ExpenseExpenseIdRoute: ExpenseExpenseIdRoute,
@@ -371,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplitReviewRoute: SplitReviewRoute,
   SplitScanRoute: SplitScanRoute,
   SplitShareRoute: SplitShareRoute,
+  SplitStartRoute: SplitStartRoute,
   GroupsIndexRoute: GroupsIndexRoute,
 }
 export const routeTree = rootRouteImport

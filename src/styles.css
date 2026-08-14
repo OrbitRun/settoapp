@@ -193,3 +193,13 @@
 @utility animate-sheet-in {
   animation: pari-sheet-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* iOS zooms the page when a focused field renders below 16px. Unlayered, so it
+   wins over Tailwind's utility layer on touch devices only. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
