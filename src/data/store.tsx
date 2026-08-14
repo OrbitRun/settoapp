@@ -728,12 +728,14 @@ export function PariProvider({ children }: { children: ReactNode }) {
         paid_by_person_id?: string;
         total_minor?: number;
         expense_date?: string;
+        group_id?: string | null;
       } = {};
       if (input.title !== undefined) patch.title = input.title;
       if (input.merchant !== undefined) patch.merchant = input.merchant;
       if (input.paidByPersonId !== undefined) patch.paid_by_person_id = input.paidByPersonId;
       if (input.totalMinor !== undefined) patch.total_minor = input.totalMinor;
       if (input.expenseDate !== undefined) patch.expense_date = input.expenseDate;
+      if (input.groupId !== undefined) patch.group_id = input.groupId;
 
       if (Object.keys(patch).length > 0) {
         await supabase.from("expenses").update(patch).eq("id", id);
@@ -755,17 +757,19 @@ export function PariProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // One meaningful activity entry per edit — never one per changed field.
       const existing = expenseById(id);
       await logActivity(
-        input.allocations ? "split_changed" : "expense_updated",
+        "expense_updated",
         "expense",
         id,
-        existing?.group_id ?? null,
+        input.groupId !== undefined ? input.groupId : (existing?.group_id ?? null),
         {
           title: input.title ?? existing?.title ?? "",
           amount_minor: input.totalMinor ?? existing?.total_minor ?? 0,
         },
       );
+
       await refresh();
     };
 
