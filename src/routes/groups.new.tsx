@@ -133,7 +133,8 @@ function CreateGroupScreen() {
             onClick={() => setShowAdvanced((prev) => !prev)}
             className="px-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            Default split · {OPTIONS.find((o) => o.value === defaultSplit)?.label}
+            {t("split.howToSplit")} ·{" "}
+            {t(OPTIONS.find((o) => o.value === defaultSplit)?.labelKey ?? "split.equal")}
           </button>
 
           {showAdvanced ? (
