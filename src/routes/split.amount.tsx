@@ -37,15 +37,12 @@ function ManualExpenseScreen() {
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
   const [showPaidBy, setShowPaidBy] = useState(false);
-  const amountChars = draft.amountMinor > 0 ? `${toMajor(draft.amountMinor)}` : "0";
-  const heroClass = cn(
-    "font-semibold tracking-[-0.04em]",
-    amountChars.length <= 5
-      ? "text-[60px] leading-[1.05]"
-      : amountChars.length <= 7
-        ? "text-[50px] leading-[1.08]"
-        : "text-[38px] leading-[1.12]",
-  );
+  const amountText =
+    draft.amountMinor > 0 ? formatMinorNumber(draft.amountMinor) : "0";
+  const heroSize =
+    amountText.length <= 5 ? 60 : amountText.length <= 7 ? 52 : amountText.length <= 10 ? 42 : 32;
+  const suffixSize = Math.max(18, Math.round(heroSize / 3));
+  const heroStyle = { fontSize: `${heroSize}px`, lineHeight: 1.05 } as const;
 
 
 
