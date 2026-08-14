@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { Clock, Home, Plus, ScanLine, Users, Wallet } from "lucide-react";
+import { Clock, Home, Plus, ScanLine, User, Users } from "lucide-react";
 
 import { usePari } from "@/data/store";
 import { emptyDraft } from "@/data/draft";
