@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { BottomNav, Divider, Panel, Screen, TopBar } from "@/components/pari/AppShell";
@@ -34,6 +35,8 @@ function GroupsScreen() {
   const pari = usePari();
   const t = useT();
   const groups = pari.data.groups.filter((group) => !group.archived_at);
+  const navigate = useNavigate();
+  const [code, setCode] = useState("");
 
   return (
     <>
@@ -71,6 +74,30 @@ function GroupsScreen() {
             <Plus className="h-4 w-4" strokeWidth={1.8} />
             {t("groups.create")}
           </Link>
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              const trimmed = code.trim();
+              if (trimmed) navigate({ to: "/join/$token", params: { token: trimmed } });
+            }}
+            className="flex items-center gap-2 rounded-2xl bg-surface px-4 py-2.5 shadow-soft"
+          >
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value.toUpperCase())}
+              placeholder={t("invite.code")}
+              maxLength={12}
+              className="min-w-0 flex-1 bg-transparent text-[16px] tracking-[0.14em] outline-none placeholder:tracking-normal placeholder:text-muted-foreground/50"
+            />
+            <button
+              type="submit"
+              disabled={!code.trim()}
+              className="shrink-0 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40"
+            >
+              {t("invite.join")}
+            </button>
+          </form>
         </div>
       </Screen>
       <BottomNav />
