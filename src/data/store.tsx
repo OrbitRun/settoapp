@@ -903,8 +903,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
           })
         : markSettled,
       addPerson: isGuest ? guestAddPerson : addPerson,
-      renamePerson,
-      deletePerson,
+      renamePerson: isGuest ? guestRenamePerson : renamePerson,
+      deletePerson: isGuest ? guestDeletePerson : deletePerson,
+
       updateProfile,
       signOut,
       refresh,
