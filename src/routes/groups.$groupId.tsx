@@ -146,6 +146,23 @@ function GroupDetailScreen() {
                 <Plus className="h-4 w-4" strokeWidth={2} />
                 {t("groups.addExpense")}
               </button>
+
+              {canSettle ? (
+                <Link
+                  to="/settle/$groupId"
+                  params={{ groupId }}
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-accent/50 bg-accent/15 py-4 text-[15px] font-medium text-foreground transition-transform active:scale-[0.99]"
+                >
+                  <Check className="h-4 w-4" strokeWidth={2} />
+                  {t("groups.settleUp")}
+                </Link>
+              ) : (
+                <div className="flex items-center justify-center gap-2 rounded-2xl bg-surface-strong/60 py-4 text-[15px] font-medium text-muted-foreground">
+                  <Check className="h-4 w-4" strokeWidth={2} />
+                  {t("groups.nothingToSettle")}
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={() => setInviteOpen(true)}
@@ -155,20 +172,14 @@ function GroupDetailScreen() {
                 {t("invite.title")}
               </button>
               <Link
-                to="/settle/$groupId"
-                params={{ groupId }}
-                className="py-3 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {t("groups.settleUp")}
-              </Link>
-              <Link
                 to="/groups/$groupId/edit"
                 params={{ groupId }}
-                className="pb-2 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="pb-2 pt-1 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {t("groups.edit")}
               </Link>
             </div>
+
           </div>
         ) : null}
 
