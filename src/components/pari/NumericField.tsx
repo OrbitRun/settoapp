@@ -96,10 +96,12 @@ export function NumericField({
           });
         }}
         onChange={(event) => {
-          // Drop a leading "0" so typing over the resting zero replaces it.
-          const raw = event.target.value
-            .replace(/[^\d.,]/g, "")
-            .replace(/^0+(?=\d)/, "");
+          let raw = event.target.value.replace(/[^\d.,]/g, "");
+          // Typing over the resting "0" replaces it, wherever the caret sat.
+          if (text === "0" && raw !== "0" && raw.includes("0")) {
+            raw = raw.replace("0", "");
+          }
+          raw = raw.replace(/^0+(?=\d)/, "");
           setText(raw);
           if (raw.trim() === "") return; // allow temporary blank, don't force 0
           onChange(clamp(parse(raw)));
