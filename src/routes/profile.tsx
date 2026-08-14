@@ -151,44 +151,6 @@ function ProfileScreen() {
             </Link>
           </Panel>
 
-          <Panel title={t("profile.people")}>
-            {pari.data.people.map((person, index) => (
-              <div key={person.id}>
-                {index > 0 ? <Divider /> : null}
-                <div className="flex items-center gap-3 px-4 py-3.5">
-                  <Avatar name={person.name} size="sm" />
-                  <span className="min-w-0 flex-1 truncate text-[15px]">
-                    {person.name}
-                    {person.is_self ? (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {t("common.you")}
-                      </span>
-                    ) : null}
-                  </span>
-                  {!person.is_self ? (
-                    <button
-                      type="button"
-                      aria-label={`${t("common.delete")} ${person.name}`}
-                      onClick={() => pari.deletePerson(person.id)}
-                      className="text-muted-foreground/70 transition-colors hover:text-negative"
-                    >
-                      <Trash2 className="h-4 w-4" strokeWidth={1.6} />
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-            {pari.data.people.length > 0 ? <Divider /> : null}
-            <button
-              type="button"
-              onClick={() => setSheet("person")}
-              className="flex w-full items-center gap-2 px-4 py-4 text-left text-[15px] text-muted-foreground"
-            >
-              <Plus className="h-4 w-4" strokeWidth={1.8} />
-              {t("profile.addPerson")}
-            </button>
-          </Panel>
-
           <Panel>
             <button
               type="button"
