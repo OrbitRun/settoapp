@@ -12,7 +12,11 @@ import { cn } from "@/lib/utils";
 import type { SplitMode } from "@/lib/split";
 import { AuthGate } from "@/components/pari/AuthGate";
 
+type GroupSearch = { people?: string };
+
 export const Route = createFileRoute("/groups/new")({
+  validateSearch: (search: Record<string, unknown>): GroupSearch =>
+    typeof search['people'] === "string" ? { people: search['people'] } : {},
   head: () => ({
     meta: [
       { title: "Create a group — PARI" },
