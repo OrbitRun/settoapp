@@ -219,6 +219,7 @@ const en: Dict = {
   "invite.needAccount": "You need an account to join a group — your invitation is kept.",
   "invite.invalidTitle": "Invitation not found",
   "invite.invalidBody": "The link is expired or has been revoked. Ask for a new one.",
+  "invite.getApp": "Get PARI",
 
   "convert.title": "Save this split in PARI",
   "convert.body": "Create a free account to keep the split, follow balances and settle up later.",
