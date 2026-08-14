@@ -8,7 +8,7 @@ import {
   type SettlementStep,
   type SplitMode,
 } from "@/lib/split";
-import { CURRENT_PERSON_ID, CURRENT_PROFILE_ID, demoData } from "./demo";
+import { CURRENT_PERSON_ID, CURRENT_PROFILE_ID, createDemoData } from "./demo";
 import { emptyDraft, itemTotalMinor, type DraftItem, type SplitDraft } from "./draft";
 import type { ActivityEntry, Expense, PariData, Person } from "./types";
 
@@ -60,7 +60,7 @@ type PariContextValue = {
 const PariContext = createContext<PariContextValue | null>(null);
 
 export function PariProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<PariData>(demoData);
+  const [data, setData] = useState<PariData>(() => createDemoData());
   const [draft, setDraftState] = useState<SplitDraft>(() => emptyDraft(CURRENT_PERSON_ID));
 
   const value = useMemo<PariContextValue>(() => {
