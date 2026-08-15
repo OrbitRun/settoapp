@@ -1140,24 +1140,38 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
 
     const guestAddExpense = async (input: AddExpenseInput): Promise<Expense | null> => {
+      const locked = lockMoney({
+        systemCurrency: profile?.currency ?? "DKK",
+        originalTotalMinor: input.totalMinor,
+        allocations: input.allocations,
+        money: input.money,
+      });
       const expense = makeGuestExpense({
         title: input.title || input.merchant || "Split",
         merchant: input.merchant,
         paidByPersonId: input.paidByPersonId,
-        totalMinor: input.totalMinor,
+        totalMinor: locked.totalMinor,
         source: input.source,
-        currency: "DKK",
+        currency: locked.currency,
+        originalCurrency: locked.originalCurrency,
+        originalTotalMinor: locked.originalTotalMinor,
+        exchangeRate: locked.exchangeRate,
+        exchangeRateDate: locked.exchangeRateDate,
+        exchangeRateSource: locked.exchangeRateSource,
+        cardChargedMinor: locked.cardChargedMinor,
         ...(input.expenseDate ? { expenseDate: input.expenseDate } : {}),
       });
 
-      const splits = input.allocations.map((allocation) => ({
+      const splits = locked.allocations.map((allocation) => ({
         id: makeGuestSplitId(),
         expense_id: expense.id,
         person_id: allocation.personId,
         amount_minor: allocation.amountMinor,
+        original_amount_minor: locked.originalByPerson[allocation.personId] ?? null,
         percentage: allocation.percentage ?? null,
         shares: allocation.shares ?? null,
       }));
+
 
       const items = (input.items ?? []).map((item) => ({
         id: makeGuestItemId(),
