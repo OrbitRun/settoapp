@@ -143,6 +143,8 @@ type PariContextValue = {
   settlementPlan: (groupId: string) => SettlementStep[];
   recentExpenses: (limit?: number) => Expense[];
   activityFeed: () => ActivityEntry[];
+  /** Audit trail for one expense (created / edited / deleted), oldest first. */
+  expenseHistory: (expenseId: string) => ActivityEntry[];
   groupDefaultPercentages: (groupId: string) => Record<string, number> | null;
   groupRule: (groupId: string) => GroupRule | null;
   addExpense: (input: AddExpenseInput) => Promise<Expense | null>;
