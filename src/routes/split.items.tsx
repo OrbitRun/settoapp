@@ -9,7 +9,8 @@ import { PersonChip } from "@/components/pari/PersonChip";
 import { disambiguateInitials } from "@/components/pari/Avatar";
 import { computeDraftAllocations, itemTotalMinor } from "@/data/draft";
 import { usePari } from "@/data/store";
-import { formatMinor } from "@/lib/money";
+import { formatMinorIn } from "@/lib/money";
+import { useMoneyLock } from "@/hooks/useMoneyLock";
 import { calculateEqualSplit } from "@/lib/split";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
@@ -151,12 +152,12 @@ function ItemSplitScreen() {
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
                     {assigned.length === 1
-                      ? `${pari.personName(assigned[0]!)} · ${formatMinor(share, { compact: false })}`
-                      : t("receipt.each", { amount: formatMinor(share, { compact: false }) })}
+                      ? `${pari.personName(assigned[0]!)} · ${formatMinorIn2(share, { compact: false })}`
+                      : t("receipt.each", { amount: formatMinorIn2(share, { compact: false }) })}
                   </span>
                 </button>
                 <span className="tnum shrink-0 text-[15px] font-medium">
-                  {formatMinor(itemTotalMinor(item), { currency: "" }).trim()}
+                  {formatMinorIn2(itemTotalMinor(item), { currency: "" }).trim()}
                 </span>
               </div>
 
@@ -194,7 +195,7 @@ function ItemSplitScreen() {
             </>
           ) : (
             <PrimaryButton onClick={confirm}>
-              {t("receipt.confirmSplit")} · {formatMinor(total, { compact: false })}
+              {t("receipt.confirmSplit")} · {formatMinorIn2(total, { compact: false })}
             </PrimaryButton>
           )}
         </div>

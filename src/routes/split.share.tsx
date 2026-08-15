@@ -11,7 +11,8 @@ import { SplitSelector } from "@/components/pari/SplitSelector";
 import { computeDraftAllocations, draftSharedTotalMinor, sharedItems } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
-import { formatMinor } from "@/lib/money";
+import { formatMinorIn } from "@/lib/money";
+import { useMoneyLock } from "@/hooks/useMoneyLock";
 
 export const Route = createFileRoute("/split/share")({
   head: () => ({
@@ -106,7 +107,7 @@ function ShareScreen() {
             {t("split.sharingPartial", {
               shared: sharedItems(draft.items).length,
               total: draft.items.length,
-              amount: formatMinor(sharedTotal, { compact: false }),
+              amount: formatMinorIn2(sharedTotal, { compact: false }),
             })}
           </p>
         ) : null}
@@ -150,7 +151,7 @@ function ShareScreen() {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {formatMinor(sharedTotal, { compact: false })} ·{" "}
+            {formatMinorIn2(sharedTotal, { compact: false })} ·{" "}
             {t(
               draft.participants.length === 1
                 ? "participants.personCount"
