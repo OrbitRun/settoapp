@@ -65,6 +65,7 @@ const en: Dict = {
   "groups.shouldReceive": "You should receive money",
   "groups.shouldPay": "You should pay this",
   "groups.addExpense": "Add expense",
+  "groups.payments": "Payments",
   "groups.settleUp": "Settle up",
   "groups.gone": "This group no longer exists",
 
