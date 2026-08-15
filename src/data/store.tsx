@@ -834,7 +834,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const deleteExpense = async (id: string) => {
       const existing = expenseById(id);
       await supabase.from("expenses").delete().eq("id", id);
-      await logActivity("expense_deleted", "expense", null, existing?.group_id ?? null, {
+      // Keeps the deletion attached to the expense's own history instead of
+      // becoming a separate feed row.
+      await logActivity("expense_deleted", "expense", id, existing?.group_id ?? null, {
         title: existing?.title ?? "",
         amount_minor: existing?.total_minor ?? 0,
       });
