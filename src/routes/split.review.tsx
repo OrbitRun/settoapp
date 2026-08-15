@@ -33,6 +33,21 @@ export const Route = createFileRoute("/split/review")({
   component: ReviewScreen,
 });
 
+/** Keeps original / discount / paid consistent on a line, in whole øre. */
+function withMoney(item: DraftItem, originalLineMinor: number, discountLineMinor: number): DraftItem {
+  const quantity = Math.max(1, item.quantity);
+  const discount = Math.min(Math.max(0, discountLineMinor), originalLineMinor);
+  const paid = originalLineMinor - discount;
+  return {
+    ...item,
+    unitPriceMinor: Math.round(paid / quantity),
+    originalUnitPriceMinor: discount > 0 ? Math.round(originalLineMinor / quantity) : null,
+    discountMinor: discount,
+    discountPercent: null,
+  };
+}
+
+
 function ReviewScreen() {
   const pari = usePari();
   const navigate = useNavigate();
