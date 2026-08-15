@@ -11,7 +11,13 @@ export type DraftItem = {
   id: string;
   name: string;
   quantity: number;
+  /** Effective price actually paid, per unit. All split math uses this. */
   unitPriceMinor: number;
+  /** Pre-discount unit price, when the receipt printed one. Display only. */
+  originalUnitPriceMinor?: number | null;
+  /** Discount for the whole line (all units), positive. Display only. */
+  discountMinor?: number;
+  discountPercent?: number | null;
   /** false = private, kept out of the shared expense */
   isShared: boolean;
   /** person ids sharing this item; empty means "everyone in the expense" */
@@ -35,7 +41,10 @@ export type SplitDraft = {
   usingGroupDefault: boolean;
   /** Soft warnings from the receipt reader, shown on the review screen. */
   receiptWarnings?: string[];
+  /** Discount that applies to the whole receipt rather than a single line. */
+  receiptDiscountMinor?: number;
 };
+
 
 
 export const itemTotalMinor = (item: DraftItem) => item.unitPriceMinor * item.quantity;
