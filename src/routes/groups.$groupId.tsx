@@ -8,7 +8,7 @@ import { Avatar } from "@/components/pari/Avatar";
 import { BalanceDisplay, MoneyAmount, balanceTone } from "@/components/pari/MoneyAmount";
 import { EmptyState } from "@/components/pari/EmptyState";
 import { ExpenseRow } from "@/components/pari/rows";
-import { FxSummary } from "@/components/pari/FxSummary";
+import { ExpenseActivityCard } from "@/components/pari/ExpenseActivityCard";
 import { emptyDraft } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
