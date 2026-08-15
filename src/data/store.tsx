@@ -158,7 +158,11 @@ type PariContextValue = {
   removeGroupMember: (groupId: string, personId: string) => Promise<"ok" | "has-expenses">;
   setGroupArchived: (groupId: string, archived: boolean) => Promise<void>;
   deleteGroup: (groupId: string) => Promise<void>;
-  markSettled: (groupId: string, step: SettlementStep) => Promise<void>;
+  markSettled: (
+    groupId: string,
+    step: SettlementStep,
+    options?: { amountMinor?: number; note?: string },
+  ) => Promise<void>;
   addPerson: (name: string) => Promise<Person | null>;
   renamePerson: (id: string, name: string) => Promise<void>;
   deletePerson: (id: string) => Promise<void>;
@@ -1098,20 +1102,35 @@ export function PariProvider({ children }: { children: ReactNode }) {
       await refresh();
     };
 
-    const markSettled = async (groupId: string, step: SettlementStep) => {
+    /**
+     * Registers a payment as its own settlement transaction. Partial payments
+     * pass a smaller amountMinor; balances are always recalculated from
+     * expenses + splits + settlements, never overwritten.
+     */
+    const markSettled = async (
+      groupId: string,
+      step: SettlementStep,
+      options?: { amountMinor?: number; note?: string },
+    ) => {
       if (!userId) return;
+      const paid = Math.round(options?.amountMinor ?? step.amountMinor);
+      if (paid <= 0 || paid > step.amountMinor) return;
       await supabase.from("settlements").insert({
         owner_user_id: userId,
         group_id: groupId,
         from_person_id: step.fromPersonId,
         to_person_id: step.toPersonId,
-        amount_minor: step.amountMinor,
+        amount_minor: paid,
         currency: profile?.currency ?? "DKK",
         status: "settled",
         settled_at: nowIso(),
       });
       await logActivity("settlement_marked", "settlement", groupId, groupId, {
-        amount_minor: step.amountMinor,
+        amount_minor: paid,
+        from_person_id: step.fromPersonId,
+        to_person_id: step.toPersonId,
+        remaining_minor: step.amountMinor - paid,
+        ...(options?.note ? { note: options.note } : {}),
       });
       await refresh();
     };

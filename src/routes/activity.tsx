@@ -112,6 +112,24 @@ function ActivityScreen() {
                   const rowAmount = expense
                     ? (expense.original_total_minor ?? expense.total_minor)
                     : amount;
+                  const settlement =
+                    entry.activity_type === "settlement_marked" &&
+                    typeof entry.metadata["from_person_id"] === "string" &&
+                    typeof entry.metadata["to_person_id"] === "string"
+                      ? {
+                          from: pari.personName(String(entry.metadata["from_person_id"])),
+                          to: pari.personName(String(entry.metadata["to_person_id"])),
+                          remaining:
+                            typeof entry.metadata["remaining_minor"] === "number"
+                              ? entry.metadata["remaining_minor"]
+                              : 0,
+                          note:
+                            typeof entry.metadata["note"] === "string"
+                              ? entry.metadata["note"]
+                              : "",
+                        }
+                      : null;
+
 
                   return (
                     <div key={entry.id}>
@@ -124,7 +142,12 @@ function ActivityScreen() {
                         <Avatar name={actor} size="sm" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[15px]">
-                            {t(KEYS[entry.activity_type], { actor, title })}
+                            {settlement
+                              ? t("activity.settlementPaid", {
+                                  from: settlement.from,
+                                  to: settlement.to,
+                                })
+                              : t(KEYS[entry.activity_type], { actor, title })}
                           </p>
                           <p className="mt-0.5 text-[13px] text-muted-foreground">
                             {shortDate(entry.created_at)}
@@ -218,6 +241,38 @@ function ActivityScreen() {
                                 {t("expense.title")} →
                               </button>
                             </>
+                          ) : settlement ? (
+                            <div className="space-y-1.5">
+                              <p className="text-foreground">{t("activity.payment")}</p>
+                              <div className="flex justify-between">
+                                <span>{t("activity.paymentFrom")}</span>
+                                <span>{settlement.from}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>{t("activity.paymentTo")}</span>
+                                <span>{settlement.to}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>{t("activity.paymentAmount")}</span>
+                                {amount !== undefined ? (
+                                  <MoneyAmount minor={amount} tone="muted" />
+                                ) : null}
+                              </div>
+                              <div className="flex justify-between">
+                                <span>{t("activity.paymentRemaining")}</span>
+                                {settlement.remaining > 0 ? (
+                                  <MoneyAmount minor={settlement.remaining} tone="muted" />
+                                ) : (
+                                  <span>{t("activity.paymentSettled")}</span>
+                                )}
+                              </div>
+                              {settlement.note ? (
+                                <div className="flex justify-between">
+                                  <span>{t("activity.paymentNote")}</span>
+                                  <span>{settlement.note}</span>
+                                </div>
+                              ) : null}
+                            </div>
                           ) : (
                             <div className="flex justify-between">
                               <span>{group ? group.name : t("activity.title")}</span>
