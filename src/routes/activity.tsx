@@ -178,69 +178,7 @@ function ActivityScreen() {
                       {open ? (
                         <div className="animate-rise space-y-2 px-4 pb-5 text-[13px] text-muted-foreground">
                           {expense ? (
-                            <>
-                              <div className="flex justify-between">
-                                <span className="text-foreground">{expense.title}</span>
-                                <MoneyAmount
-                                  minor={expense.original_total_minor ?? expense.total_minor}
-                                  currency={originalCurrency}
-                                />
-                              </div>
-                              {foreign ? (
-                                <FxSummary
-                                  originalCurrency={originalCurrency ?? ""}
-                                  convertedMinor={expense.total_minor}
-                                  systemCurrency={expense.currency}
-                                  rate={Number(expense.exchange_rate ?? 1)}
-                                  rateDate={expense.exchange_rate_date ?? null}
-                                  fallbackDate={expense.created_at}
-                                />
-                              ) : null}
-                              {group ? (
-                                <div className="flex justify-between">
-                                  <span>{t("expense.group")}</span>
-                                  <span>{group.name}</span>
-                                </div>
-                              ) : null}
-                              <div className="flex justify-between">
-                                <span>{t("split.paidBy")}</span>
-                                <span>{pari.personName(expense.paid_by_person_id)}</span>
-                              </div>
-                              <div className="pt-1">
-                                {pari.expenseOriginalAllocations(expense.id).map((allocation) => (
-                                  <div
-                                    key={allocation.personId}
-                                    className="flex justify-between py-0.5"
-                                  >
-                                    <span>
-                                      {pari.personName(allocation.personId)}
-                                      {allocation.percentage != null
-                                        ? ` · ${allocation.percentage}%`
-                                        : allocation.shares != null
-                                          ? ` · ${allocation.shares}`
-                                          : ""}
-                                    </span>
-                                    <MoneyAmount
-                                      minor={allocation.amountMinor}
-                                      currency={originalCurrency}
-                                      tone="muted"
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  navigate({
-                                    to: "/expense/$expenseId",
-                                    params: { expenseId: expense.id },
-                                  })
-                                }
-                                className="pt-2 text-[13px] font-medium text-foreground"
-                              >
-                                {t("expense.title")} →
-                              </button>
-                            </>
+                            <ExpenseActivityCard expense={expense} history={history} />
                           ) : settlement ? (
                             <div className="space-y-1.5">
                               <p className="text-foreground">{t("activity.payment")}</p>
@@ -281,31 +219,9 @@ function ActivityScreen() {
                               ) : null}
                             </div>
                           )}
-
-                          {history.length > 1 ? (
-                            <div className="space-y-1.5 pt-3">
-                              <p className="text-[12px] uppercase tracking-wide text-muted-foreground/70">
-                                {t("activity.history")}
-                              </p>
-                              {history.map((event) => (
-                                <div key={event.id} className="flex justify-between">
-                                  <span>
-                                    {t(HISTORY_KEYS[event.activity_type], {
-                                      actor: event.actor_person_id
-                                        ? pari.personName(event.actor_person_id)
-                                        : pari.currentProfileName,
-                                    })}
-                                  </span>
-                                  <span className="text-muted-foreground/80">
-                                    {shortDate(event.created_at)} · {timeOfDay(event.created_at)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : null}
-
                         </div>
                       ) : null}
+
                     </div>
                   );
                 })}
