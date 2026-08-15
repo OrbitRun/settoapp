@@ -96,11 +96,18 @@ function ReviewScreen() {
         </p>
       </div>
 
-      {draft.receiptWarnings && draft.receiptWarnings.length > 0 ? (
+      {unassignedDiscount ? (
+        <div className="mb-4 rounded-2xl bg-surface-strong px-4 py-3 text-sm text-muted-foreground">
+          {t("receipt.unassignedDiscount", {
+            amount: formatMinor(receiptDiscount, { compact: false }),
+          })}
+        </div>
+      ) : draft.receiptWarnings && draft.receiptWarnings.length > 0 ? (
         <div className="mb-4 rounded-2xl bg-surface-strong px-4 py-3 text-sm text-muted-foreground">
           {t("receipt.checkLines")}
         </div>
       ) : null}
+
 
 
       <div className="mb-3 flex items-center justify-between px-4">
