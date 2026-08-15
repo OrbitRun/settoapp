@@ -109,7 +109,9 @@ function ManualExpenseScreen() {
       totalMinor: draft.amountMinor,
       allocations,
       source: "manual",
+      ...(lock.money ? { money: lock.money } : {}),
     });
+
     if (!expense) return;
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
     } catch {
