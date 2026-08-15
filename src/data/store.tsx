@@ -112,11 +112,16 @@ type UpdateExpenseInput = {
   title?: string;
   merchant?: string | null;
   paidByPersonId?: string;
+  /** Total in the expense's original currency. */
   totalMinor?: number;
+  /** Shares in the original currency. */
   allocations?: Allocation[];
   expenseDate?: string;
   groupId?: string | null;
+  /** Supply to change currency, override the rate, or set the card amount. */
+  money?: MoneyContext;
 };
+
 
 
 type PariContextValue = {
