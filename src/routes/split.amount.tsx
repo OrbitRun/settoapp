@@ -131,7 +131,6 @@ function ManualExpenseScreen() {
               {amountText}
             </span>
             <NumericField
-              autoFocus
               showZero
               value={toMajor(draft.amountMinor)}
               onChange={(next) => setDraft((prev) => ({ ...prev, amountMinor: toMinor(next) }))}

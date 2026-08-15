@@ -89,7 +89,7 @@ export function NumericField({
         placeholder={placeholder}
         onFocus={(event) => {
           setFocused(true);
-          setText(value === 0 ? "" : stripFormat(event.target.value));
+          setText(value === 0 ? (showZero ? "0" : "") : stripFormat(event.target.value));
           selectAll(event.target);
         }}
         onMouseUp={(event) => {
