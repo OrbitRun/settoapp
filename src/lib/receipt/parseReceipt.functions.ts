@@ -193,13 +193,27 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
                     items: {
                       type: "object",
                       additionalProperties: false,
-                      required: ["name", "quantity", "unit_price", "uncertain"],
+                      required: [
+                        "name",
+                        "quantity",
+                        "unit_price",
+                        "original_total",
+                        "discount_amount",
+                        "discount_percent",
+                        "effective_total",
+                        "uncertain",
+                      ],
                       properties: {
                         name: { type: "string" },
                         quantity: nullableNumber,
                         unit_price: nullableNumber,
+                        original_total: nullableNumber,
+                        discount_amount: nullableNumber,
+                        discount_percent: nullableNumber,
+                        effective_total: nullableNumber,
                         uncertain: { type: ["boolean", "null"] },
                       },
+
                     },
                   },
                 },
