@@ -158,7 +158,11 @@ type PariContextValue = {
   removeGroupMember: (groupId: string, personId: string) => Promise<"ok" | "has-expenses">;
   setGroupArchived: (groupId: string, archived: boolean) => Promise<void>;
   deleteGroup: (groupId: string) => Promise<void>;
-  markSettled: (groupId: string, step: SettlementStep) => Promise<void>;
+  markSettled: (
+    groupId: string,
+    step: SettlementStep,
+    options?: { amountMinor?: number; note?: string },
+  ) => Promise<void>;
   addPerson: (name: string) => Promise<Person | null>;
   renamePerson: (id: string, name: string) => Promise<void>;
   deletePerson: (id: string) => Promise<void>;
