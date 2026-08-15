@@ -22,7 +22,9 @@ import {
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { usePari } from "@/data/store";
 import type { Allocation, SplitMode } from "@/lib/split";
-import { toMajor, toMinor } from "@/lib/money";
+import { formatMinorIn, toMajor, toMinor } from "@/lib/money";
+import { CurrencyPanel } from "@/components/pari/CurrencyPanel";
+import { useMoneyLock } from "@/hooks/useMoneyLock";
 import { shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
 import { AuthGate } from "@/components/pari/AuthGate";
@@ -86,7 +88,10 @@ function ExpenseDetailScreen() {
   const [confirmSettled, setConfirmSettled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState(expense?.title ?? "");
-  const [amount, setAmount] = useState(toMajor(expense?.total_minor ?? 0));
+  const originalCurrency = expense?.original_currency ?? expense?.currency ?? pari.currency;
+  const originalTotalMinor = expense?.original_total_minor ?? expense?.total_minor ?? 0;
+  const [currency, setCurrency] = useState(originalCurrency);
+  const [amount, setAmount] = useState(toMajor(originalTotalMinor));
   const [paidBy, setPaidBy] = useState(expense?.paid_by_person_id ?? "");
   const [groupId, setGroupId] = useState<string | null>(expense?.group_id ?? null);
   const [groupChanged, setGroupChanged] = useState(false);
@@ -94,8 +99,16 @@ function ExpenseDetailScreen() {
     allocations.map((allocation) => allocation.personId),
   );
   const [rule, setRule] = useState<SplitRule>(() =>
-    ruleFromAllocations(allocations, expense?.total_minor ?? 0),
+    ruleFromAllocations(allocations, originalTotalMinor),
   );
+
+  // Editing happens in the currency the money was actually spent in.
+  const lock = useMoneyLock({
+    currency,
+    systemCurrency: pari.currency,
+    totalMinor: toMinor(amount),
+    dateIso: expense?.expense_date ?? null,
+  });
 
   const candidates = useMemo(() => {
     const ids = groupId
@@ -129,12 +142,13 @@ function ExpenseDetailScreen() {
 
   const startEditing = () => {
     setTitle(expense.title);
-    setAmount(toMajor(expense.total_minor));
+    setAmount(toMajor(originalTotalMinor));
+    setCurrency(originalCurrency);
     setPaidBy(expense.paid_by_person_id);
     setGroupId(expense.group_id);
     setGroupChanged(false);
     setParticipants(allocations.map((a) => a.personId));
-    setRule(ruleFromAllocations(allocations, expense.total_minor));
+    setRule(ruleFromAllocations(allocations, originalTotalMinor));
     if (inSettlement) setConfirmSettled(true);
     else setEditing(true);
   };
@@ -186,6 +200,7 @@ function ExpenseDetailScreen() {
         paidByPersonId: paidBy,
         groupId,
         allocations: previewAllocations(rule, people, totalMinor),
+        ...(lock.money ? { money: lock.money } : {}),
       });
       setEditing(false);
       toast.success(t("expense.saved"));
@@ -209,10 +224,16 @@ function ExpenseDetailScreen() {
       <FlowHeader title={expense.title} subtitle={group?.name ?? undefined} />
 
       <div className="px-1 pb-8 text-center">
-        <MoneyAmount
-          minor={expense.total_minor}
-          className="text-[40px] font-semibold tracking-[-0.04em]"
-        />
+        <p className="tnum text-[40px] font-semibold tracking-[-0.04em]">
+          {formatMinorIn(originalTotalMinor, originalCurrency, { compact: false })}
+        </p>
+        {originalCurrency !== expense.currency ? (
+          <p className="tnum mt-1 text-[15px] text-muted-foreground">
+            {t("currency.bookedAs", {
+              amount: formatMinorIn(expense.total_minor, expense.currency, { compact: false }),
+            })}
+          </p>
+        ) : null}
         <p className="mt-2 text-sm text-muted-foreground">
           {shortDate(expense.expense_date)} ·{" "}
           {t("home.paidBy", { name: pari.personName(expense.paid_by_person_id) })}
