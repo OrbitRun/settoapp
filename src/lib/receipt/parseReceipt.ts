@@ -4,11 +4,13 @@ import { parseReceiptImage, receiptErrorCode } from "./parseReceipt.functions";
 export type ParsedReceipt = {
   merchant: string;
   totalMinor: number;
+  receiptDiscountMinor: number;
   dateIso: string;
   items: DraftItem[];
   warnings: string[];
   confidence: number;
 };
+
 
 export { receiptErrorCode };
 export type { ReceiptErrorCode } from "./parseReceipt.functions";
