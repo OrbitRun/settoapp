@@ -6,8 +6,8 @@ import { BottomNav, Divider, Panel, Screen, TopBar } from "@/components/pari/App
 import { EmptyState } from "@/components/pari/EmptyState";
 import { Avatar } from "@/components/pari/Avatar";
 import { MoneyAmount } from "@/components/pari/MoneyAmount";
-import { FxSummary } from "@/components/pari/FxSummary";
-import { formatMinorIn } from "@/lib/money";
+import { ExpenseActivityCard } from "@/components/pari/ExpenseActivityCard";
+
 import { usePari } from "@/data/store";
 import { dayGroupLabel, shortDate, timeOfDay } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
