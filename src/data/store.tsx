@@ -556,6 +556,18 @@ export function PariProvider({ children }: { children: ReactNode }) {
           shares: s.shares ?? undefined,
         }));
 
+    /** Shares as they were split, in the currency the money was spent in. */
+    const expenseOriginalAllocations = (expenseId: string): Allocation[] =>
+      data.expenseSplits
+        .filter((s) => s.expense_id === expenseId)
+        .map((s) => ({
+          personId: s.person_id,
+          amountMinor: s.original_amount_minor ?? s.amount_minor,
+          percentage: s.percentage ?? undefined,
+          shares: s.shares ?? undefined,
+        }));
+
+
     const balancesFor = (expenses: Expense[], groupId?: string) =>
       calculateBalances(
         expenses.map((expense) => ({
