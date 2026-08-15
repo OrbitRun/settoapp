@@ -204,6 +204,9 @@ function ReviewScreen() {
             selectable
             selected={selected.includes(item.id)}
             isPrivate={!item.isShared}
+            flagged={item.confidence === "low"}
+            flagLabel={t("receipt.checkLine")}
+
             detail={
               (item.discountMinor ?? 0) > 0
                 ? t("receipt.discountLine", {
