@@ -193,6 +193,28 @@ const en: Dict = {
   "receipt.paidPrice": "Paid",
   "receipt.unassignedDiscount":
     "A discount of {amount} applies to the whole receipt and is spread across the items.",
+  "receipt.checkLine": "Check this line",
+  "receipt.lowConfidence": "Some lines were hard to read — tap to check them.",
+  "receipt.confidenceLegend": "Lines we were unsure about are marked.",
+
+  "currency.pick": "Currency",
+  "currency.receiptCurrency": "Receipt currency",
+  "currency.expenseCurrency": "Currency",
+  "currency.detected": "Detected from the receipt",
+  "currency.change": "Change",
+  "currency.splitIn": "Split in {currency}",
+  "currency.bookedAs": "Booked as {amount}",
+  "currency.rateLine": "1 {base} = {rate} {quote} · {date}",
+  "currency.rateLoading": "Fetching today's rate…",
+  "currency.rateFailed": "We couldn't fetch a rate. Enter it yourself.",
+  "currency.manualRate": "Exchange rate",
+  "currency.cardAmount": "Actual card amount",
+  "currency.cardAmountHint": "Optional — use the amount your bank charged.",
+  "currency.original": "Original",
+  "currency.converted": "Converted",
+  "currency.rateLocked": "Rate locked {date}",
+
+
 
   "receipt.missing": "We're missing {amount}",
   "receipt.tooMuch": "That's {amount} too much",
