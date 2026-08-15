@@ -229,39 +229,27 @@ function ActivityScreen() {
                           )}
 
                           {history.length > 1 ? (
-                            <div className="pt-2">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setHistoryId(historyId === entry.id ? null : entry.id)
-                                }
-                                className="text-[12px] text-muted-foreground/80 underline-offset-2 hover:underline"
-                              >
-                                {isDeleted ? t("activity.deletedTag") : t("activity.edited")}
-                              </button>
-                              {historyId === entry.id ? (
-                                <div className="animate-rise mt-2 space-y-1.5">
-                                  <p className="text-[12px] uppercase tracking-wide text-muted-foreground/70">
-                                    {t("activity.history")}
-                                  </p>
-                                  {history.map((event) => (
-                                    <div key={event.id} className="flex justify-between">
-                                      <span>
-                                        {t(HISTORY_KEYS[event.activity_type], {
-                                          actor: event.actor_person_id
-                                            ? pari.personName(event.actor_person_id)
-                                            : pari.currentProfileName,
-                                        })}
-                                      </span>
-                                      <span className="text-muted-foreground/80">
-                                        {shortDate(event.created_at)} · {timeOfDay(event.created_at)}
-                                      </span>
-                                    </div>
-                                  ))}
+                            <div className="space-y-1.5 pt-3">
+                              <p className="text-[12px] uppercase tracking-wide text-muted-foreground/70">
+                                {t("activity.history")}
+                              </p>
+                              {history.map((event) => (
+                                <div key={event.id} className="flex justify-between">
+                                  <span>
+                                    {t(HISTORY_KEYS[event.activity_type], {
+                                      actor: event.actor_person_id
+                                        ? pari.personName(event.actor_person_id)
+                                        : pari.currentProfileName,
+                                    })}
+                                  </span>
+                                  <span className="text-muted-foreground/80">
+                                    {shortDate(event.created_at)} · {timeOfDay(event.created_at)}
+                                  </span>
                                 </div>
-                              ) : null}
+                              ))}
                             </div>
                           ) : null}
+
                         </div>
                       ) : null}
                     </div>
