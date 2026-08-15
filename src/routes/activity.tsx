@@ -112,6 +112,24 @@ function ActivityScreen() {
                   const rowAmount = expense
                     ? (expense.original_total_minor ?? expense.total_minor)
                     : amount;
+                  const settlement =
+                    entry.activity_type === "settlement_marked" &&
+                    typeof entry.metadata["from_person_id"] === "string" &&
+                    typeof entry.metadata["to_person_id"] === "string"
+                      ? {
+                          from: pari.personName(String(entry.metadata["from_person_id"])),
+                          to: pari.personName(String(entry.metadata["to_person_id"])),
+                          remaining:
+                            typeof entry.metadata["remaining_minor"] === "number"
+                              ? entry.metadata["remaining_minor"]
+                              : 0,
+                          note:
+                            typeof entry.metadata["note"] === "string"
+                              ? entry.metadata["note"]
+                              : "",
+                        }
+                      : null;
+
 
                   return (
                     <div key={entry.id}>
