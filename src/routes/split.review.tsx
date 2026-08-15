@@ -34,8 +34,14 @@ function ReviewScreen() {
   const [editing, setEditing] = useState<DraftItem | null>(null);
   const t = useT();
 
-  const itemsTotal = itemsTotalMinor(draft.items);
-  const difference = draft.amountMinor - itemsTotal;
+  const grossTotal = itemsTotalMinor(draft.items);
+  const receiptDiscount = draft.receiptDiscountMinor ?? 0;
+  const itemsTotal = draftItemsNetTotalMinor(draft);
+  const rawDifference = draft.amountMinor - itemsTotal;
+  // Whole-øre rounding noise is not a mismatch.
+  const difference = Math.abs(rawDifference) <= 1 ? 0 : rawDifference;
+  const unassignedDiscount = (draft.receiptWarnings ?? []).includes("UNASSIGNED_DISCOUNT");
+
 
   const update = (id: string, patch: Partial<DraftItem>) =>
     setDraft((prev) => ({
