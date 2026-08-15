@@ -7,7 +7,7 @@
  * reach the screen.
  */
 import type { Allocation, SplitMode } from "@/lib/split";
-import { formatMinorIn } from "@/lib/money";
+import { formatMinor, formatMinorIn } from "@/lib/money";
 import type { Translate } from "@/lib/i18n";
 
 export type ExpenseSnapshot = {
@@ -231,8 +231,8 @@ export function describeChanges(
     } else if (value.fromAmountMinor !== undefined && changes.amount === undefined) {
       splitDetails.push(
         `${name}: ${arrow(
-          formatMinorIn(value.fromAmountMinor, undefined, { compact: false }),
-          formatMinorIn(value.toAmountMinor ?? 0, undefined, { compact: false }),
+          formatMinor(value.fromAmountMinor, { compact: false }),
+          formatMinor(value.toAmountMinor ?? 0, { compact: false }),
         )}`,
       );
     }
