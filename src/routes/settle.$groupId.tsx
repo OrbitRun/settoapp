@@ -40,6 +40,8 @@ function SettleScreen() {
   const pari = usePari();
   const group = pari.data.groups.find((g) => g.id === groupId);
   const plan = pari.settlementPlan(groupId);
+  const [payingKey, setPayingKey] = useState<string | null>(null);
+  const paying = plan.find((s) => `${s.fromPersonId}-${s.toPersonId}` === payingKey);
 
   return (
     <Screen>
