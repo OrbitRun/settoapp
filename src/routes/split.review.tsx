@@ -316,7 +316,7 @@ function ReviewScreen() {
                 }}
                 min={0}
                 ariaLabel={t("receipt.originalPrice")}
-                suffix={<span className="text-xs">{currencyLabel()}</span>}
+                suffix={<span className="text-xs">{currencyLabel(draft.currency)}</span>}
                 className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
               />
@@ -342,7 +342,7 @@ function ReviewScreen() {
                 }}
                 min={0}
                 ariaLabel={t("receipt.discount")}
-                suffix={<span className="text-xs">{currencyLabel()}</span>}
+                suffix={<span className="text-xs">{currencyLabel(draft.currency)}</span>}
                 className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
               />
@@ -355,7 +355,7 @@ function ReviewScreen() {
                 }}
                 min={0}
                 ariaLabel={t("receipt.paidPrice")}
-                suffix={<span className="text-xs">{currencyLabel()}</span>}
+                suffix={<span className="text-xs">{currencyLabel(draft.currency)}</span>}
                 className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
               />
