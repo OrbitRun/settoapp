@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Check, Plus, UserPlus } from "lucide-react";
+import { Check, ChevronDown, Plus, UserPlus } from "lucide-react";
 
 import { BottomNav, Divider, Panel, Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
@@ -8,9 +8,12 @@ import { Avatar } from "@/components/pari/Avatar";
 import { BalanceDisplay, MoneyAmount, balanceTone } from "@/components/pari/MoneyAmount";
 import { EmptyState } from "@/components/pari/EmptyState";
 import { ExpenseRow } from "@/components/pari/rows";
+import { FxSummary } from "@/components/pari/FxSummary";
 import { emptyDraft } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
+import { shortDate } from "@/lib/dates";
+import { formatMinorIn } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { AuthGate } from "@/components/pari/AuthGate";
 import { InviteSheet } from "@/components/pari/InviteSheet";
