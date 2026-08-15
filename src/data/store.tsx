@@ -1219,6 +1219,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       settlementPlan,
       recentExpenses,
       activityFeed,
+      expenseHistory,
       groupDefaultPercentages,
       groupRule,
       addExpense: isGuest ? guestAddExpense : addExpense,
