@@ -82,6 +82,9 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
     name: item.name,
     quantity: item.quantity,
     unitPriceMinor: item.unitPriceMinor,
+    originalUnitPriceMinor: item.originalUnitPriceMinor,
+    discountMinor: item.discountMinor,
+    discountPercent: item.discountPercent,
     isShared: true,
     assigned: [],
   }));
@@ -101,9 +104,11 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
   return {
     merchant: parsed.merchant ?? "Receipt",
     totalMinor: parsed.totalMinor,
+    receiptDiscountMinor: parsed.receiptDiscountMinor,
     dateIso: toIsoDate(parsed.dateIso),
     items,
     warnings: parsed.warnings,
     confidence: parsed.confidence,
   };
+
 }
