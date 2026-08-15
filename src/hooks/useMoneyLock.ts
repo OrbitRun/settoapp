@@ -10,7 +10,7 @@ export type MoneyLock = {
   systemCurrency: string;
   foreign: boolean;
   rate: number | null;
-  rateDate: string;
+  rateDate: string | null;
   loading: boolean;
   failed: boolean;
   manualRate: number | null;

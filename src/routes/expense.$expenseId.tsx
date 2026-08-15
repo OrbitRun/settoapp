@@ -108,6 +108,17 @@ function ExpenseDetailScreen() {
     systemCurrency: pari.currency,
     totalMinor: toMinor(amount),
     dateIso: expense?.expense_date ?? null,
+    // Existing expense: reuse the rate locked at save time, never refetch.
+    stored:
+      expense && expense.original_currency && expense.original_currency !== expense.currency
+        ? {
+            currency: expense.original_currency,
+            rate: Number(expense.exchange_rate) || 1,
+            rateDate: expense.exchange_rate_date ?? null,
+            source: expense.exchange_rate_source,
+            cardMinor: expense.card_charged_minor ?? null,
+          }
+        : null,
   });
 
   const candidates = useMemo(() => {
