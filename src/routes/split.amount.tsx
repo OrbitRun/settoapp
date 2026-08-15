@@ -260,11 +260,12 @@ function ManualExpenseScreen() {
           <PrimaryButton onClick={() => void save()} disabled={!canSave || busy}>
             {t("split.finish")}
             {draft.amountMinor > 0
-              ? ` · ${formatMinor(draft.amountMinor, { compact: false })}`
+              ? ` · ${formatMinorIn(draft.amountMinor, draft.currency, { compact: false })}`
               : ""}
           </PrimaryButton>
         </div>
       </div>
+
     </Screen>
   );
 }
