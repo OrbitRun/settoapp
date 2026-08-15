@@ -100,16 +100,21 @@ export function SplitRuleEditor({
   totalMinor,
   onChange,
   showAmounts = true,
+  currency,
 }: {
   rule: SplitRule;
   people: RulePerson[];
   totalMinor: number;
   onChange: (patch: Partial<SplitRule>) => void;
   showAmounts?: boolean;
+  /** Currency the amounts are in — the expense's original currency. */
+  currency?: string | undefined;
 }) {
   const t = useT();
   const allocations = previewAllocations(rule, people, totalMinor);
   const amountOf = (id: string) => allocations.find((a) => a.personId === id)?.amountMinor ?? 0;
+  const money = (minor: number, compact = true) =>
+    formatMinor(minor, { ...(currency ? { currency } : {}), compact });
 
   if (people.length === 0) return null;
 
@@ -122,7 +127,7 @@ export function SplitRuleEditor({
     return uniform ? (
       <div className="text-center">
         <p className="text-[26px] font-semibold tracking-[-0.03em]">
-          {formatMinor(each, { compact: false })}
+          {money(each, false)}
           <span className="ml-2 text-[15px] font-normal text-muted-foreground">
             {t("participants.each")}
           </span>
@@ -138,7 +143,7 @@ export function SplitRuleEditor({
         {people.map((person) => (
           <div key={person.id} className="flex items-center justify-between">
             <span className="min-w-0 flex-1 truncate text-[15px]">{person.name}</span>
-            <MoneyAmount minor={amountOf(person.id)} compact={false} size="sm" />
+            <MoneyAmount minor={amountOf(person.id)} currency={currency} compact={false} size="sm" />
           </div>
         ))}
       </div>
@@ -151,6 +156,7 @@ export function SplitRuleEditor({
         totalMinor={totalMinor}
         people={people}
         percentages={rule.percentages}
+        currency={currency}
         showAmounts={showAmounts && totalMinor > 0}
         onChange={(percentages) => onChange({ percentages })}
       />
@@ -173,7 +179,7 @@ export function SplitRuleEditor({
             <div key={person.id} className="flex items-center gap-3">
               <span className="min-w-0 flex-1 truncate text-[15px]">{person.name}</span>
               {showAmounts && totalMinor > 0 ? (
-                <MoneyAmount minor={amountOf(person.id)} tone="muted" size="sm" />
+                <MoneyAmount minor={amountOf(person.id)} currency={currency} tone="muted" size="sm" />
               ) : (
                 <span className="tnum text-[13px] text-muted-foreground">
                   {pct.toFixed(pct % 1 === 0 ? 0 : 1)}%
@@ -222,7 +228,7 @@ export function SplitRuleEditor({
             onChange={(next) => onChange({ exact: { ...rule.exact, [person.id]: toMinor(next) } })}
             min={0}
             ariaLabel={person.name}
-            suffix={<span className="text-sm">{currencyLabel()}</span>}
+            suffix={<span className="text-sm">{currencyLabel(currency)}</span>}
             className="h-11 w-[132px] shrink-0 rounded-xl bg-surface-strong px-3"
             inputClassName="text-right text-[15px] font-medium"
           />
@@ -233,14 +239,14 @@ export function SplitRuleEditor({
           <>
             <Check className="h-3.5 w-3.5 text-positive" strokeWidth={2} />
             {t("split.allocated", {
-              allocated: formatMinor(sum, { compact: false }),
-              total: formatMinor(totalMinor, { compact: false }),
+              allocated: money(sum, false),
+              total: money(totalMinor, false),
             })}
           </>
         ) : sum < totalMinor ? (
-          t("split.remaining", { amount: formatMinor(totalMinor - sum, { compact: false }) })
+          t("split.remaining", { amount: money(totalMinor - sum, false) })
         ) : (
-          t("split.over", { amount: formatMinor(sum - totalMinor, { compact: false }) })
+          t("split.over", { amount: money(sum - totalMinor, false) })
         )}
       </p>
     </div>

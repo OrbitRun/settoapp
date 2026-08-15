@@ -6,6 +6,7 @@ import { BottomNav, Divider, Panel, Screen, TopBar } from "@/components/pari/App
 import { EmptyState } from "@/components/pari/EmptyState";
 import { Avatar } from "@/components/pari/Avatar";
 import { MoneyAmount } from "@/components/pari/MoneyAmount";
+import { formatMinorIn } from "@/lib/money";
 import { usePari } from "@/data/store";
 import { dayGroupLabel, shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
@@ -85,6 +86,12 @@ function ActivityScreen() {
                       ? pari.expenseById(entry.entity_id)
                       : undefined;
                   const open = openId === entry.id;
+                  const originalCurrency =
+                    expense?.original_currency ?? expense?.currency ?? undefined;
+                  const foreign = expense != null && originalCurrency !== expense.currency;
+                  const rowAmount = expense
+                    ? (expense.original_total_minor ?? expense.total_minor)
+                    : amount;
 
                   return (
                     <div key={entry.id}>
@@ -104,7 +111,13 @@ function ActivityScreen() {
                             {group ? ` · ${group.name}` : ""}
                           </p>
                         </div>
-                        {amount !== undefined ? <MoneyAmount minor={amount} tone="muted" /> : null}
+                        {rowAmount !== undefined ? (
+                          <MoneyAmount
+                            minor={rowAmount}
+                            currency={expense ? originalCurrency : undefined}
+                            tone="muted"
+                          />
+                        ) : null}
                         <ChevronDown
                           className={cn(
                             "h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform",
@@ -120,8 +133,34 @@ function ActivityScreen() {
                             <>
                               <div className="flex justify-between">
                                 <span className="text-foreground">{expense.title}</span>
-                                <MoneyAmount minor={expense.total_minor} />
+                                <MoneyAmount
+                                  minor={expense.original_total_minor ?? expense.total_minor}
+                                  currency={originalCurrency}
+                                />
                               </div>
+                              {foreign ? (
+                                <div className="flex justify-between">
+                                  <span>
+                                    {t("currency.rateLine", {
+                                      base: originalCurrency ?? "",
+                                      rate: Number(expense.exchange_rate ?? 1)
+                                        .toFixed(4)
+                                        .replace(".", ","),
+                                      quote: expense.currency,
+                                      date: shortDate(
+                                        expense.exchange_rate_date
+                                          ? `${expense.exchange_rate_date}T12:00:00.000Z`
+                                          : expense.created_at,
+                                      ),
+                                    })}
+                                  </span>
+                                  <span>
+                                    {t("currency.bookedAs", {
+                                      amount: formatMinorIn(expense.total_minor, expense.currency),
+                                    })}
+                                  </span>
+                                </div>
+                              ) : null}
                               {group ? (
                                 <div className="flex justify-between">
                                   <span>{t("expense.group")}</span>
@@ -133,7 +172,7 @@ function ActivityScreen() {
                                 <span>{pari.personName(expense.paid_by_person_id)}</span>
                               </div>
                               <div className="pt-1">
-                                {pari.expenseAllocations(expense.id).map((allocation) => (
+                                {pari.expenseOriginalAllocations(expense.id).map((allocation) => (
                                   <div
                                     key={allocation.personId}
                                     className="flex justify-between py-0.5"
@@ -146,7 +185,11 @@ function ActivityScreen() {
                                           ? ` · ${allocation.shares}`
                                           : ""}
                                     </span>
-                                    <MoneyAmount minor={allocation.amountMinor} tone="muted" />
+                                    <MoneyAmount
+                                      minor={allocation.amountMinor}
+                                      currency={originalCurrency}
+                                      tone="muted"
+                                    />
                                   </div>
                                 ))}
                               </div>

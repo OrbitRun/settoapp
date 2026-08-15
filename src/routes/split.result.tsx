@@ -5,7 +5,6 @@ import { z } from "zod";
 import { Divider, Panel, Screen } from "@/components/pari/AppShell";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { Avatar } from "@/components/pari/Avatar";
-import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { EmptyState } from "@/components/pari/EmptyState";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";

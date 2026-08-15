@@ -14,7 +14,8 @@ const SIZES: Record<Size, string> = {
 export function MoneyAmount({
   minor,
   size = "md",
-  currency = "DKK",
+  /** Omit for system-currency (accounting) values — falls back to the profile currency. */
+  currency,
   showSign = false,
   compact = true,
   tone = "default",
@@ -22,7 +23,7 @@ export function MoneyAmount({
 }: {
   minor: number;
   size?: Size;
-  currency?: string;
+  currency?: string | undefined;
   showSign?: boolean;
   compact?: boolean;
   tone?: "default" | "positive" | "negative" | "muted";
@@ -47,7 +48,7 @@ export function MoneyAmount({
         className,
       )}
     >
-      {formatMinor(minor, { currency, showSign, compact })}
+      {formatMinor(minor, { ...(currency ? { currency } : {}), showSign, compact })}
     </span>
   );
 }

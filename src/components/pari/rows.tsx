@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 
 import { shortDate } from "@/lib/dates";
-import { formatMinor } from "@/lib/money";
+import { formatMinor, formatMinorIn } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { useI18n, useT } from "@/lib/i18n";
 import { AvatarStack } from "./Avatar";
@@ -58,35 +58,63 @@ export function ExpenseRow({
   title,
   subtitle,
   amountMinor,
+  currency,
+  originalAmountMinor,
+  originalCurrency,
   dateIso,
+  expenseId,
   onClick,
   className,
 }: {
   title: string;
   subtitle: string;
+  /** Amount in system currency — what the ledger and balances use. */
   amountMinor: number;
+  currency?: string | undefined;
+  /** Set only for foreign-currency expenses; shown as context in the subtitle. */
+  originalAmountMinor?: number | undefined;
+  originalCurrency?: string | undefined;
   dateIso?: string;
+  /** Makes the row open the canonical expense detail screen. */
+  expenseId?: string | undefined;
   onClick?: () => void;
   className?: string;
 }) {
-  const Tag = onClick ? "button" : "div";
-  return (
-    <Tag
-      {...(onClick ? { type: "button" as const, onClick } : {})}
-      className={cn(
-        "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl px-4 py-3.5 text-left transition-colors",
-        onClick && "hover:bg-surface-strong/60",
-        className,
-      )}
-    >
+  const foreign =
+    originalCurrency != null && originalAmountMinor != null && originalCurrency !== currency;
+
+  const inner = (
+    <>
       <div className="min-w-0">
         <p className="truncate text-[15px] font-medium tracking-tight">{title}</p>
         <p className="mt-1 truncate text-xs text-muted-foreground">
           {dateIso ? `${shortDate(dateIso)} · ` : ""}
+          {foreign ? `${formatMinorIn(originalAmountMinor, originalCurrency)} · ` : ""}
           {subtitle}
         </p>
       </div>
-      <MoneyAmount minor={amountMinor} className="shrink-0" />
+      <MoneyAmount minor={amountMinor} currency={currency} className="shrink-0" />
+    </>
+  );
+
+  const shell = cn(
+    "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl px-4 py-3.5 text-left transition-colors",
+    (onClick || expenseId) && "hover:bg-surface-strong/60",
+    className,
+  );
+
+  if (expenseId) {
+    return (
+      <Link to="/expense/$expenseId" params={{ expenseId }} className={shell}>
+        {inner}
+      </Link>
+    );
+  }
+
+  const Tag = onClick ? "button" : "div";
+  return (
+    <Tag {...(onClick ? { type: "button" as const, onClick } : {})} className={shell}>
+      {inner}
     </Tag>
   );
 }

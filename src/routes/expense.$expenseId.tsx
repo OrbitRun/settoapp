@@ -7,7 +7,6 @@ import { Divider, Panel, Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { EmptyState } from "@/components/pari/EmptyState";
-import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { NumericField } from "@/components/pari/NumericField";
 import { ParticipantSelector } from "@/components/pari/ParticipantSelector";
 import { GroupPicker } from "@/components/pari/GroupPicker";
@@ -333,6 +332,7 @@ function ExpenseDetailScreen() {
               rule={rule}
               people={people}
               totalMinor={totalMinor}
+              currency={currency}
               onChange={(patch) => setRule((prev) => ({ ...prev, ...patch }))}
             />
           </section>
@@ -379,7 +379,9 @@ function ExpenseDetailScreen() {
                       {item.quantity > 1 ? `${item.quantity} × ` : ""}
                       {item.name}
                     </span>
-                    <MoneyAmount minor={item.total_minor} tone="muted" />
+                    <span className="tnum text-sm text-muted-foreground">
+                      {formatMinorIn(item.total_minor, originalCurrency)}
+                    </span>
                   </div>
                 </div>
               ))}

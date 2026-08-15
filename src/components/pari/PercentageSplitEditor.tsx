@@ -13,12 +13,14 @@ export function PercentageSplitEditor({
   percentages,
   onChange,
   showAmounts = true,
+  currency,
 }: {
   totalMinor: number;
   people: { id: string; name: string }[];
   percentages: Record<string, number>;
   onChange: (next: Record<string, number>) => void;
   showAmounts?: boolean;
+  currency?: string | undefined;
 }) {
   const t = useT();
   const sum = people.reduce((acc, person) => acc + (percentages[person.id] ?? 0), 0);
@@ -56,6 +58,7 @@ export function PercentageSplitEditor({
               {showAmounts ? (
                 <MoneyAmount
                   minor={amount}
+                  currency={currency}
                   tone="muted"
                   size="sm"
                   className="w-24 shrink-0 text-right"
