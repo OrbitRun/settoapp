@@ -242,10 +242,14 @@ function ReviewScreen() {
             />
             <div className="flex gap-2">
               <NumericField
-                value={toMajor(editing.unitPriceMinor)}
-                onChange={(next) => setEditing({ ...editing, unitPriceMinor: toMinor(next) })}
+                value={toMajor(itemOriginalTotalMinor(editing))}
+                onChange={(next) => {
+                  const original = Math.max(0, toMinor(next));
+                  const discount = Math.min(editing.discountMinor ?? 0, original);
+                  setEditing(withMoney(editing, original, discount));
+                }}
                 min={0}
-                ariaLabel={t("receipt.price")}
+                ariaLabel={t("receipt.originalPrice")}
                 suffix={<span className="text-xs">{currencyLabel()}</span>}
                 className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
@@ -261,6 +265,40 @@ function ReviewScreen() {
                 inputClassName="text-[15px]"
               />
             </div>
+
+            <div className="flex gap-2">
+              <NumericField
+                value={toMajor(editing.discountMinor ?? 0)}
+                onChange={(next) => {
+                  const original = itemOriginalTotalMinor(editing);
+                  const discount = Math.min(Math.max(0, toMinor(next)), original);
+                  setEditing(withMoney(editing, original, discount));
+                }}
+                min={0}
+                ariaLabel={t("receipt.discount")}
+                suffix={<span className="text-xs">{currencyLabel()}</span>}
+                className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
+                inputClassName="text-[15px]"
+              />
+              <NumericField
+                value={toMajor(itemTotalMinor(editing))}
+                onChange={(next) => {
+                  const paid = Math.max(0, toMinor(next));
+                  const original = Math.max(itemOriginalTotalMinor(editing), paid);
+                  setEditing(withMoney(editing, original, original - paid));
+                }}
+                min={0}
+                ariaLabel={t("receipt.paidPrice")}
+                suffix={<span className="text-xs">{currencyLabel()}</span>}
+                className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
+                inputClassName="text-[15px]"
+              />
+            </div>
+
+            <p className="px-1 text-xs text-muted-foreground">
+              {t("receipt.originalPrice")} · {t("receipt.discount")} · {t("receipt.paidPrice")}
+            </p>
+
 
             <PrimaryButton
               onClick={() => {
