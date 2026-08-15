@@ -100,16 +100,21 @@ export function SplitRuleEditor({
   totalMinor,
   onChange,
   showAmounts = true,
+  currency,
 }: {
   rule: SplitRule;
   people: RulePerson[];
   totalMinor: number;
   onChange: (patch: Partial<SplitRule>) => void;
   showAmounts?: boolean;
+  /** Currency the amounts are in — the expense's original currency. */
+  currency?: string | undefined;
 }) {
   const t = useT();
   const allocations = previewAllocations(rule, people, totalMinor);
   const amountOf = (id: string) => allocations.find((a) => a.personId === id)?.amountMinor ?? 0;
+  const money = (minor: number, compact = true) =>
+    formatMinor(minor, { ...(currency ? { currency } : {}), compact });
 
   if (people.length === 0) return null;
 
