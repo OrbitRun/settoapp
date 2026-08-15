@@ -16,7 +16,9 @@ import {
 } from "@/data/draft";
 
 import { usePari } from "@/data/store";
-import { currencyLabel, formatMinor, toMajor, toMinor } from "@/lib/money";
+import { CurrencyPanel } from "@/components/pari/CurrencyPanel";
+import { useMoneyLock } from "@/hooks/useMoneyLock";
+import { currencyLabel, formatMinorIn, toMajor, toMinor } from "@/lib/money";
 import { NumericField } from "@/components/pari/NumericField";
 import { shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
@@ -34,7 +36,11 @@ export const Route = createFileRoute("/split/review")({
 });
 
 /** Keeps original / discount / paid consistent on a line, in whole øre. */
-function withMoney(item: DraftItem, originalLineMinor: number, discountLineMinor: number): DraftItem {
+function withMoney(
+  item: DraftItem,
+  originalLineMinor: number,
+  discountLineMinor: number,
+): DraftItem {
   const quantity = Math.max(1, item.quantity);
   const discount = Math.min(Math.max(0, discountLineMinor), originalLineMinor);
   const paid = originalLineMinor - discount;
@@ -47,7 +53,6 @@ function withMoney(item: DraftItem, originalLineMinor: number, discountLineMinor
   };
 }
 
-
 function ReviewScreen() {
   const pari = usePari();
   const navigate = useNavigate();
@@ -56,6 +61,19 @@ function ReviewScreen() {
   const [editing, setEditing] = useState<DraftItem | null>(null);
   const t = useT();
 
+  // The review screen stays entirely in the receipt's own currency.
+  const money = (minor: number, options: { currency?: string; compact?: boolean } = {}) =>
+    formatMinorIn(minor, options.currency ?? draft.currency, {
+      compact: options.compact ?? true,
+    });
+
+  const lock = useMoneyLock({
+    currency: draft.currency,
+    systemCurrency: pari.currency,
+    totalMinor: draft.amountMinor,
+    dateIso: draft.dateIso ?? null,
+  });
+
   const grossTotal = itemsTotalMinor(draft.items);
   const receiptDiscount = draft.receiptDiscountMinor ?? 0;
   const itemsTotal = draftItemsNetTotalMinor(draft);
@@ -63,7 +81,7 @@ function ReviewScreen() {
   // Whole-øre rounding noise is not a mismatch.
   const difference = Math.abs(rawDifference) <= 1 ? 0 : rawDifference;
   const unassignedDiscount = (draft.receiptWarnings ?? []).includes("UNASSIGNED_DISCOUNT");
-
+  const unsureLines = draft.items.filter((item) => item.confidence === "low").length;
 
   const update = (id: string, patch: Partial<DraftItem>) =>
     setDraft((prev) => ({
@@ -102,28 +120,53 @@ function ReviewScreen() {
       <FlowHeader title={t("receipt.found")} />
 
       <div className="px-1 pb-8">
-        <p className="text-sm text-muted-foreground">{shortDate(draft.items.length ? new Date().toISOString() : new Date().toISOString())}</p>
+        <p className="text-sm text-muted-foreground">
+          {shortDate(draft.items.length ? new Date().toISOString() : new Date().toISOString())}
+        </p>
         <h1 className="mt-1 text-[26px] font-semibold tracking-[-0.03em]">
           {draft.merchant ?? t("split.receipt")}
         </h1>
         <p className="tnum mt-2 text-[17px] text-muted-foreground">
-          {formatMinor(draft.amountMinor, { compact: false })}
+          {money(draft.amountMinor, { compact: false })}
         </p>
+      </div>
+
+      <div className="mb-4">
+        <CurrencyPanel
+          lock={lock}
+          onCurrencyChange={(currency) =>
+            setDraft((prev) => ({
+              ...prev,
+              currency,
+              currencyConfidence: "high",
+              currencyConfirmed: true,
+            }))
+          }
+          detectedNote={
+            draft.currencyConfirmed
+              ? undefined
+              : draft.currencyEvidence
+                ? `${t("currency.detected")} · ${draft.currencyEvidence}`
+                : t("currency.detected")
+          }
+        />
       </div>
 
       {unassignedDiscount ? (
         <div className="mb-4 rounded-2xl bg-surface-strong px-4 py-3 text-sm text-muted-foreground">
           {t("receipt.unassignedDiscount", {
-            amount: formatMinor(receiptDiscount, { compact: false }),
+            amount: money(receiptDiscount, { compact: false }),
           })}
+        </div>
+      ) : unsureLines > 0 ? (
+        <div className="mb-4 rounded-2xl bg-warning-soft px-4 py-3 text-sm">
+          {t("receipt.lowConfidence")}
         </div>
       ) : draft.receiptWarnings && draft.receiptWarnings.length > 0 ? (
         <div className="mb-4 rounded-2xl bg-surface-strong px-4 py-3 text-sm text-muted-foreground">
           {t("receipt.checkLines")}
         </div>
       ) : null}
-
-
 
       <div className="mb-3 flex items-center justify-between px-4">
         <span className="text-[13px] text-muted-foreground">
@@ -156,14 +199,17 @@ function ReviewScreen() {
             selectable
             selected={selected.includes(item.id)}
             isPrivate={!item.isShared}
+            flagged={item.confidence === "low"}
+            flagLabel={t("receipt.checkLine")}
+
             detail={
               (item.discountMinor ?? 0) > 0
                 ? t("receipt.discountLine", {
-                    original: formatMinor(itemOriginalTotalMinor(item), {
+                    original: money(itemOriginalTotalMinor(item), {
                       currency: "",
                       compact: false,
                     }).trim(),
-                    amount: formatMinor(item.discountMinor ?? 0, {
+                    amount: money(item.discountMinor ?? 0, {
                       currency: "",
                       compact: false,
                     }).trim(),
@@ -173,9 +219,7 @@ function ReviewScreen() {
             onClick={() => toggle(item.id)}
             right={
               <span className="flex items-center gap-3">
-                <span className="tnum">
-                  {formatMinor(itemTotalMinor(item), { currency: "" }).trim()}
-                </span>
+                <span className="tnum">{money(itemTotalMinor(item), { currency: "" }).trim()}</span>
                 <button
                   type="button"
                   aria-label={`${t("common.edit")} ${item.name}`}
@@ -196,19 +240,17 @@ function ReviewScreen() {
       <div className="mt-5 space-y-2 px-4">
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>{t("receipt.detected")}</span>
-          <span className="tnum">{formatMinor(grossTotal, { compact: false })}</span>
+          <span className="tnum">{money(grossTotal, { compact: false })}</span>
         </div>
         {receiptDiscount > 0 ? (
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>{t("receipt.discount")}</span>
-            <span className="tnum">−{formatMinor(receiptDiscount, { compact: false })}</span>
+            <span className="tnum">−{money(receiptDiscount, { compact: false })}</span>
           </div>
         ) : null}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("receipt.total")}</span>
-          <span className="tnum font-medium">
-            {formatMinor(draft.amountMinor, { compact: false })}
-          </span>
+          <span className="tnum font-medium">{money(draft.amountMinor, { compact: false })}</span>
         </div>
 
         <p className="pt-1 text-sm">
@@ -219,9 +261,9 @@ function ReviewScreen() {
           ) : (
             <span className="text-muted-foreground">
               {difference > 0
-                ? t("receipt.missing", { amount: formatMinor(difference, { compact: false }) })
+                ? t("receipt.missing", { amount: money(difference, { compact: false }) })
                 : t("receipt.tooMuch", {
-                    amount: formatMinor(-difference, { compact: false }),
+                    amount: money(-difference, { compact: false }),
                   })}
             </span>
           )}
@@ -246,7 +288,11 @@ function ReviewScreen() {
         </div>
       </div>
 
-      <BottomSheet open={editing !== null} onClose={() => setEditing(null)} title={t("receipt.editItem")}>
+      <BottomSheet
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        title={t("receipt.editItem")}
+      >
         {editing ? (
           <div className="space-y-4">
             <input
@@ -265,13 +311,15 @@ function ReviewScreen() {
                 }}
                 min={0}
                 ariaLabel={t("receipt.originalPrice")}
-                suffix={<span className="text-xs">{currencyLabel()}</span>}
+                suffix={<span className="text-xs">{currencyLabel(draft.currency)}</span>}
                 className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
               />
               <NumericField
                 value={editing.quantity}
-                onChange={(next) => setEditing({ ...editing, quantity: Math.max(1, Math.round(next)) })}
+                onChange={(next) =>
+                  setEditing({ ...editing, quantity: Math.max(1, Math.round(next)) })
+                }
                 min={1}
                 decimals={0}
                 ariaLabel={t("receipt.quantity")}
@@ -291,7 +339,7 @@ function ReviewScreen() {
                 }}
                 min={0}
                 ariaLabel={t("receipt.discount")}
-                suffix={<span className="text-xs">{currencyLabel()}</span>}
+                suffix={<span className="text-xs">{currencyLabel(draft.currency)}</span>}
                 className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
               />
@@ -304,7 +352,7 @@ function ReviewScreen() {
                 }}
                 min={0}
                 ariaLabel={t("receipt.paidPrice")}
-                suffix={<span className="text-xs">{currencyLabel()}</span>}
+                suffix={<span className="text-xs">{currencyLabel(draft.currency)}</span>}
                 className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
               />
@@ -313,7 +361,6 @@ function ReviewScreen() {
             <p className="px-1 text-xs text-muted-foreground">
               {t("receipt.originalPrice")} · {t("receipt.discount")} · {t("receipt.paidPrice")}
             </p>
-
 
             <PrimaryButton
               onClick={() => {

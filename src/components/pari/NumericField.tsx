@@ -49,8 +49,6 @@ export function NumericField({
   /** Never report while typing — only on blur/Enter, through onCommit. */
   commitOnly?: boolean;
 }) {
-
-
   const inputRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(() => toText(value, format, showZero));
   const [focused, setFocused] = useState(false);

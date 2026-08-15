@@ -6,6 +6,7 @@ import {
   type Allocation,
   type SplitMode,
 } from "@/lib/split";
+import type { Confidence } from "@/lib/fx";
 
 export type DraftItem = {
   id: string;
@@ -18,6 +19,8 @@ export type DraftItem = {
   /** Discount for the whole line (all units), positive. Display only. */
   discountMinor?: number;
   discountPercent?: number | null;
+  /** How legible the line was. Never means "excluded from the split". */
+  confidence?: Confidence;
   /** false = private, kept out of the shared expense */
   isShared: boolean;
   /** person ids sharing this item; empty means "everyone in the expense" */
@@ -43,9 +46,22 @@ export type SplitDraft = {
   receiptWarnings?: string[];
   /** Discount that applies to the whole receipt rather than a single line. */
   receiptDiscountMinor?: number;
+
+  /**
+   * The currency the money was actually spent in. Every amount in the draft —
+   * items, discounts, amountMinor — is in this currency. Conversion to the
+   * system currency happens only when the expense is confirmed.
+   */
+  currency: string;
+  currencyConfidence: Confidence;
+  currencyEvidence?: string | null;
+  /** True once the user has picked the currency by hand. */
+  currencyConfirmed: boolean;
+  /** How sure the reader was about the receipt total. */
+  totalConfidence?: Confidence;
+  /** ISO date of the purchase, used to look up the rate. */
+  dateIso?: string | null;
 };
-
-
 
 export const itemTotalMinor = (item: DraftItem) => item.unitPriceMinor * item.quantity;
 
@@ -96,7 +112,10 @@ export function effectiveItemTotals(draft: SplitDraft): Map<string, number> {
   const discount = draft.receiptDiscountMinor ?? 0;
   const parts = prorateDiscount(draft.items, discount);
   return new Map(
-    draft.items.map((item) => [item.id, Math.max(0, itemTotalMinor(item) - (parts.get(item.id) ?? 0))]),
+    draft.items.map((item) => [
+      item.id,
+      Math.max(0, itemTotalMinor(item) - (parts.get(item.id) ?? 0)),
+    ]),
   );
 }
 
@@ -109,7 +128,10 @@ export function draftItemsNetTotalMinor(draft: SplitDraft): number {
 
 /** The amount actually being shared: shared items when itemised, else the full amount. */
 export function draftSharedTotalMinor(draft: SplitDraft): number {
-  if (draft.items.length > 0 && (draft.splitByItem || sharedItems(draft.items).length < draft.items.length)) {
+  if (
+    draft.items.length > 0 &&
+    (draft.splitByItem || sharedItems(draft.items).length < draft.items.length)
+  ) {
     const totals = effectiveItemTotals(draft);
     return sharedItems(draft.items).reduce((sum, item) => sum + (totals.get(item.id) ?? 0), 0);
   }
@@ -127,15 +149,20 @@ export function computeDraftAllocations(draft: SplitDraft): Allocation[] {
     const totals = new Map<string, number>(participants.map((id) => [id, 0]));
     for (const item of sharedItems(draft.items)) {
       const people = item.assigned.length > 0 ? item.assigned : participants;
-      for (const allocation of calculateEqualSplit(effective.get(item.id) ?? itemTotalMinor(item), people)) {
-        totals.set(allocation.personId, (totals.get(allocation.personId) ?? 0) + allocation.amountMinor);
+      for (const allocation of calculateEqualSplit(
+        effective.get(item.id) ?? itemTotalMinor(item),
+        people,
+      )) {
+        totals.set(
+          allocation.personId,
+          (totals.get(allocation.personId) ?? 0) + allocation.amountMinor,
+        );
       }
     }
     return [...totals.entries()]
       .filter(([, amount]) => amount > 0)
       .map(([personId, amountMinor]) => ({ personId, amountMinor }));
   }
-
 
   switch (draft.mode) {
     case "percentage":
@@ -179,8 +206,7 @@ export const splitModeHintKey: Record<SplitMode, string> = {
   exact: "split.exactHint",
 };
 
-
-export function emptyDraft(paidByPersonId: string): SplitDraft {
+export function emptyDraft(paidByPersonId: string, currency = "DKK"): SplitDraft {
   return {
     source: "manual",
     title: "",
@@ -196,5 +222,9 @@ export function emptyDraft(paidByPersonId: string): SplitDraft {
     items: [],
     splitByItem: false,
     usingGroupDefault: false,
+    currency,
+    currencyConfidence: "high",
+    currencyConfirmed: false,
+    dateIso: null,
   };
 }

@@ -29,12 +29,8 @@ export function FlowHeader({
         )}
       </button>
       <div className="min-w-0 text-center">
-        {title ? (
-          <p className="truncate text-[15px] font-medium tracking-tight">{title}</p>
-        ) : null}
-        {subtitle ? (
-          <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
-        ) : null}
+        {title ? <p className="truncate text-[15px] font-medium tracking-tight">{title}</p> : null}
+        {subtitle ? <p className="truncate text-xs text-muted-foreground">{subtitle}</p> : null}
       </div>
       <span className="h-10 w-10" />
     </header>

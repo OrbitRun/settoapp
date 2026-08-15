@@ -1,4 +1,4 @@
-import { Check, Lock } from "lucide-react";
+import { AlertCircle, Check, Lock } from "lucide-react";
 
 import { formatMinor } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,8 @@ export function ReceiptItemRow({
   selected = false,
   selectable = false,
   isPrivate = false,
+  flagged = false,
+  flagLabel,
   detail,
   onClick,
   right,
@@ -20,6 +22,9 @@ export function ReceiptItemRow({
   selected?: boolean;
   selectable?: boolean;
   isPrivate?: boolean;
+  /** The reader wasn't sure about this line — visually separate from selection. */
+  flagged?: boolean;
+  flagLabel?: string | undefined;
   detail?: string | undefined;
   onClick?: (() => void) | undefined;
   right?: React.ReactNode;
@@ -51,7 +56,21 @@ export function ReceiptItemRow({
 
       <span className="min-w-0">
         <span className="flex items-center gap-1.5">
-          <span className="truncate text-[15px] tracking-tight">{name}</span>
+          <span
+            className={cn(
+              "truncate text-[15px] tracking-tight",
+              flagged && "decoration-warning/70 underline decoration-dotted underline-offset-4",
+            )}
+          >
+            {name}
+          </span>
+          {flagged ? (
+            <AlertCircle
+              className="h-3.5 w-3.5 shrink-0 text-warning"
+              strokeWidth={1.8}
+              aria-label={flagLabel}
+            />
+          ) : null}
           {isPrivate ? (
             <Lock className="h-3 w-3 shrink-0 text-muted-foreground" strokeWidth={1.8} />
           ) : null}

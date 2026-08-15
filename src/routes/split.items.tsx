@@ -9,7 +9,8 @@ import { PersonChip } from "@/components/pari/PersonChip";
 import { disambiguateInitials } from "@/components/pari/Avatar";
 import { computeDraftAllocations, itemTotalMinor } from "@/data/draft";
 import { usePari } from "@/data/store";
-import { formatMinor } from "@/lib/money";
+import { formatMinorIn } from "@/lib/money";
+import { useMoneyLock } from "@/hooks/useMoneyLock";
 import { calculateEqualSplit } from "@/lib/split";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
@@ -34,6 +35,19 @@ function ItemSplitScreen() {
   const [assignOpen, setAssignOpen] = useState(false);
   const [bulkPeople, setBulkPeople] = useState<string[]>([]);
   const t = useT();
+
+  // Items and totals stay in the receipt's own currency.
+  const formatMinorIn2 = (minor: number, options: { currency?: string; compact?: boolean } = {}) =>
+    formatMinorIn(minor, options.currency ?? draft.currency, {
+      compact: options.compact ?? true,
+    });
+
+  const lock = useMoneyLock({
+    currency: draft.currency,
+    systemCurrency: pari.currency,
+    totalMinor: draft.amountMinor,
+    dateIso: draft.dateIso ?? null,
+  });
 
   const people = useMemo(() => {
     const names = draft.participants.map((id) => pari.personName(id));
@@ -90,6 +104,7 @@ function ItemSplitScreen() {
       allocations,
       source: "receipt",
       items: draft.items,
+      ...(lock.money ? { money: lock.money } : {}),
     });
     if (!expense) return;
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
@@ -151,12 +166,12 @@ function ItemSplitScreen() {
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
                     {assigned.length === 1
-                      ? `${pari.personName(assigned[0]!)} · ${formatMinor(share, { compact: false })}`
-                      : t("receipt.each", { amount: formatMinor(share, { compact: false }) })}
+                      ? `${pari.personName(assigned[0]!)} · ${formatMinorIn2(share, { compact: false })}`
+                      : t("receipt.each", { amount: formatMinorIn2(share, { compact: false }) })}
                   </span>
                 </button>
                 <span className="tnum shrink-0 text-[15px] font-medium">
-                  {formatMinor(itemTotalMinor(item), { currency: "" }).trim()}
+                  {formatMinorIn2(itemTotalMinor(item), { currency: "" }).trim()}
                 </span>
               </div>
 
@@ -189,12 +204,16 @@ function ItemSplitScreen() {
               <p className="pb-1 text-center text-sm text-muted-foreground">
                 {t("receipt.itemsSelected", { count: selected.length })}
               </p>
-              <PrimaryButton onClick={() => setAssignOpen(true)}>{t("receipt.assignPeople")}</PrimaryButton>
-              <SecondaryButton onClick={() => setSelected([])}>{t("receipt.clear")}</SecondaryButton>
+              <PrimaryButton onClick={() => setAssignOpen(true)}>
+                {t("receipt.assignPeople")}
+              </PrimaryButton>
+              <SecondaryButton onClick={() => setSelected([])}>
+                {t("receipt.clear")}
+              </SecondaryButton>
             </>
           ) : (
             <PrimaryButton onClick={confirm}>
-              {t("receipt.confirmSplit")} · {formatMinor(total, { compact: false })}
+              {t("receipt.confirmSplit")} · {formatMinorIn2(total, { compact: false })}
             </PrimaryButton>
           )}
         </div>

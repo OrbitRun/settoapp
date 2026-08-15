@@ -46,6 +46,9 @@
   --color-positive-soft: var(--positive-soft);
   --color-negative: var(--negative);
   --color-negative-soft: var(--negative-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+
   --color-surface: var(--surface);
   --color-surface-strong: var(--surface-strong);
   --color-hairline: var(--hairline);
@@ -88,6 +91,9 @@
   --positive-soft: oklch(0.93 0.035 172);
   --negative: oklch(0.55 0.09 40.9);
   --negative-soft: oklch(0.94 0.022 60);
+  --warning: oklch(0.62 0.096 75);
+  --warning-soft: oklch(0.95 0.03 85);
+
 
   --surface: oklch(1 0 0);
   --surface-strong: oklch(0.946 0.01 93.6);
@@ -126,6 +132,9 @@
   --positive-soft: oklch(0.318 0.053 175.6);
   --negative: oklch(0.72 0.09 45);
   --negative-soft: oklch(0.3 0.04 40);
+  --warning: oklch(0.8 0.09 82);
+  --warning-soft: oklch(0.32 0.045 80);
+
 
   --surface: oklch(0.262 0.034 179.7);
   --surface-strong: oklch(0.318 0.053 175.6);

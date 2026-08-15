@@ -71,7 +71,45 @@ export function formatMoney(
 
 /** Consumer-facing currency wording: Danish says "kr.", not "DKK". */
 export function currencyLabel(currency = defaultCurrency, locale = defaultLocale): string {
-  if (currency === "DKK" && locale.toLowerCase().startsWith("da")) return "kr.";
-  return currency;
+  if (currency === "DKK") return locale.toLowerCase().startsWith("da") ? "kr." : "DKK";
+  return CURRENCY_SYMBOLS[currency] ?? currency;
 }
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: "€",
+  USD: "$",
+  GBP: "£",
+  CHF: "CHF",
+  SEK: "kr",
+  NOK: "kr",
+  PLN: "zł",
+  CZK: "Kč",
+  JPY: "¥",
+};
+
+/** Currencies offered in the manual currency picker. */
+export const CURRENCY_OPTIONS = [
+  "DKK",
+  "EUR",
+  "USD",
+  "GBP",
+  "SEK",
+  "NOK",
+  "CHF",
+  "PLN",
+  "CZK",
+] as const;
+
+/** Formats an amount in an explicit currency, independent of the profile currency. */
+export function formatMinorIn(
+  minor: number,
+  currency: string,
+  options: { compact?: boolean; showSign?: boolean } = {},
+): string {
+  return formatMoney(minor, currency, defaultLocale, options);
+}
+
+export function normaliseCurrency(value: string | null | undefined): string | null {
+  const code = (value ?? "").trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(code) ? code : null;
+}

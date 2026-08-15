@@ -95,8 +95,7 @@ export async function fetchInvitationPreview(code: string): Promise<InvitationPr
     return null;
   }
   const row = (data ?? [])[0] as
-    | { group_name: string; inviter_name: string; member_count: number }
-    | undefined;
+    { group_name: string; inviter_name: string; member_count: number } | undefined;
   if (!row) return null;
   return {
     groupName: row.group_name,

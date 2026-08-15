@@ -48,10 +48,7 @@ export function disambiguateInitials(names: string[]): Record<string, string> {
   for (const name of names) {
     let label = initialsOf(name);
     let length = 3;
-    while (
-      names.some((other) => other !== name && initialsOf(other) === label) &&
-      length <= 4
-    ) {
+    while (names.some((other) => other !== name && initialsOf(other) === label) && length <= 4) {
       label = name.trim().slice(0, length).toUpperCase();
       length += 1;
     }

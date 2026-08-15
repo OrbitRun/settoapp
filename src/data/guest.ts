@@ -33,7 +33,6 @@ const uid = () =>
       : Math.random().toString(36).slice(2)
   }`;
 
-
 export const isGuestId = (id: string | null | undefined) => Boolean(id?.startsWith("guest-"));
 
 export function selfLabel(): string {
@@ -95,6 +94,12 @@ export function makeGuestExpense(input: {
   totalMinor: number;
   source: "manual" | "receipt";
   currency: string;
+  originalCurrency?: string;
+  originalTotalMinor?: number;
+  exchangeRate?: number;
+  exchangeRateDate?: string | null;
+  exchangeRateSource?: string;
+  cardChargedMinor?: number | null;
   expenseDate?: string;
 }): Expense {
   const now = new Date().toISOString();
@@ -108,6 +113,12 @@ export function makeGuestExpense(input: {
     expense_date: input.expenseDate ?? now,
     currency: input.currency,
     total_minor: input.totalMinor,
+    original_currency: input.originalCurrency ?? input.currency,
+    original_total_minor: input.originalTotalMinor ?? input.totalMinor,
+    exchange_rate: input.exchangeRate ?? 1,
+    exchange_rate_date: input.exchangeRateDate ?? null,
+    exchange_rate_source: input.exchangeRateSource ?? "same",
+    card_charged_minor: input.cardChargedMinor ?? null,
     source_type: input.source,
     receipt_image_url: null,
     created_at: now,

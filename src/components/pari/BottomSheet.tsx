@@ -48,14 +48,11 @@ export function BottomSheet({
           className,
         )}
       >
-
         <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-hairline" />
         {title ? (
           <div className="mb-5 space-y-1">
             <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-            {description ? (
-              <p className="text-sm text-muted-foreground">{description}</p>
-            ) : null}
+            {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
           </div>
         ) : null}
         {children}

@@ -47,16 +47,11 @@ function SettleScreen() {
 
       <div className="px-1 pb-8">
         <h1 className="text-[26px] font-semibold tracking-[-0.03em]">{t("settle.title")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t("settle.hint")}
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("settle.hint")}</p>
       </div>
 
       {plan.length === 0 ? (
-        <EmptyState
-          title={t("settle.allSettled")}
-          description={t("settle.nothingPending")}
-        />
+        <EmptyState title={t("settle.allSettled")} description={t("settle.nothingPending")} />
       ) : (
         <Panel>
           {plan.map((step, index) => (
@@ -72,7 +67,12 @@ function SettleScreen() {
                         to: pari.personName(step.toPersonId),
                       })}
                     </p>
-                    <MoneyAmount minor={step.amountMinor} tone="muted" size="sm" className="mt-1 block" />
+                    <MoneyAmount
+                      minor={step.amountMinor}
+                      tone="muted"
+                      size="sm"
+                      className="mt-1 block"
+                    />
                   </div>
                 </div>
 

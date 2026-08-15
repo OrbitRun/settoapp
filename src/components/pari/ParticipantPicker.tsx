@@ -48,7 +48,6 @@ export function ParticipantPicker({
     }));
   const allSelected = people.length > 0 && selected.length === people.length;
 
-
   const toggle = (id: string) =>
     onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
 
@@ -88,7 +87,6 @@ export function ParticipantPicker({
     }
   };
 
-
   const commitRename = async (id: string) => {
     const trimmed = editName.trim();
     setEditing(null);
@@ -121,9 +119,7 @@ export function ParticipantPicker({
           >
             <Minus className="h-4 w-4" strokeWidth={2} />
           </button>
-          <span className="tnum w-6 text-center text-[17px] font-semibold">
-            {selected.length}
-          </span>
+          <span className="tnum w-6 text-center text-[17px] font-semibold">{selected.length}</span>
           <button
             type="button"
             aria-label="+"

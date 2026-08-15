@@ -23,6 +23,8 @@ export function receiptErrorCode(error: unknown): ReceiptErrorCode | null {
   return code && /^[A-Z_]+$/.test(code) ? (code as ReceiptErrorCode) : null;
 }
 
+export type ReceiptConfidence = "high" | "medium" | "low";
+
 export type ParsedReceiptLine = {
   name: string;
   quantity: number;
@@ -34,6 +36,8 @@ export type ParsedReceiptLine = {
   discountMinor: number;
   discountPercent: number | null;
   uncertain: boolean;
+  /** How sure the reader is about THIS line. Never about whether to include it. */
+  confidence: ReceiptConfidence;
 };
 
 export type ParsedReceiptPayload = {
@@ -43,7 +47,12 @@ export type ParsedReceiptPayload = {
   /** Discount that applies to the whole receipt, not one line. Positive. */
   receiptDiscountMinor: number;
   dateIso: string | null;
+  /** ISO 4217 code detected on the receipt, or null when unreadable. */
   currency: string | null;
+  currencyConfidence: ReceiptConfidence;
+  /** What the currency guess was based on, for the review screen. */
+  currencyEvidence: string | null;
+  totalConfidence: ReceiptConfidence;
   items: ParsedReceiptLine[];
   warnings: string[];
   confidence: number;
@@ -87,8 +96,34 @@ Example: "R* SØD TØS  1x 299.95  259.95 / Linierabat 13.34% 40.00" with "I alt
   Mark an item you are unsure about with "uncertain": true.
 - If a field cannot be read, return null and add a short warning. Never fabricate values.
 - Only return an empty items array and total null if the image is genuinely not a receipt.
-- "confidence" is 0-1 for the overall read.`;
+- "confidence" is 0-1 for the overall read.
 
+CURRENCY — always answer, never guess silently:
+- Return "currency" as an ISO 4217 code (DKK, EUR, USD, GBP, SEK, NOK, CHF, PLN, CZK ...).
+- Signal strength, strongest first:
+  1. An explicit ISO code printed on the receipt ("EUR", "DKK", "USD") — high.
+  2. A currency symbol or unambiguous abbreviation: € = EUR, £ = GBP, $ = USD,
+     "zł" = PLN, "Kč" = CZK — high.
+  3. VAT/tax wording plus country context: MOMS + "kr" = DKK, MVA + "kr" = NOK,
+     MOMS + "kr" with Swedish wording = SEK, "IVA"/"MwSt"/"TVA" with € = EUR — medium.
+  4. Language or address only, no monetary marker — low.
+- "kr" alone is ambiguous between DKK, SEK and NOK. Use the receipt language and
+  address to choose, and report medium or low, never high.
+- Put the literal evidence you used in "currency_evidence" (e.g. "EUR printed next
+  to TOTAL", "€ symbol", "MOMS 25%").
+- Never assume DKK just because you often see Danish receipts.
+
+PER-FIELD CONFIDENCE:
+- Each item gets "confidence": "high" when name and amount are both clearly legible,
+  "medium" when one is partially unclear, "low" when you had to infer it.
+- "total_confidence" describes the final amount only.
+- Confidence is about legibility. It is NEVER about whether an item should be split.
+
+NOT ITEMS — never return these as items:
+- Payment/card lines: KORT, KONTANT, DANKORT, VISA, MASTERCARD, MOBILEPAY, BETALT,
+  CARD, CASH, CHANGE, BYTTEPENGE, TIP if printed as a payment line, AFRUNDING,
+  ROUNDING, GEBYR/FEE lines belonging to the payment, loyalty points, saldo.
+- Totals and taxes: TOTAL, I ALT, AT BETALE, SUBTOTAL, MOMS, VAT, MWST, TVA.`;
 
 const TIMEOUT_MS = 60_000;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -107,6 +142,35 @@ function toMinor(value: unknown): number | null {
 
 const nullableNumber = { type: ["number", "null"] } as const;
 const nullableString = { type: ["string", "null"] } as const;
+const confidenceEnum = { type: ["string", "null"], enum: ["high", "medium", "low", null] } as const;
+
+const CONFIDENCE_VALUES = new Set(["high", "medium", "low"]);
+
+export function toConfidence(
+  value: string | null | undefined,
+  fallback: ReceiptConfidence,
+): ReceiptConfidence {
+  const normalised = (value ?? "").toLowerCase();
+  return CONFIDENCE_VALUES.has(normalised) ? (normalised as ReceiptConfidence) : fallback;
+}
+
+const SYMBOL_CURRENCIES: Record<string, string> = {
+  "€": "EUR",
+  $: "USD",
+  "£": "GBP",
+  zł: "PLN",
+  kč: "CZK",
+  "¥": "JPY",
+};
+
+/** Accepts an ISO code or a symbol the model echoed back. Never guesses. */
+export function normaliseCurrencyCode(value: string | null | undefined): string | null {
+  const raw = (value ?? "").trim();
+  if (!raw) return null;
+  const upper = raw.toUpperCase();
+  if (/^[A-Z]{3}$/.test(upper)) return upper;
+  return SYMBOL_CURRENCIES[raw.toLowerCase()] ?? SYMBOL_CURRENCIES[raw] ?? null;
+}
 
 export const parseReceiptImage = createServerFn({ method: "POST" })
   .inputValidator((input: { dataUrl: string }) => {
@@ -170,6 +234,9 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
                   "merchant",
                   "total",
                   "currency",
+                  "currency_confidence",
+                  "currency_evidence",
+                  "total_confidence",
                   "date",
                   "subtotal",
                   "tax",
@@ -182,6 +249,9 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
                   merchant: nullableString,
                   total: nullableNumber,
                   currency: nullableString,
+                  currency_confidence: confidenceEnum,
+                  currency_evidence: nullableString,
+                  total_confidence: confidenceEnum,
                   date: nullableString,
                   subtotal: nullableNumber,
                   tax: nullableNumber,
@@ -202,6 +272,7 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
                         "discount_percent",
                         "effective_total",
                         "uncertain",
+                        "confidence",
                       ],
                       properties: {
                         name: { type: "string" },
@@ -212,8 +283,8 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
                         discount_percent: nullableNumber,
                         effective_total: nullableNumber,
                         uncertain: { type: ["boolean", "null"] },
+                        confidence: confidenceEnum,
                       },
-
                     },
                   },
                 },
@@ -255,6 +326,9 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       merchant?: string | null;
       total?: number | null;
       currency?: string | null;
+      currency_confidence?: string | null;
+      currency_evidence?: string | null;
+      total_confidence?: string | null;
       date?: string | null;
       subtotal?: number | null;
       discount?: number | null;
@@ -269,8 +343,10 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
         discount_percent?: number | null;
         effective_total?: number | null;
         uncertain?: boolean | null;
+        confidence?: string | null;
       }[];
     };
+
     try {
       parsed = JSON.parse(stripFence(content));
     } catch {
@@ -313,7 +389,9 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
             previous.discountMinor += amount;
             previous.unitPriceMinor = Math.max(
               0,
-              Math.round((previous.unitPriceMinor * previous.quantity - amount) / previous.quantity),
+              Math.round(
+                (previous.unitPriceMinor * previous.quantity - amount) / previous.quantity,
+              ),
             );
             if (discountPercent !== null) previous.discountPercent = discountPercent;
           } else {
@@ -324,7 +402,12 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       }
 
       // Only a percentage printed: derive the amount from the original total.
-      if (discount === 0 && discountPercent !== null && originalTotal !== null && effectiveTotal === null) {
+      if (
+        discount === 0 &&
+        discountPercent !== null &&
+        originalTotal !== null &&
+        effectiveTotal === null
+      ) {
         discount = Math.round((originalTotal * discountPercent) / 100);
       }
       if (effectiveTotal === null && originalTotal !== null) {
@@ -347,6 +430,7 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
         uncertain = true;
       }
 
+      const lineConfidence = toConfidence(raw.confidence, uncertain ? "low" : "high");
       items.push({
         name,
         quantity,
@@ -355,6 +439,7 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
         discountMinor: Math.max(0, discount),
         discountPercent,
         uncertain: uncertain || (unit === null && originalTotal === 0),
+        confidence: uncertain ? "low" : lineConfidence,
       });
     }
 
@@ -383,7 +468,8 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
     }
 
     const netItemsTotal = itemsTotal - receiptDiscountMinor;
-    const totalMinor = reportedTotal && reportedTotal > 0 ? reportedTotal : Math.max(0, netItemsTotal);
+    const totalMinor =
+      reportedTotal && reportedTotal > 0 ? reportedTotal : Math.max(0, netItemsTotal);
 
     if (items.length === 0) warnings.push("NO_ITEMS_DETECTED");
     if (!reportedTotal) warnings.push("TOTAL_NOT_FOUND");
@@ -412,18 +498,27 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       ms: Date.now() - startedAt,
     });
 
+    const detectedCurrency = normaliseCurrencyCode(parsed.currency);
+    const currencyConfidence: ReceiptConfidence = detectedCurrency
+      ? toConfidence(parsed.currency_confidence, "medium")
+      : "low";
+    if (!detectedCurrency) warnings.push("CURRENCY_NOT_DETECTED");
+    else if (currencyConfidence === "low") warnings.push("CURRENCY_UNCERTAIN");
+
     return {
       merchant: parsed.merchant?.trim() || null,
       totalMinor,
       subtotalMinor,
       receiptDiscountMinor,
       dateIso: parsed.date ?? null,
-      currency: parsed.currency?.trim() || null,
+      currency: detectedCurrency,
+      currencyConfidence,
+      currencyEvidence: parsed.currency_evidence?.trim() || null,
+      totalConfidence: reportedTotal ? toConfidence(parsed.total_confidence, "high") : "low",
       items,
       warnings,
       confidence,
     };
-
   });
 
 function stripFence(content: string): string {

@@ -14,14 +14,9 @@ import { PersonChip } from "@/components/pari/PersonChip";
 import { computeDraftAllocations } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
-import {
-  currencyLabel,
-  formatMinor,
-  formatMinorNumber,
-  toMajor,
-  toMinor,
-} from "@/lib/money";
-
+import { CurrencyPanel } from "@/components/pari/CurrencyPanel";
+import { useMoneyLock } from "@/hooks/useMoneyLock";
+import { currencyLabel, formatMinorIn, formatMinorNumber, toMajor, toMinor } from "@/lib/money";
 
 export const Route = createFileRoute("/split/amount")({
   head: () => ({
@@ -42,14 +37,17 @@ function ManualExpenseScreen() {
   const { draft, setDraft } = pari;
   const [showPaidBy, setShowPaidBy] = useState(false);
   const [busy, setBusy] = useState(false);
-  const amountText =
-    draft.amountMinor > 0 ? formatMinorNumber(draft.amountMinor) : "0";
+  const lock = useMoneyLock({
+    currency: draft.currency,
+    systemCurrency: pari.currency,
+    totalMinor: draft.amountMinor,
+  });
+  const amountText = draft.amountMinor > 0 ? formatMinorNumber(draft.amountMinor) : "0";
+
   const heroSize =
     amountText.length <= 5 ? 60 : amountText.length <= 7 ? 52 : amountText.length <= 10 ? 42 : 32;
   const suffixSize = Math.max(18, Math.round(heroSize / 3));
   const heroStyle = { fontSize: `${heroSize}px`, lineHeight: 1.05 } as const;
-
-
 
   const participants = draft.participants.map((id) => ({ id, name: pari.personName(id) }));
 
@@ -92,17 +90,19 @@ function ManualExpenseScreen() {
     if (busy) return;
     setBusy(true);
     try {
-    const expense = await pari.addExpense({
-      groupId: draft.groupId,
-      title: draft.title,
-      merchant: draft.merchant,
-      paidByPersonId: draft.paidByPersonId,
-      totalMinor: draft.amountMinor,
-      allocations,
-      source: "manual",
-    });
-    if (!expense) return;
-    navigate({ to: "/split/result", search: { expenseId: expense.id } });
+      const expense = await pari.addExpense({
+        groupId: draft.groupId,
+        title: draft.title,
+        merchant: draft.merchant,
+        paidByPersonId: draft.paidByPersonId,
+        totalMinor: draft.amountMinor,
+        allocations,
+        source: "manual",
+        ...(lock.money ? { money: lock.money } : {}),
+      });
+
+      if (!expense) return;
+      navigate({ to: "/split/result", search: { expenseId: expense.id } });
     } catch {
       toast.error(t("common.saveFailed"));
     } finally {
@@ -146,7 +146,7 @@ function ManualExpenseScreen() {
             className="shrink-0 font-medium text-muted-foreground"
             style={{ fontSize: `${suffixSize}px` }}
           >
-            {currencyLabel()}
+            {currencyLabel(draft.currency)}
           </span>
         </div>
 
@@ -158,8 +158,14 @@ function ManualExpenseScreen() {
         />
       </div>
 
-
       <div className="space-y-6">
+        <CurrencyPanel
+          lock={lock}
+          onCurrencyChange={(currency) =>
+            setDraft((prev) => ({ ...prev, currency, currencyConfirmed: true }))
+          }
+        />
+
         {showGroups ? (
           <div className="space-y-2">
             <GroupPicker groupId={draft.groupId} onChange={setGroup} />
@@ -200,7 +206,6 @@ function ManualExpenseScreen() {
           scope={draft.groupId ? pari.groupPersonIds(draft.groupId) : []}
           onChange={(ids) => setDraft((prev) => ({ ...prev, participants: ids }))}
         />
-
 
         <section className="space-y-4 rounded-3xl bg-surface p-5 shadow-soft">
           <div className="flex items-center justify-between">
@@ -248,7 +253,7 @@ function ManualExpenseScreen() {
           <PrimaryButton onClick={() => void save()} disabled={!canSave || busy}>
             {t("split.finish")}
             {draft.amountMinor > 0
-              ? ` · ${formatMinor(draft.amountMinor, { compact: false })}`
+              ? ` · ${formatMinorIn(draft.amountMinor, draft.currency, { compact: false })}`
               : ""}
           </PrimaryButton>
         </div>

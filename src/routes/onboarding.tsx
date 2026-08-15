@@ -41,7 +41,9 @@ function OnboardingScreen() {
           <h1 className="mt-4 text-[38px] font-semibold leading-[1.08] tracking-[-0.035em]">
             {t(current.titleKey)}
           </h1>
-          <p className="mt-4 max-w-[28ch] text-[17px] text-muted-foreground">{t(current.bodyKey)}</p>
+          <p className="mt-4 max-w-[28ch] text-[17px] text-muted-foreground">
+            {t(current.bodyKey)}
+          </p>
         </div>
 
         <div className="mb-8 flex gap-1.5">

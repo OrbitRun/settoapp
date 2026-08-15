@@ -123,6 +123,7 @@ export type Database = {
           amount_minor: number
           expense_id: string
           id: string
+          original_amount_minor: number | null
           owner_user_id: string
           percentage: number | null
           person_id: string
@@ -132,6 +133,7 @@ export type Database = {
           amount_minor?: number
           expense_id: string
           id?: string
+          original_amount_minor?: number | null
           owner_user_id: string
           percentage?: number | null
           person_id: string
@@ -141,6 +143,7 @@ export type Database = {
           amount_minor?: number
           expense_id?: string
           id?: string
+          original_amount_minor?: number | null
           owner_user_id?: string
           percentage?: number | null
           person_id?: string
@@ -165,12 +168,18 @@ export type Database = {
       }
       expenses: {
         Row: {
+          card_charged_minor: number | null
           created_at: string
           currency: string
+          exchange_rate: number
+          exchange_rate_date: string | null
+          exchange_rate_source: string
           expense_date: string
           group_id: string | null
           id: string
           merchant: string | null
+          original_currency: string | null
+          original_total_minor: number | null
           owner_user_id: string
           paid_by_person_id: string
           receipt_image_url: string | null
@@ -180,12 +189,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          card_charged_minor?: number | null
           created_at?: string
           currency?: string
+          exchange_rate?: number
+          exchange_rate_date?: string | null
+          exchange_rate_source?: string
           expense_date?: string
           group_id?: string | null
           id?: string
           merchant?: string | null
+          original_currency?: string | null
+          original_total_minor?: number | null
           owner_user_id: string
           paid_by_person_id: string
           receipt_image_url?: string | null
@@ -195,12 +210,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          card_charged_minor?: number | null
           created_at?: string
           currency?: string
+          exchange_rate?: number
+          exchange_rate_date?: string | null
+          exchange_rate_source?: string
           expense_date?: string
           group_id?: string | null
           id?: string
           merchant?: string | null
+          original_currency?: string | null
+          original_total_minor?: number | null
           owner_user_id?: string
           paid_by_person_id?: string
           receipt_image_url?: string | null
@@ -225,6 +246,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fx_rates: {
+        Row: {
+          base_currency: string
+          created_at: string
+          id: string
+          quote_currency: string
+          rate: number
+          rate_date: string
+          source: string
+        }
+        Insert: {
+          base_currency: string
+          created_at?: string
+          id?: string
+          quote_currency: string
+          rate: number
+          rate_date: string
+          source?: string
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          id?: string
+          quote_currency?: string
+          rate?: number
+          rate_date?: string
+          source?: string
+        }
+        Relationships: []
       }
       group_invitations: {
         Row: {

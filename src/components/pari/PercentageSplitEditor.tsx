@@ -40,7 +40,6 @@ export function PercentageSplitEditor({
     onChange(next);
   };
 
-
   const round = (value: number) => value.toFixed(value % 1 === 0 ? 0 : 1);
 
   return (
@@ -48,8 +47,7 @@ export function PercentageSplitEditor({
       <div className="space-y-3">
         {people.map((person) => {
           const value = percentages[person.id] ?? 0;
-          const amount =
-            allocations.find((a) => a.personId === person.id)?.amountMinor ?? 0;
+          const amount = allocations.find((a) => a.personId === person.id)?.amountMinor ?? 0;
 
           return (
             <div key={person.id} className="flex items-center gap-3">
@@ -76,7 +74,6 @@ export function PercentageSplitEditor({
                 className="h-11 w-[92px] shrink-0 rounded-xl bg-surface-strong px-3"
                 inputClassName="text-right text-[15px] font-medium"
               />
-
             </div>
           );
         })}

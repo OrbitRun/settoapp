@@ -22,7 +22,9 @@ import {
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { usePari } from "@/data/store";
 import type { Allocation, SplitMode } from "@/lib/split";
-import { toMajor, toMinor } from "@/lib/money";
+import { formatMinorIn, toMajor, toMinor } from "@/lib/money";
+import { CurrencyPanel } from "@/components/pari/CurrencyPanel";
+import { useMoneyLock } from "@/hooks/useMoneyLock";
 import { shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
 import { AuthGate } from "@/components/pari/AuthGate";
@@ -64,9 +66,7 @@ function ruleFromAllocations(allocations: Allocation[], totalMinor: number): Spl
     mode = "shares";
   } else if (allocations.length > 0) {
     const each = Math.floor(totalMinor / allocations.length);
-    const uniform = allocations.every(
-      (a) => Math.abs(a.amountMinor - each) <= 1,
-    );
+    const uniform = allocations.every((a) => Math.abs(a.amountMinor - each) <= 1);
     mode = uniform ? "equal" : "exact";
   }
 
@@ -80,7 +80,8 @@ function ExpenseDetailScreen() {
   const navigate = useNavigate();
 
   const expense = pari.expenseById(expenseId);
-  const allocations = pari.expenseAllocations(expenseId);
+  // Shown and edited in the original currency; converted values are derived on save.
+  const allocations = pari.expenseOriginalAllocations(expenseId);
   const items = pari.expenseItems(expenseId);
 
   const [editing, setEditing] = useState(false);
@@ -88,7 +89,10 @@ function ExpenseDetailScreen() {
   const [confirmSettled, setConfirmSettled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState(expense?.title ?? "");
-  const [amount, setAmount] = useState(toMajor(expense?.total_minor ?? 0));
+  const originalCurrency = expense?.original_currency ?? expense?.currency ?? pari.currency;
+  const originalTotalMinor = expense?.original_total_minor ?? expense?.total_minor ?? 0;
+  const [currency, setCurrency] = useState(originalCurrency);
+  const [amount, setAmount] = useState(toMajor(originalTotalMinor));
   const [paidBy, setPaidBy] = useState(expense?.paid_by_person_id ?? "");
   const [groupId, setGroupId] = useState<string | null>(expense?.group_id ?? null);
   const [groupChanged, setGroupChanged] = useState(false);
@@ -96,15 +100,22 @@ function ExpenseDetailScreen() {
     allocations.map((allocation) => allocation.personId),
   );
   const [rule, setRule] = useState<SplitRule>(() =>
-    ruleFromAllocations(allocations, expense?.total_minor ?? 0),
+    ruleFromAllocations(allocations, originalTotalMinor),
   );
+
+  // Editing happens in the currency the money was actually spent in.
+  const lock = useMoneyLock({
+    currency,
+    systemCurrency: pari.currency,
+    totalMinor: toMinor(amount),
+    dateIso: expense?.expense_date ?? null,
+  });
 
   const candidates = useMemo(() => {
     const ids = groupId
       ? pari.groupPersonIds(groupId)
       : pari.data.people.map((person) => person.id);
     return ids.map((id) => ({ id, name: pari.personName(id) }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, pari]);
 
   if (!expense) {
@@ -123,25 +134,22 @@ function ExpenseDetailScreen() {
   /** The expense is historical once its group already has a completed settlement. */
   const inSettlement =
     expense.group_id != null &&
-    pari.data.settlements.some(
-      (s) => s.group_id === expense.group_id && s.status === "settled",
-    );
+    pari.data.settlements.some((s) => s.group_id === expense.group_id && s.status === "settled");
 
   const people = participants.map((id) => ({ id, name: pari.personName(id) }));
   const totalMinor = toMinor(amount);
   const canSave =
-    totalMinor > 0 &&
-    participants.length > 0 &&
-    isRuleComplete(rule, people, totalMinor);
+    totalMinor > 0 && participants.length > 0 && isRuleComplete(rule, people, totalMinor);
 
   const startEditing = () => {
     setTitle(expense.title);
-    setAmount(toMajor(expense.total_minor));
+    setAmount(toMajor(originalTotalMinor));
+    setCurrency(originalCurrency);
     setPaidBy(expense.paid_by_person_id);
     setGroupId(expense.group_id);
     setGroupChanged(false);
     setParticipants(allocations.map((a) => a.personId));
-    setRule(ruleFromAllocations(allocations, expense.total_minor));
+    setRule(ruleFromAllocations(allocations, originalTotalMinor));
     if (inSettlement) setConfirmSettled(true);
     else setEditing(true);
   };
@@ -175,7 +183,11 @@ function ExpenseDetailScreen() {
       : [...participants, personId];
     setParticipants(next);
     setRule((prev) =>
-      seedRule(prev, next.map((id) => ({ id, name: pari.personName(id) })), prev.mode),
+      seedRule(
+        prev,
+        next.map((id) => ({ id, name: pari.personName(id) })),
+        prev.mode,
+      ),
     );
   };
 
@@ -189,6 +201,7 @@ function ExpenseDetailScreen() {
         paidByPersonId: paidBy,
         groupId,
         allocations: previewAllocations(rule, people, totalMinor),
+        ...(lock.money ? { money: lock.money } : {}),
       });
       setEditing(false);
       toast.success(t("expense.saved"));
@@ -212,10 +225,16 @@ function ExpenseDetailScreen() {
       <FlowHeader title={expense.title} subtitle={group?.name ?? undefined} />
 
       <div className="px-1 pb-8 text-center">
-        <MoneyAmount
-          minor={expense.total_minor}
-          className="text-[40px] font-semibold tracking-[-0.04em]"
-        />
+        <p className="tnum text-[40px] font-semibold tracking-[-0.04em]">
+          {formatMinorIn(originalTotalMinor, originalCurrency, { compact: false })}
+        </p>
+        {originalCurrency !== expense.currency ? (
+          <p className="tnum mt-1 text-[15px] text-muted-foreground">
+            {t("currency.bookedAs", {
+              amount: formatMinorIn(expense.total_minor, expense.currency, { compact: false }),
+            })}
+          </p>
+        ) : null}
         <p className="mt-2 text-sm text-muted-foreground">
           {shortDate(expense.expense_date)} ·{" "}
           {t("home.paidBy", { name: pari.personName(expense.paid_by_person_id) })}
@@ -270,7 +289,11 @@ function ExpenseDetailScreen() {
                 participants.length === candidates.length ? [] : candidates.map((p) => p.id);
               setParticipants(next);
               setRule((prev) =>
-                seedRule(prev, next.map((id) => ({ id, name: pari.personName(id) })), prev.mode),
+                seedRule(
+                  prev,
+                  next.map((id) => ({ id, name: pari.personName(id) })),
+                  prev.mode,
+                ),
               );
             }}
           />
@@ -295,6 +318,8 @@ function ExpenseDetailScreen() {
               ))}
             </Panel>
           </section>
+
+          <CurrencyPanel lock={lock} onCurrencyChange={setCurrency} />
 
           <section className="space-y-4 rounded-3xl bg-surface p-5 shadow-soft">
             <div className="flex items-center justify-between">
@@ -336,7 +361,9 @@ function ExpenseDetailScreen() {
                       </span>
                     ) : null}
                   </span>
-                  <MoneyAmount minor={allocation.amountMinor} />
+                  <span className="tnum text-[15px] font-medium">
+                    {formatMinorIn(allocation.amountMinor, originalCurrency)}
+                  </span>
                 </div>
               </div>
             ))}

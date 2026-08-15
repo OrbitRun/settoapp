@@ -72,9 +72,7 @@ function ActivityScreen() {
                   const actor = entry.actor_person_id
                     ? pari.personName(entry.actor_person_id)
                     : pari.currentProfileName;
-                  const title = entry.metadata["title"]
-                    ? String(entry.metadata["title"])
-                    : "";
+                  const title = entry.metadata["title"] ? String(entry.metadata["title"]) : "";
                   const amount =
                     typeof entry.metadata["amount_minor"] === "number"
                       ? entry.metadata["amount_minor"]
@@ -106,9 +104,7 @@ function ActivityScreen() {
                             {group ? ` · ${group.name}` : ""}
                           </p>
                         </div>
-                        {amount !== undefined ? (
-                          <MoneyAmount minor={amount} tone="muted" />
-                        ) : null}
+                        {amount !== undefined ? <MoneyAmount minor={amount} tone="muted" /> : null}
                         <ChevronDown
                           className={cn(
                             "h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform",
@@ -177,7 +173,6 @@ function ActivityScreen() {
                           )}
                         </div>
                       ) : null}
-
                     </div>
                   );
                 })}
