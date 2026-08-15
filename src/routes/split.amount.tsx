@@ -170,8 +170,14 @@ function ManualExpenseScreen() {
         />
       </div>
 
-
       <div className="space-y-6">
+        <CurrencyPanel
+          lock={lock}
+          onCurrencyChange={(currency) =>
+            setDraft((prev) => ({ ...prev, currency, currencyConfirmed: true }))
+          }
+        />
+
         {showGroups ? (
           <div className="space-y-2">
             <GroupPicker groupId={draft.groupId} onChange={setGroup} />
