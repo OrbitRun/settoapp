@@ -7,7 +7,14 @@ import { FlowHeader } from "@/components/pari/FlowHeader";
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { ReceiptItemRow } from "@/components/pari/ReceiptItem";
-import { itemTotalMinor, itemsTotalMinor, type DraftItem } from "@/data/draft";
+import {
+  draftItemsNetTotalMinor,
+  itemOriginalTotalMinor,
+  itemTotalMinor,
+  itemsTotalMinor,
+  type DraftItem,
+} from "@/data/draft";
+
 import { usePari } from "@/data/store";
 import { currencyLabel, formatMinor, toMajor, toMinor } from "@/lib/money";
 import { NumericField } from "@/components/pari/NumericField";
