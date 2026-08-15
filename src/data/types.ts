@@ -139,7 +139,7 @@ export type ActivityEntry = {
   activity_type: ActivityType;
   entity_type: "expense" | "settlement" | "group";
   entity_id: string | null;
-  metadata: Record<string, string | number>;
+  metadata: Record<string, unknown>;
   created_at: string;
 };
 
