@@ -36,6 +36,22 @@ function ShareScreen() {
   const { draft, setDraft } = pari;
   const [busy, setBusy] = useState(false);
 
+  // Everything on this screen is shown in the receipt's own currency.
+  const formatMinorIn2 = (
+    minor: number,
+    options: { currency?: string; compact?: boolean } = {},
+  ) =>
+    formatMinorIn(minor, options.currency ?? draft.currency, {
+      compact: options.compact ?? true,
+    });
+
+  const lock = useMoneyLock({
+    currency: draft.currency,
+    systemCurrency: pari.currency,
+    totalMinor: draft.amountMinor,
+    dateIso: draft.dateIso ?? null,
+  });
+
   const showGroups = !pari.isGuest && pari.data.groups.length > 0;
 
   const wholeReceipt = { ...draft, splitByItem: false };
@@ -79,6 +95,7 @@ function ShareScreen() {
       allocations,
       source: "receipt",
       items: draft.items,
+      ...(lock.money ? { money: lock.money } : {}),
     });
     if (!expense) return;
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
