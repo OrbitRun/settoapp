@@ -241,6 +241,7 @@ function ExpenseDetailScreen() {
         </p>
         {originalCurrency !== expense.currency ? (
           <FxSummary
+            alignment="center"
             className="mt-1"
             originalCurrency={originalCurrency}
             convertedMinor={expense.total_minor}
