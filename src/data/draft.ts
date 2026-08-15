@@ -63,10 +63,6 @@ export type SplitDraft = {
   dateIso?: string | null;
 };
 
-
-
-
-
 export const itemTotalMinor = (item: DraftItem) => item.unitPriceMinor * item.quantity;
 
 /** Pre-discount line total, when the receipt printed an original price. */
@@ -116,7 +112,10 @@ export function effectiveItemTotals(draft: SplitDraft): Map<string, number> {
   const discount = draft.receiptDiscountMinor ?? 0;
   const parts = prorateDiscount(draft.items, discount);
   return new Map(
-    draft.items.map((item) => [item.id, Math.max(0, itemTotalMinor(item) - (parts.get(item.id) ?? 0))]),
+    draft.items.map((item) => [
+      item.id,
+      Math.max(0, itemTotalMinor(item) - (parts.get(item.id) ?? 0)),
+    ]),
   );
 }
 
@@ -129,7 +128,10 @@ export function draftItemsNetTotalMinor(draft: SplitDraft): number {
 
 /** The amount actually being shared: shared items when itemised, else the full amount. */
 export function draftSharedTotalMinor(draft: SplitDraft): number {
-  if (draft.items.length > 0 && (draft.splitByItem || sharedItems(draft.items).length < draft.items.length)) {
+  if (
+    draft.items.length > 0 &&
+    (draft.splitByItem || sharedItems(draft.items).length < draft.items.length)
+  ) {
     const totals = effectiveItemTotals(draft);
     return sharedItems(draft.items).reduce((sum, item) => sum + (totals.get(item.id) ?? 0), 0);
   }
@@ -147,15 +149,20 @@ export function computeDraftAllocations(draft: SplitDraft): Allocation[] {
     const totals = new Map<string, number>(participants.map((id) => [id, 0]));
     for (const item of sharedItems(draft.items)) {
       const people = item.assigned.length > 0 ? item.assigned : participants;
-      for (const allocation of calculateEqualSplit(effective.get(item.id) ?? itemTotalMinor(item), people)) {
-        totals.set(allocation.personId, (totals.get(allocation.personId) ?? 0) + allocation.amountMinor);
+      for (const allocation of calculateEqualSplit(
+        effective.get(item.id) ?? itemTotalMinor(item),
+        people,
+      )) {
+        totals.set(
+          allocation.personId,
+          (totals.get(allocation.personId) ?? 0) + allocation.amountMinor,
+        );
       }
     }
     return [...totals.entries()]
       .filter(([, amount]) => amount > 0)
       .map(([personId, amountMinor]) => ({ personId, amountMinor }));
   }
-
 
   switch (draft.mode) {
     case "percentage":
@@ -199,7 +206,6 @@ export const splitModeHintKey: Record<SplitMode, string> = {
   exact: "split.exactHint",
 };
 
-
 export function emptyDraft(paidByPersonId: string, currency = "DKK"): SplitDraft {
   return {
     source: "manual",
@@ -221,5 +227,4 @@ export function emptyDraft(paidByPersonId: string, currency = "DKK"): SplitDraft
     currencyConfirmed: false,
     dateIso: null,
   };
-
 }

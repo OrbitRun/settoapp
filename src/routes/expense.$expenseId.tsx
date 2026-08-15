@@ -64,9 +64,7 @@ function ruleFromAllocations(allocations: Allocation[], totalMinor: number): Spl
     mode = "shares";
   } else if (allocations.length > 0) {
     const each = Math.floor(totalMinor / allocations.length);
-    const uniform = allocations.every(
-      (a) => Math.abs(a.amountMinor - each) <= 1,
-    );
+    const uniform = allocations.every((a) => Math.abs(a.amountMinor - each) <= 1);
     mode = uniform ? "equal" : "exact";
   }
 
@@ -104,7 +102,6 @@ function ExpenseDetailScreen() {
       ? pari.groupPersonIds(groupId)
       : pari.data.people.map((person) => person.id);
     return ids.map((id) => ({ id, name: pari.personName(id) }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, pari]);
 
   if (!expense) {
@@ -123,16 +120,12 @@ function ExpenseDetailScreen() {
   /** The expense is historical once its group already has a completed settlement. */
   const inSettlement =
     expense.group_id != null &&
-    pari.data.settlements.some(
-      (s) => s.group_id === expense.group_id && s.status === "settled",
-    );
+    pari.data.settlements.some((s) => s.group_id === expense.group_id && s.status === "settled");
 
   const people = participants.map((id) => ({ id, name: pari.personName(id) }));
   const totalMinor = toMinor(amount);
   const canSave =
-    totalMinor > 0 &&
-    participants.length > 0 &&
-    isRuleComplete(rule, people, totalMinor);
+    totalMinor > 0 && participants.length > 0 && isRuleComplete(rule, people, totalMinor);
 
   const startEditing = () => {
     setTitle(expense.title);
@@ -175,7 +168,11 @@ function ExpenseDetailScreen() {
       : [...participants, personId];
     setParticipants(next);
     setRule((prev) =>
-      seedRule(prev, next.map((id) => ({ id, name: pari.personName(id) })), prev.mode),
+      seedRule(
+        prev,
+        next.map((id) => ({ id, name: pari.personName(id) })),
+        prev.mode,
+      ),
     );
   };
 
@@ -270,7 +267,11 @@ function ExpenseDetailScreen() {
                 participants.length === candidates.length ? [] : candidates.map((p) => p.id);
               setParticipants(next);
               setRule((prev) =>
-                seedRule(prev, next.map((id) => ({ id, name: pari.personName(id) })), prev.mode),
+                seedRule(
+                  prev,
+                  next.map((id) => ({ id, name: pari.personName(id) })),
+                  prev.mode,
+                ),
               );
             }}
           />

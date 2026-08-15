@@ -9,7 +9,6 @@ import { parseReceipt, receiptErrorCode } from "@/lib/receipt/parseReceipt";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
 
-
 export const Route = createFileRoute("/split/scan")({
   head: () => ({
     meta: [
@@ -92,7 +91,6 @@ function ScanScreen() {
         totalConfidence: parsed.totalConfidence,
       }));
 
-
       navigate({ to: "/split/review" });
     } catch (caught) {
       setReading(false);
@@ -113,10 +111,13 @@ function ScanScreen() {
     }
   };
 
-
   return (
     <Screen className="pb-16">
-      <FlowHeader title={t("split.scan")} variant="close" onClose={() => navigate({ to: pari.isGuest ? "/" : "/home" })} />
+      <FlowHeader
+        title={t("split.scan")}
+        variant="close"
+        onClose={() => navigate({ to: pari.isGuest ? "/" : "/home" })}
+      />
 
       <input
         ref={cameraRef}
@@ -126,13 +127,7 @@ function ScanScreen() {
         className="hidden"
         onChange={pick}
       />
-      <input
-        ref={libraryRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={pick}
-      />
+      <input ref={libraryRef} type="file" accept="image/*" className="hidden" onChange={pick} />
 
       <div className="flex min-h-[58svh] flex-col items-center justify-center px-2 text-center">
         {previewUrl ? (
@@ -171,11 +166,7 @@ function ScanScreen() {
         )}
 
         <p className="mt-8 text-[17px] font-medium tracking-tight">
-          {reading
-            ? t("scan.reading")
-            : previewUrl
-              ? t("scan.looksGood")
-              : t("scan.addPhoto")}
+          {reading ? t("scan.reading") : previewUrl ? t("scan.looksGood") : t("scan.addPhoto")}
         </p>
         <p className="mt-2 max-w-[30ch] text-sm text-muted-foreground">
           {reading
@@ -185,9 +176,7 @@ function ScanScreen() {
               : t("scan.addPhotoHint")}
         </p>
 
-        {error ? (
-          <p className="mt-3 max-w-[30ch] text-sm text-negative">{error}</p>
-        ) : null}
+        {error ? <p className="mt-3 max-w-[30ch] text-sm text-negative">{error}</p> : null}
       </div>
 
       {!reading ? (
@@ -226,7 +215,6 @@ function ScanScreen() {
               ) : null}
             </>
           ) : (
-
             <>
               <PrimaryButton onClick={openCamera}>
                 <Camera className="h-4 w-4" strokeWidth={1.8} />

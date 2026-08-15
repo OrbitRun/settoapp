@@ -56,9 +56,8 @@ function ResultScreen() {
   );
   const originalCurrency = expense.original_currency ?? expense.currency;
   // The split itself lives in the original currency; balances use the converted one.
-  const allocations = (foreign
-    ? pari.expenseOriginalAllocations(expense.id)
-    : pari.expenseAllocations(expense.id)
+  const allocations = (
+    foreign ? pari.expenseOriginalAllocations(expense.id) : pari.expenseAllocations(expense.id)
   ).sort((a, b) => b.amountMinor - a.amountMinor);
 
   const shareText = [
@@ -113,7 +112,6 @@ function ResultScreen() {
     navigate({ to: pari.isGuest ? "/" : "/home" });
   };
 
-
   return (
     <Screen>
       <div className="animate-rise px-1 pb-5 pt-8 text-center">
@@ -134,7 +132,9 @@ function ResultScreen() {
             <p className="tnum mt-0.5 text-xs text-muted-foreground">
               {t("currency.rateLine", {
                 base: originalCurrency,
-                rate: Number(expense.exchange_rate ?? 1).toFixed(4).replace(".", ","),
+                rate: Number(expense.exchange_rate ?? 1)
+                  .toFixed(4)
+                  .replace(".", ","),
                 quote: expense.currency,
                 date: expense.exchange_rate_date
                   ? shortDate(`${expense.exchange_rate_date}T12:00:00.000Z`)
@@ -179,7 +179,6 @@ function ResultScreen() {
           <SecondaryButton onClick={saveInPari}>{t("split.saveAsGroup")}</SecondaryButton>
         )}
 
-
         <SecondaryButton onClick={newSplit}>{t("split.newSplit")}</SecondaryButton>
 
         <button
@@ -189,7 +188,6 @@ function ResultScreen() {
         >
           {t("split.done")}
         </button>
-
       </div>
     </Screen>
   );

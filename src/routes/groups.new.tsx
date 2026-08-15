@@ -23,7 +23,7 @@ type GroupSearch = { people?: string };
 
 export const Route = createFileRoute("/groups/new")({
   validateSearch: (search: Record<string, unknown>): GroupSearch =>
-    typeof search['people'] === "string" ? { people: search['people'] } : {},
+    typeof search["people"] === "string" ? { people: search["people"] } : {},
   head: () => ({
     meta: [
       { title: "Create a group — PARI" },
@@ -102,22 +102,21 @@ function CreateGroupScreen() {
     if (busy) return;
     setBusy(true);
     try {
-    const groupId = await pari.createGroup({
-      name,
-      personNames: people,
-      defaultSplitType: defaultSplit,
-      percentages: rule.percentages,
-      shares: rule.shares,
-    });
-    if (!groupId) return;
-    navigate({ to: "/groups/$groupId", params: { groupId } });
+      const groupId = await pari.createGroup({
+        name,
+        personNames: people,
+        defaultSplitType: defaultSplit,
+        percentages: rule.percentages,
+        shares: rule.shares,
+      });
+      if (!groupId) return;
+      navigate({ to: "/groups/$groupId", params: { groupId } });
     } catch {
       toast.error(t("common.saveFailed"));
     } finally {
       setBusy(false);
     }
   };
-
 
   return (
     <Screen>
@@ -161,7 +160,6 @@ function CreateGroupScreen() {
               </div>
             ))}
 
-
             <div className="flex items-center gap-3 px-3 py-2.5">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-strong">
                 <Plus className="h-4 w-4 text-muted-foreground" strokeWidth={1.8} />
@@ -181,9 +179,7 @@ function CreateGroupScreen() {
               />
             </div>
           </div>
-          <p className="px-1 text-xs text-muted-foreground">
-            {t("groups.peopleHint")}
-          </p>
+          <p className="px-1 text-xs text-muted-foreground">{t("groups.peopleHint")}</p>
         </section>
 
         <section className="space-y-3">

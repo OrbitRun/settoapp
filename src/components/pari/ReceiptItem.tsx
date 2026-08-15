@@ -82,7 +82,6 @@ export function ReceiptItemRow({
         ) : null}
       </span>
 
-
       <span className="tnum shrink-0 text-[15px] font-medium">
         {right ?? formatMinor(amountMinor * quantity, { currency: "" }).trim()}
       </span>

@@ -58,9 +58,7 @@ function SplitStartScreen() {
         >
           <ScanLine className="h-6 w-6 shrink-0" strokeWidth={1.6} />
           <span className="min-w-0">
-            <span className="block text-[17px] font-medium tracking-tight">
-              {t("start.scan")}
-            </span>
+            <span className="block text-[17px] font-medium tracking-tight">{t("start.scan")}</span>
             <span className="mt-0.5 block text-sm text-muted-foreground">
               {t("start.scanHint")}
             </span>

@@ -101,7 +101,8 @@ const en: Dict = {
   "scan.errorBusy": "Too many requests right now. Wait a moment and try again.",
   "scan.errorCredits": "Receipt reading is unavailable right now.",
   "scan.errorTooLarge": "That photo is too large. Try a new photo.",
-  "scan.errorNoReceipt": "We couldn't find a receipt in that photo. Try a sharper, straight-on photo.",
+  "scan.errorNoReceipt":
+    "We couldn't find a receipt in that photo. Try a sharper, straight-on photo.",
   "scan.notImage": "That file isn't an image. Choose a photo of the receipt.",
 
   "activity.title": "Activity",
@@ -127,13 +128,11 @@ const en: Dict = {
   "expense.gone": "This expense no longer exists",
   "expense.saveChanges": "Save changes",
   "expense.settledWarning": "This expense is part of a completed settlement.",
-  "expense.settledHint":
-    "Changes become a new outstanding adjustment. The old settlement is kept.",
+  "expense.settledHint": "Changes become a new outstanding adjustment. The old settlement is kept.",
   "expense.editAnyway": "Edit anyway",
   "expense.groupChangeWarning": "Changing group replaces participants and the split.",
   "expense.participants": "Participants",
   "groups.nothingToSettle": "Nothing to settle",
-
 
   "profile.title": "Profile",
   "profile.overall": "Overall",
@@ -213,8 +212,6 @@ const en: Dict = {
   "currency.original": "Original",
   "currency.converted": "Converted",
   "currency.rateLocked": "Rate locked {date}",
-
-
 
   "receipt.missing": "We're missing {amount}",
   "receipt.tooMuch": "That's {amount} too much",
@@ -319,8 +316,6 @@ const en: Dict = {
   "auth.error": "Something went wrong",
   "auth.googleFailed": "Google sign-in failed",
 
-
-
   "guest.badge": "Guest",
   "guest.yourSplits": "Your splits",
   "guest.saveCta": "Create an account to save this",
@@ -379,8 +374,7 @@ const en: Dict = {
   "split.done": "Done",
   "split.goHome": "Go home",
   "split.receiptShareTitle": "How should this receipt be shared?",
-  "split.sharingPartial":
-    "Sharing {shared} of {total} items · {amount}. The rest stays private.",
+  "split.sharingPartial": "Sharing {shared} of {total} items · {amount}. The rest stays private.",
   "split.splitEqually": "Split equally",
   "split.splitByItem": "Split by item",
   "split.apply": "Apply",
@@ -391,7 +385,6 @@ const en: Dict = {
   "group.choose": "Choose a group",
   "group.noneOption": "No group — just these people",
 };
-
 
 const da: Dict = {
   "app.tagline": "Del alt. Gør op med et tryk.",
@@ -490,7 +483,8 @@ const da: Dict = {
   "scan.errorBusy": "Der er travlt lige nu. Vent et øjeblik og prøv igen.",
   "scan.errorCredits": "Kvitteringslæsning er ikke tilgængelig lige nu.",
   "scan.errorTooLarge": "Billedet er for stort. Tag et nyt billede.",
-  "scan.errorNoReceipt": "Vi fandt ingen kvittering på billedet. Tag et skarpt billede lige forfra.",
+  "scan.errorNoReceipt":
+    "Vi fandt ingen kvittering på billedet. Tag et skarpt billede lige forfra.",
   "scan.notImage": "Filen er ikke et billede. Vælg et foto af kvitteringen.",
 
   "activity.title": "Aktivitet",
@@ -522,7 +516,6 @@ const da: Dict = {
   "expense.groupChangeWarning": "Skift af gruppe erstatter deltagere og fordeling.",
   "expense.participants": "Deltagere",
   "groups.nothingToSettle": "Intet at gøre op",
-
 
   "profile.title": "Profil",
   "profile.overall": "Samlet",
@@ -602,8 +595,6 @@ const da: Dict = {
   "currency.original": "Original",
   "currency.converted": "Omregnet",
   "currency.rateLocked": "Kurs låst {date}",
-
-
 
   "receipt.missing": "Der mangler {amount}",
   "receipt.tooMuch": "Der er {amount} for meget",
@@ -708,8 +699,6 @@ const da: Dict = {
   "auth.error": "Noget gik galt",
   "auth.googleFailed": "Google-login mislykkedes",
 
-
-
   "guest.badge": "Gæst",
   "guest.yourSplits": "Dine splits",
   "guest.saveCta": "Opret en konto for at gemme",
@@ -717,8 +706,7 @@ const da: Dict = {
   "guest.migrationFailed": "Vi kunne ikke flytte dit split. Det ligger stadig på denne enhed.",
   "account.title": "Opret en konto",
   "account.saveTitle": "Gem dit split",
-  "account.save_split":
-    "Opret en konto for at gemme udgiften, personerne og din historik i PARI.",
+  "account.save_split": "Opret en konto for at gemme udgiften, personerne og din historik i PARI.",
   "account.save_expense": "Opret en konto for at gemme udgiften og din historik.",
 
   "account.create_group": "Grupper kræver en konto, så saldi holdes opdateret.",
@@ -768,8 +756,7 @@ const da: Dict = {
   "split.done": "Færdig",
   "split.goHome": "Til forsiden",
   "split.receiptShareTitle": "Hvordan skal kvitteringen deles?",
-  "split.sharingPartial":
-    "Deler {shared} af {total} varer · {amount}. Resten er privat.",
+  "split.sharingPartial": "Deler {shared} af {total} varer · {amount}. Resten er privat.",
   "split.splitEqually": "Del ligeligt",
   "split.splitByItem": "Del pr. vare",
   "split.apply": "Anvend",
@@ -780,7 +767,6 @@ const da: Dict = {
   "group.choose": "Vælg gruppe",
   "group.noneOption": "Ingen gruppe — kun disse personer",
 };
-
 
 const DICTS: Record<Language, Dict> = { en, da };
 
@@ -795,13 +781,7 @@ export function detectLanguage(): Language {
   return navigator.language?.toLowerCase().startsWith("da") ? "da" : "en";
 }
 
-export function I18nProvider({
-  language,
-  children,
-}: {
-  language: Language;
-  children: ReactNode;
-}) {
+export function I18nProvider({ language, children }: { language: Language; children: ReactNode }) {
   const value = useMemo<I18nValue>(() => {
     const dict = DICTS[language] ?? da;
     const t: Translate = (key, vars) => {

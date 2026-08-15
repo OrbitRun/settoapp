@@ -77,7 +77,6 @@ function HomeScreen() {
                 }
               />
             ) : (
-
               active.map((group, index) => (
                 <div key={group.id}>
                   {index > 0 ? <Divider /> : null}
@@ -111,7 +110,6 @@ function HomeScreen() {
               ))}
             </Panel>
           ) : null}
-
         </div>
       </Screen>
       <BottomNav />

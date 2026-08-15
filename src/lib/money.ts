@@ -113,5 +113,3 @@ export function normaliseCurrency(value: string | null | undefined): string | nu
   const code = (value ?? "").trim().toUpperCase();
   return /^[A-Z]{3}$/.test(code) ? code : null;
 }
-
-

@@ -66,7 +66,6 @@ function GroupDetailScreen() {
   // "Gør op" is a real action only when someone actually owes someone else.
   const canSettle = pari.settlementPlan(groupId).length > 0;
 
-
   const addExpense = () => {
     pari.setDraft({
       ...emptyDraft(pari.currentPersonId),
@@ -82,7 +81,10 @@ function GroupDetailScreen() {
   return (
     <>
       <Screen>
-        <FlowHeader title={group.name} subtitle={t("common.memberCount", { count: memberIds.length })} />
+        <FlowHeader
+          title={group.name}
+          subtitle={t("common.memberCount", { count: memberIds.length })}
+        />
 
         <div className="animate-rise px-1 pb-8">
           <BalanceDisplay
@@ -114,7 +116,6 @@ function GroupDetailScreen() {
               {t(option.labelKey)}
             </button>
           ))}
-
         </div>
 
         {tab === "Expenses" ? (
@@ -131,7 +132,9 @@ function GroupDetailScreen() {
                     {index > 0 ? <Divider /> : null}
                     <ExpenseRow
                       title={expense.title}
-                      subtitle={t("home.paidBy", { name: pari.personName(expense.paid_by_person_id) })}
+                      subtitle={t("home.paidBy", {
+                        name: pari.personName(expense.paid_by_person_id),
+                      })}
                       dateIso={expense.expense_date}
                       amountMinor={expense.total_minor}
                     />
@@ -182,7 +185,6 @@ function GroupDetailScreen() {
                 {t("groups.edit")}
               </Link>
             </div>
-
           </div>
         ) : null}
 

@@ -36,7 +36,11 @@ export const Route = createFileRoute("/split/review")({
 });
 
 /** Keeps original / discount / paid consistent on a line, in whole øre. */
-function withMoney(item: DraftItem, originalLineMinor: number, discountLineMinor: number): DraftItem {
+function withMoney(
+  item: DraftItem,
+  originalLineMinor: number,
+  discountLineMinor: number,
+): DraftItem {
   const quantity = Math.max(1, item.quantity);
   const discount = Math.min(Math.max(0, discountLineMinor), originalLineMinor);
   const paid = originalLineMinor - discount;
@@ -49,7 +53,6 @@ function withMoney(item: DraftItem, originalLineMinor: number, discountLineMinor
   };
 }
 
-
 function ReviewScreen() {
   const pari = usePari();
   const navigate = useNavigate();
@@ -59,10 +62,7 @@ function ReviewScreen() {
   const t = useT();
 
   // The review screen stays entirely in the receipt's own currency.
-  const money = (
-    minor: number,
-    options: { currency?: string; compact?: boolean } = {},
-  ) =>
+  const money = (minor: number, options: { currency?: string; compact?: boolean } = {}) =>
     formatMinorIn(minor, options.currency ?? draft.currency, {
       compact: options.compact ?? true,
     });
@@ -82,9 +82,6 @@ function ReviewScreen() {
   const difference = Math.abs(rawDifference) <= 1 ? 0 : rawDifference;
   const unassignedDiscount = (draft.receiptWarnings ?? []).includes("UNASSIGNED_DISCOUNT");
   const unsureLines = draft.items.filter((item) => item.confidence === "low").length;
-
-
-
 
   const update = (id: string, patch: Partial<DraftItem>) =>
     setDraft((prev) => ({
@@ -123,7 +120,9 @@ function ReviewScreen() {
       <FlowHeader title={t("receipt.found")} />
 
       <div className="px-1 pb-8">
-        <p className="text-sm text-muted-foreground">{shortDate(draft.items.length ? new Date().toISOString() : new Date().toISOString())}</p>
+        <p className="text-sm text-muted-foreground">
+          {shortDate(draft.items.length ? new Date().toISOString() : new Date().toISOString())}
+        </p>
         <h1 className="mt-1 text-[26px] font-semibold tracking-[-0.03em]">
           {draft.merchant ?? t("split.receipt")}
         </h1>
@@ -168,10 +167,6 @@ function ReviewScreen() {
           {t("receipt.checkLines")}
         </div>
       ) : null}
-
-
-
-
 
       <div className="mb-3 flex items-center justify-between px-4">
         <span className="text-[13px] text-muted-foreground">
@@ -224,9 +219,7 @@ function ReviewScreen() {
             onClick={() => toggle(item.id)}
             right={
               <span className="flex items-center gap-3">
-                <span className="tnum">
-                  {money(itemTotalMinor(item), { currency: "" }).trim()}
-                </span>
+                <span className="tnum">{money(itemTotalMinor(item), { currency: "" }).trim()}</span>
                 <button
                   type="button"
                   aria-label={`${t("common.edit")} ${item.name}`}
@@ -257,9 +250,7 @@ function ReviewScreen() {
         ) : null}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("receipt.total")}</span>
-          <span className="tnum font-medium">
-            {money(draft.amountMinor, { compact: false })}
-          </span>
+          <span className="tnum font-medium">{money(draft.amountMinor, { compact: false })}</span>
         </div>
 
         <p className="pt-1 text-sm">
@@ -297,7 +288,11 @@ function ReviewScreen() {
         </div>
       </div>
 
-      <BottomSheet open={editing !== null} onClose={() => setEditing(null)} title={t("receipt.editItem")}>
+      <BottomSheet
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        title={t("receipt.editItem")}
+      >
         {editing ? (
           <div className="space-y-4">
             <input
@@ -322,7 +317,9 @@ function ReviewScreen() {
               />
               <NumericField
                 value={editing.quantity}
-                onChange={(next) => setEditing({ ...editing, quantity: Math.max(1, Math.round(next)) })}
+                onChange={(next) =>
+                  setEditing({ ...editing, quantity: Math.max(1, Math.round(next)) })
+                }
                 min={1}
                 decimals={0}
                 ariaLabel={t("receipt.quantity")}
@@ -364,7 +361,6 @@ function ReviewScreen() {
             <p className="px-1 text-xs text-muted-foreground">
               {t("receipt.originalPrice")} · {t("receipt.discount")} · {t("receipt.paidPrice")}
             </p>
-
 
             <PrimaryButton
               onClick={() => {

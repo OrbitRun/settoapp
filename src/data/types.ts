@@ -103,7 +103,6 @@ export type ExpenseSplit = {
   shares: number | null;
 };
 
-
 export type ItemSplit = {
   id: string;
   expense_item_id: string;

@@ -20,15 +20,12 @@ import { Toaster } from "@/components/ui/sonner";
 import { AccountSheet } from "@/components/pari/AccountSheet";
 import { useScrollToTopOnNavigate } from "@/hooks/useScrollToTopOnNavigate";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-svh items-center justify-center bg-background px-6">
       <div className="max-w-sm text-center">
         <h1 className="text-2xl font-semibold tracking-tight">Nothing here</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This page doesn't exist or has moved.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">This page doesn't exist or has moved.</p>
         <Link
           to="/"
           className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-primary px-6 text-sm font-medium text-primary-foreground"
@@ -132,8 +129,7 @@ function AppFrame({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof document === "undefined") return;
     const prefersDark =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches;
+      typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
     const dark = pari.appearance === "dark" || (pari.appearance === "system" && prefersDark);
     document.documentElement.classList.toggle("dark", dark);
   }, [pari.appearance]);
@@ -145,7 +141,6 @@ function AppFrame({ children }: { children: ReactNode }) {
     </I18nProvider>
   );
 }
-
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();

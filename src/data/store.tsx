@@ -61,9 +61,7 @@ export type AccountPromptReason =
   | "settle"
   | "collaborate";
 
-
 const nowIso = () => new Date().toISOString();
-
 
 export type AddExpenseInput = {
   groupId: string | null;
@@ -80,7 +78,6 @@ export type AddExpenseInput = {
   /** Omitted when the purchase was already in the system currency. */
   money?: MoneyContext;
 };
-
 
 type CreateGroupInput = {
   name: string;
@@ -122,8 +119,6 @@ type UpdateExpenseInput = {
   money?: MoneyContext;
 };
 
-
-
 type PariContextValue = {
   data: PariData;
   loading: boolean;
@@ -164,7 +159,9 @@ type PariContextValue = {
   addPerson: (name: string) => Promise<Person | null>;
   renamePerson: (id: string, name: string) => Promise<void>;
   deletePerson: (id: string) => Promise<void>;
-  updateProfile: (patch: Partial<Pick<Profile, "display_name" | "language" | "currency" | "appearance">>) => Promise<void>;
+  updateProfile: (
+    patch: Partial<Pick<Profile, "display_name" | "language" | "currency" | "appearance">>,
+  ) => Promise<void>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   draft: SplitDraft;
@@ -183,9 +180,7 @@ type PariContextValue = {
   migratingGuestData: boolean;
   /** True when carrying a guest split into the new account failed. */
   guestMigrationFailed: boolean;
-
 };
-
 
 const PariContext = createContext<PariContextValue | null>(null);
 
@@ -247,7 +242,6 @@ async function fetchAll(userId: string): Promise<PariData> {
   };
 }
 
-
 /**
  * Moves a guest's local splits into a freshly authenticated account so nobody
  * ever has to scan or split the same receipt twice.
@@ -283,9 +277,7 @@ async function migrateGuestData(userId: string, state: GuestState): Promise<stri
       if (selfPerson) idMap.set(guestPerson.id, selfPerson.id);
       continue;
     }
-    const match = people.find(
-      (p) => p.name.toLowerCase() === guestPerson.name.toLowerCase(),
-    );
+    const match = people.find((p) => p.name.toLowerCase() === guestPerson.name.toLowerCase());
     if (match) {
       idMap.set(guestPerson.id, match.id);
       continue;
@@ -301,9 +293,7 @@ async function migrateGuestData(userId: string, state: GuestState): Promise<stri
   let lastExpenseId: string | null = null;
 
   // Oldest first so the account timeline keeps the guest's order.
-  const ordered = [...state.expenses].sort((a, b) =>
-    a.expense_date.localeCompare(b.expense_date),
-  );
+  const ordered = [...state.expenses].sort((a, b) => a.expense_date.localeCompare(b.expense_date));
 
   for (const guestExpense of ordered) {
     const payerId = idMap.get(guestExpense.paid_by_person_id) ?? selfPerson?.id;
@@ -369,8 +359,6 @@ async function migrateGuestData(userId: string, state: GuestState): Promise<stri
   return lastExpenseId;
 }
 
-
-
 export function PariProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
@@ -388,7 +376,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
   const migratedRef = useRef(false);
   const inviteRef = useRef(false);
   const navigate = useNavigate();
-
 
   const setGuest = useCallback((updater: (prev: GuestState) => GuestState) => {
     setGuestRaw((prev) => {
@@ -506,7 +493,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
       .finally(() => setMigrating(false));
   }, [userId, guestReady, queryClient, navigate]);
 
-
   // An invitation opened while signed out is applied right after auth.
   useEffect(() => {
     if (!userId || inviteRef.current) return;
@@ -524,11 +510,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
       })
       .catch((error) => console.error("[pari] pending invite", error));
   }, [userId, queryClient, navigate]);
-
-
-
-
-
 
   const value = useMemo<PariContextValue>(() => {
     const personById = (id: string) => data.people.find((p) => p.id === id);
@@ -567,7 +548,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
           percentage: s.percentage ?? undefined,
           shares: s.shares ?? undefined,
         }));
-
 
     const balancesFor = (expenses: Expense[], groupId?: string) =>
       calculateBalances(
@@ -611,15 +591,16 @@ export function PariProvider({ children }: { children: ReactNode }) {
      * dropped, and repeated edits of the same expense collapse into one row.
      */
     const activityFeed = () => {
-      const sorted = [...data.activity].sort((a, b) =>
-        b.created_at.localeCompare(a.created_at),
-      );
+      const sorted = [...data.activity].sort((a, b) => b.created_at.localeCompare(a.created_at));
       const seenEdits = new Set<string>();
       return sorted.filter((entry) => {
         if (entry.activity_type === "expense_deleted") return false;
         if (entry.entity_type === "expense") {
           if (!entry.entity_id || !expenseById(entry.entity_id)) return false;
-          if (entry.activity_type === "expense_updated" || entry.activity_type === "split_changed") {
+          if (
+            entry.activity_type === "expense_updated" ||
+            entry.activity_type === "split_changed"
+          ) {
             if (seenEdits.has(entry.entity_id)) return false;
             seenEdits.add(entry.entity_id);
           }
@@ -627,7 +608,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
         return true;
       });
     };
-
 
     const groupRule = (groupId: string): GroupRule | null => {
       const group = data.groups.find((g) => g.id === groupId);
@@ -662,9 +642,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       if (!group || group.default_split_type !== "percentage") return null;
       const members = data.groupMembers.filter((m) => m.group_id === groupId);
       if (members.length === 0 || members.some((m) => m.default_percentage == null)) return null;
-      return Object.fromEntries(
-        members.map((m) => [m.person_id, Number(m.default_percentage)]),
-      );
+      return Object.fromEntries(members.map((m) => [m.person_id, Number(m.default_percentage)]));
     };
 
     const logActivity = async (
@@ -737,7 +715,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
         );
       }
 
-
       if (input.items && input.items.length > 0) {
         await supabase.from("expense_items").insert(
           input.items.map((item, index) => ({
@@ -766,8 +743,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
       const current = expenseById(id);
       // Editing keeps the expense in its original currency; the rate stays locked
       // unless the user supplies a new one (manual override or card amount).
-      const money: MoneyContext | undefined = input.money ?? (
-        current && current.original_currency && current.original_currency !== current.currency
+      const money: MoneyContext | undefined =
+        input.money ??
+        (current && current.original_currency && current.original_currency !== current.currency
           ? {
               currency: current.original_currency,
               exchangeRate: Number(current.exchange_rate) || 1,
@@ -775,8 +753,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
               exchangeRateSource: current.exchange_rate_source,
               cardChargedMinor: current.card_charged_minor,
             }
-          : undefined
-      );
+          : undefined);
 
       const locked =
         input.totalMinor !== undefined || input.allocations || input.money
@@ -841,7 +818,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
         }
       }
 
-
       // One meaningful activity entry per edit — never one per changed field.
       const existing = expenseById(id);
       await logActivity(
@@ -872,9 +848,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       if (!userId) return null;
       const trimmed = name.trim();
       if (!trimmed) return null;
-      const existing = data.people.find(
-        (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
-      );
+      const existing = data.people.find((p) => p.name.toLowerCase() === trimmed.toLowerCase());
       if (existing) return existing;
       const { data: created, error } = await supabase
         .from("people")
@@ -970,7 +944,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
         }
       }
 
-
       await logActivity("group_created", "group", groupId, groupId, { title: input.name });
       await refresh();
       return groupId;
@@ -989,8 +962,10 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
       if (patch.percentages !== undefined || patch.shares !== undefined) {
         for (const personId of groupPersonIds(groupId)) {
-          const memberPatch: { default_percentage?: number | null; default_weight?: number | null } =
-            {};
+          const memberPatch: {
+            default_percentage?: number | null;
+            default_weight?: number | null;
+          } = {};
           if (patch.percentages !== undefined) {
             memberPatch.default_percentage = patch.percentages?.[personId] ?? null;
           }
@@ -1061,12 +1036,15 @@ export function PariProvider({ children }: { children: ReactNode }) {
         .map((expense) => expense.id);
 
       if (expenseIds.length > 0) {
-        await supabase.from("item_splits").delete().in(
-          "expense_item_id",
-          data.expenseItems
-            .filter((item) => expenseIds.includes(item.expense_id))
-            .map((item) => item.id),
-        );
+        await supabase
+          .from("item_splits")
+          .delete()
+          .in(
+            "expense_item_id",
+            data.expenseItems
+              .filter((item) => expenseIds.includes(item.expense_id))
+              .map((item) => item.id),
+          );
         await supabase.from("expense_splits").delete().in("expense_id", expenseIds);
         await supabase.from("expense_items").delete().in("expense_id", expenseIds);
         await supabase.from("expenses").delete().in("id", expenseIds);
@@ -1078,7 +1056,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
       await supabase.from("groups").delete().eq("id", groupId);
       await refresh();
     };
-
 
     const markSettled = async (groupId: string, step: SettlementStep) => {
       if (!userId) return;
@@ -1122,9 +1099,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const guestAddPerson = async (name: string): Promise<Person | null> => {
       const trimmed = name.trim();
       if (!trimmed) return null;
-      const existing = guest.people.find(
-        (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
-      );
+      const existing = guest.people.find((p) => p.name.toLowerCase() === trimmed.toLowerCase());
       if (existing) return existing;
       const person = makeGuestPerson(trimmed);
       setGuest((prev) => ({ ...prev, people: [...prev.people, person] }));
@@ -1143,14 +1118,13 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const guestDeletePerson = async (id: string) => {
       setGuest((prev) => ({
         ...prev,
-        people: prev.people.filter((p) => p.id === id ? false : true),
+        people: prev.people.filter((p) => (p.id === id ? false : true)),
       }));
       setDraftState((prev) => ({
         ...prev,
         participants: prev.participants.filter((personId) => personId !== id),
       }));
     };
-
 
     const guestAddExpense = async (input: AddExpenseInput): Promise<Expense | null> => {
       const locked = lockMoney({
@@ -1184,7 +1158,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
         percentage: allocation.percentage ?? null,
         shares: allocation.shares ?? null,
       }));
-
 
       const items = (input.items ?? []).map((item) => ({
         id: makeGuestItemId(),
@@ -1263,9 +1236,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
       setGroupArchived,
       deleteGroup,
       markSettled: isGuest
-        ? (async () => {
+        ? async () => {
             setAccountPrompt("settle");
-          })
+          }
         : markSettled,
       addPerson: isGuest ? guestAddPerson : addPerson,
       renamePerson: isGuest ? guestRenamePerson : renamePerson,
@@ -1286,7 +1259,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
       migratingGuestData: migrating,
       guestMigrationFailed: migrationFailed,
     };
-
   }, [
     data,
     draft,
@@ -1307,9 +1279,6 @@ export function PariProvider({ children }: { children: ReactNode }) {
     migrationFailed,
     deviceLanguage,
   ]);
-
-
-
 
   return <PariContext.Provider value={value}>{children}</PariContext.Provider>;
 }

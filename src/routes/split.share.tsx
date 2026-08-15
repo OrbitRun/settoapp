@@ -37,10 +37,7 @@ function ShareScreen() {
   const [busy, setBusy] = useState(false);
 
   // Everything on this screen is shown in the receipt's own currency.
-  const formatMinorIn2 = (
-    minor: number,
-    options: { currency?: string; compact?: boolean } = {},
-  ) =>
+  const formatMinorIn2 = (minor: number, options: { currency?: string; compact?: boolean } = {}) =>
     formatMinorIn(minor, options.currency ?? draft.currency, {
       compact: options.compact ?? true,
     });
@@ -86,19 +83,19 @@ function ShareScreen() {
     if (busy) return;
     setBusy(true);
     try {
-    const expense = await pari.addExpense({
-      groupId: draft.groupId,
-      title: draft.title || draft.merchant || "Receipt",
-      merchant: draft.merchant,
-      paidByPersonId: draft.paidByPersonId,
-      totalMinor: sharedTotal,
-      allocations,
-      source: "receipt",
-      items: draft.items,
-      ...(lock.money ? { money: lock.money } : {}),
-    });
-    if (!expense) return;
-    navigate({ to: "/split/result", search: { expenseId: expense.id } });
+      const expense = await pari.addExpense({
+        groupId: draft.groupId,
+        title: draft.title || draft.merchant || "Receipt",
+        merchant: draft.merchant,
+        paidByPersonId: draft.paidByPersonId,
+        totalMinor: sharedTotal,
+        allocations,
+        source: "receipt",
+        items: draft.items,
+        ...(lock.money ? { money: lock.money } : {}),
+      });
+      if (!expense) return;
+      navigate({ to: "/split/result", search: { expenseId: expense.id } });
     } catch {
       toast.error(t("common.saveFailed"));
     } finally {

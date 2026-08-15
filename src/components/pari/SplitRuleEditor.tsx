@@ -49,11 +49,7 @@ export function previewAllocations(
 }
 
 /** A rule is only usable when percentages add to 100 and exact amounts add to the total. */
-export function isRuleComplete(
-  rule: SplitRule,
-  people: RulePerson[],
-  totalMinor: number,
-): boolean {
+export function isRuleComplete(rule: SplitRule, people: RulePerson[], totalMinor: number): boolean {
   if (people.length === 0) return false;
   if (rule.mode === "percentage") {
     const sum = people.reduce((acc, p) => acc + (rule.percentages[p.id] ?? 0), 0);
@@ -113,8 +109,7 @@ export function SplitRuleEditor({
 }) {
   const t = useT();
   const allocations = previewAllocations(rule, people, totalMinor);
-  const amountOf = (id: string) =>
-    allocations.find((a) => a.personId === id)?.amountMinor ?? 0;
+  const amountOf = (id: string) => allocations.find((a) => a.personId === id)?.amountMinor ?? 0;
 
   if (people.length === 0) return null;
 
@@ -122,9 +117,7 @@ export function SplitRuleEditor({
     const each = allocations[0]?.amountMinor ?? 0;
     const uniform = allocations.every((a) => a.amountMinor === each);
     if (!showAmounts || totalMinor <= 0) {
-      return (
-        <p className="text-[13px] text-muted-foreground">{t("split.equalHint")}</p>
-      );
+      return <p className="text-[13px] text-muted-foreground">{t("split.equalHint")}</p>;
     }
     return uniform ? (
       <div className="text-center">

@@ -16,15 +16,7 @@ import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
 import { CurrencyPanel } from "@/components/pari/CurrencyPanel";
 import { useMoneyLock } from "@/hooks/useMoneyLock";
-import {
-  currencyLabel,
-  formatMinorIn,
-  formatMinorNumber,
-  toMajor,
-  toMinor,
-} from "@/lib/money";
-
-
+import { currencyLabel, formatMinorIn, formatMinorNumber, toMajor, toMinor } from "@/lib/money";
 
 export const Route = createFileRoute("/split/amount")({
   head: () => ({
@@ -50,15 +42,12 @@ function ManualExpenseScreen() {
     systemCurrency: pari.currency,
     totalMinor: draft.amountMinor,
   });
-  const amountText =
-    draft.amountMinor > 0 ? formatMinorNumber(draft.amountMinor) : "0";
+  const amountText = draft.amountMinor > 0 ? formatMinorNumber(draft.amountMinor) : "0";
 
   const heroSize =
     amountText.length <= 5 ? 60 : amountText.length <= 7 ? 52 : amountText.length <= 10 ? 42 : 32;
   const suffixSize = Math.max(18, Math.round(heroSize / 3));
   const heroStyle = { fontSize: `${heroSize}px`, lineHeight: 1.05 } as const;
-
-
 
   const participants = draft.participants.map((id) => ({ id, name: pari.personName(id) }));
 
@@ -101,19 +90,19 @@ function ManualExpenseScreen() {
     if (busy) return;
     setBusy(true);
     try {
-    const expense = await pari.addExpense({
-      groupId: draft.groupId,
-      title: draft.title,
-      merchant: draft.merchant,
-      paidByPersonId: draft.paidByPersonId,
-      totalMinor: draft.amountMinor,
-      allocations,
-      source: "manual",
-      ...(lock.money ? { money: lock.money } : {}),
-    });
+      const expense = await pari.addExpense({
+        groupId: draft.groupId,
+        title: draft.title,
+        merchant: draft.merchant,
+        paidByPersonId: draft.paidByPersonId,
+        totalMinor: draft.amountMinor,
+        allocations,
+        source: "manual",
+        ...(lock.money ? { money: lock.money } : {}),
+      });
 
-    if (!expense) return;
-    navigate({ to: "/split/result", search: { expenseId: expense.id } });
+      if (!expense) return;
+      navigate({ to: "/split/result", search: { expenseId: expense.id } });
     } catch {
       toast.error(t("common.saveFailed"));
     } finally {
@@ -160,7 +149,6 @@ function ManualExpenseScreen() {
             {currencyLabel(draft.currency)}
           </span>
         </div>
-
 
         <input
           value={draft.title}
@@ -219,7 +207,6 @@ function ManualExpenseScreen() {
           onChange={(ids) => setDraft((prev) => ({ ...prev, participants: ids }))}
         />
 
-
         <section className="space-y-4 rounded-3xl bg-surface p-5 shadow-soft">
           <div className="flex items-center justify-between">
             <p className="text-[13px] text-muted-foreground">{t("split.distribution")}</p>
@@ -271,7 +258,6 @@ function ManualExpenseScreen() {
           </PrimaryButton>
         </div>
       </div>
-
     </Screen>
   );
 }

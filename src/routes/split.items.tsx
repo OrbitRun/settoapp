@@ -37,10 +37,7 @@ function ItemSplitScreen() {
   const t = useT();
 
   // Items and totals stay in the receipt's own currency.
-  const formatMinorIn2 = (
-    minor: number,
-    options: { currency?: string; compact?: boolean } = {},
-  ) =>
+  const formatMinorIn2 = (minor: number, options: { currency?: string; compact?: boolean } = {}) =>
     formatMinorIn(minor, options.currency ?? draft.currency, {
       compact: options.compact ?? true,
     });
@@ -207,8 +204,12 @@ function ItemSplitScreen() {
               <p className="pb-1 text-center text-sm text-muted-foreground">
                 {t("receipt.itemsSelected", { count: selected.length })}
               </p>
-              <PrimaryButton onClick={() => setAssignOpen(true)}>{t("receipt.assignPeople")}</PrimaryButton>
-              <SecondaryButton onClick={() => setSelected([])}>{t("receipt.clear")}</SecondaryButton>
+              <PrimaryButton onClick={() => setAssignOpen(true)}>
+                {t("receipt.assignPeople")}
+              </PrimaryButton>
+              <SecondaryButton onClick={() => setSelected([])}>
+                {t("receipt.clear")}
+              </SecondaryButton>
             </>
           ) : (
             <PrimaryButton onClick={confirm}>

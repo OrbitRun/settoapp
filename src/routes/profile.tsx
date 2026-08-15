@@ -64,7 +64,6 @@ function ProfileScreen() {
     close();
   };
 
-
   const appearanceLabel: Record<Appearance, string> = {
     system: t("profile.system"),
     light: t("profile.light"),
@@ -109,10 +108,7 @@ function ProfileScreen() {
               <span className="text-[15px]">
                 {pari.netBalance >= 0 ? t("profile.youAreOwed") : t("profile.youOwe")}
               </span>
-              <MoneyAmount
-                minor={Math.abs(pari.netBalance)}
-                tone={balanceTone(pari.netBalance)}
-              />
+              <MoneyAmount minor={Math.abs(pari.netBalance)} tone={balanceTone(pari.netBalance)} />
             </div>
           </Panel>
 
@@ -137,7 +133,10 @@ function ProfileScreen() {
               </div>
             ))}
             <Divider />
-            <Link to="/onboarding" className="flex items-center justify-between px-4 py-4 text-[15px]">
+            <Link
+              to="/onboarding"
+              className="flex items-center justify-between px-4 py-4 text-[15px]"
+            >
               {t("profile.howItWorks")}
               <ChevronRight className="h-4 w-4 text-muted-foreground/60" strokeWidth={1.6} />
             </Link>

@@ -47,10 +47,7 @@ function GroupsScreen() {
         <div className="space-y-6">
           <Panel>
             {groups.length === 0 ? (
-              <EmptyState
-                title={t("groups.none")}
-                description={t("groups.noneHint")}
-              />
+              <EmptyState title={t("groups.none")} description={t("groups.noneHint")} />
             ) : (
               groups.map((group, index) => (
                 <div key={group.id}>

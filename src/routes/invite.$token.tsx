@@ -114,9 +114,7 @@ function InviteScreen() {
         <p className="mt-6 text-sm text-muted-foreground">
           {t("invite.invitedBy", { name: preview.inviterName })}
         </p>
-        <h1 className="mt-1.5 text-[28px] font-semibold tracking-[-0.03em]">
-          {preview.groupName}
-        </h1>
+        <h1 className="mt-1.5 text-[28px] font-semibold tracking-[-0.03em]">{preview.groupName}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {t("common.memberCount", { count: preview.memberCount })}
         </p>

@@ -86,14 +86,14 @@ function EditGroupScreen() {
     if (busy) return;
     setBusy(true);
     try {
-    await pari.updateGroup(groupId, {
-      name,
-      defaultSplitType: split,
-      percentages: split === "percentage" ? rule.percentages : null,
-      shares: split === "shares" ? rule.shares : null,
-    });
-    toast.success(t("groups.saved"));
-    navigate({ to: "/groups/$groupId", params: { groupId } });
+      await pari.updateGroup(groupId, {
+        name,
+        defaultSplitType: split,
+        percentages: split === "percentage" ? rule.percentages : null,
+        shares: split === "shares" ? rule.shares : null,
+      });
+      toast.success(t("groups.saved"));
+      navigate({ to: "/groups/$groupId", params: { groupId } });
     } catch {
       toast.error(t("common.saveFailed"));
     } finally {

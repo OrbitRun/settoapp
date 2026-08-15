@@ -17,10 +17,8 @@ export type ParsedReceipt = {
   confidence: number;
 };
 
-
 export { receiptErrorCode };
 export type { ReceiptErrorCode } from "./parseReceipt.functions";
-
 
 /** Small print needs resolution — only downscale when the photo is bigger than this. */
 const MAX_EDGE = 2200;
@@ -124,6 +122,4 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
     warnings: parsed.warnings,
     confidence: parsed.confidence,
   };
-
-
 }

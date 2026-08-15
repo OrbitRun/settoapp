@@ -77,9 +77,7 @@ export function SplitSelector({
                   {t("split.byItemHint")}
                 </span>
               </span>
-              {itemized.active ? (
-                <Check className="h-4 w-4 text-positive" strokeWidth={2} />
-              ) : null}
+              {itemized.active ? <Check className="h-4 w-4 text-positive" strokeWidth={2} /> : null}
             </button>
           ) : null}
         </div>

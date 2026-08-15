@@ -58,7 +58,6 @@ export type ParsedReceiptPayload = {
   confidence: number;
 };
 
-
 const SYSTEM_PROMPT = `You are parsing a retail or restaurant receipt from a photo.
 Read the actual image carefully.
 - Extract every visible purchased item you can identify. Do not invent items.
@@ -126,8 +125,6 @@ NOT ITEMS — never return these as items:
   ROUNDING, GEBYR/FEE lines belonging to the payment, loyalty points, saldo.
 - Totals and taxes: TOTAL, I ALT, AT BETALE, SUBTOTAL, MOMS, VAT, MWST, TVA.`;
 
-
-
 const TIMEOUT_MS = 60_000;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
@@ -161,8 +158,8 @@ const SYMBOL_CURRENCIES: Record<string, string> = {
   "€": "EUR",
   $: "USD",
   "£": "GBP",
-  "zł": "PLN",
-  "kč": "CZK",
+  zł: "PLN",
+  kč: "CZK",
   "¥": "JPY",
 };
 
@@ -174,7 +171,6 @@ export function normaliseCurrencyCode(value: string | null | undefined): string 
   if (/^[A-Z]{3}$/.test(upper)) return upper;
   return SYMBOL_CURRENCIES[raw.toLowerCase()] ?? SYMBOL_CURRENCIES[raw] ?? null;
 }
-
 
 export const parseReceiptImage = createServerFn({ method: "POST" })
   .inputValidator((input: { dataUrl: string }) => {
@@ -289,8 +285,6 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
                         uncertain: { type: ["boolean", "null"] },
                         confidence: confidenceEnum,
                       },
-
-
                     },
                   },
                 },
@@ -395,7 +389,9 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
             previous.discountMinor += amount;
             previous.unitPriceMinor = Math.max(
               0,
-              Math.round((previous.unitPriceMinor * previous.quantity - amount) / previous.quantity),
+              Math.round(
+                (previous.unitPriceMinor * previous.quantity - amount) / previous.quantity,
+              ),
             );
             if (discountPercent !== null) previous.discountPercent = discountPercent;
           } else {
@@ -406,7 +402,12 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       }
 
       // Only a percentage printed: derive the amount from the original total.
-      if (discount === 0 && discountPercent !== null && originalTotal !== null && effectiveTotal === null) {
+      if (
+        discount === 0 &&
+        discountPercent !== null &&
+        originalTotal !== null &&
+        effectiveTotal === null
+      ) {
         discount = Math.round((originalTotal * discountPercent) / 100);
       }
       if (effectiveTotal === null && originalTotal !== null) {
@@ -440,7 +441,6 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
         uncertain: uncertain || (unit === null && originalTotal === 0),
         confidence: uncertain ? "low" : lineConfidence,
       });
-
     }
 
     const itemsTotal = items.reduce((sum, item) => sum + item.unitPriceMinor * item.quantity, 0);
@@ -468,7 +468,8 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
     }
 
     const netItemsTotal = itemsTotal - receiptDiscountMinor;
-    const totalMinor = reportedTotal && reportedTotal > 0 ? reportedTotal : Math.max(0, netItemsTotal);
+    const totalMinor =
+      reportedTotal && reportedTotal > 0 ? reportedTotal : Math.max(0, netItemsTotal);
 
     if (items.length === 0) warnings.push("NO_ITEMS_DETECTED");
     if (!reportedTotal) warnings.push("TOTAL_NOT_FOUND");
@@ -518,8 +519,6 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       warnings,
       confidence,
     };
-
-
   });
 
 function stripFence(content: string): string {

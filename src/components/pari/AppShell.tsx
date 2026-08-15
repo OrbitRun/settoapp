@@ -48,9 +48,7 @@ export function TopBar({
   return (
     <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 pb-6 pt-3">
       <div className="min-w-0">
-        {subtitle ? (
-          <p className="mb-1 text-sm text-muted-foreground">{subtitle}</p>
-        ) : null}
+        {subtitle ? <p className="mb-1 text-sm text-muted-foreground">{subtitle}</p> : null}
         <h1 className="truncate text-[26px] font-semibold tracking-[-0.03em]">{title}</h1>
       </div>
       {action ?? (
@@ -87,9 +85,7 @@ export function Panel({
           {action}
         </div>
       ) : null}
-      <div className={cn("rounded-3xl bg-surface p-1.5 shadow-soft", className)}>
-        {children}
-      </div>
+      <div className={cn("rounded-3xl bg-surface p-1.5 shadow-soft", className)}>{children}</div>
     </section>
   );
 }
@@ -116,14 +112,16 @@ export function BottomNav() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   const start = (target: "/split/amount" | "/split/scan") => {
-    setDraft({ ...emptyDraft(currentPersonId), source: target === "/split/scan" ? "receipt" : "manual" });
+    setDraft({
+      ...emptyDraft(currentPersonId),
+      source: target === "/split/scan" ? "receipt" : "manual",
+    });
     setOpen(false);
     navigate({ to: target });
   };
 
   // Guest mode has no app shell — the welcome screen and the split flow only.
   if (isGuest) return null;
-
 
   return (
     <>
@@ -180,7 +178,9 @@ export function BottomNav() {
           >
             <Plus className="h-5 w-5 shrink-0" strokeWidth={1.6} />
             <span>
-              <span className="block text-[15px] font-medium tracking-tight">{t("sheet.manual")}</span>
+              <span className="block text-[15px] font-medium tracking-tight">
+                {t("sheet.manual")}
+              </span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
                 {t("sheet.manualHint")}
               </span>

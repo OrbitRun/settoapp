@@ -33,7 +33,6 @@ const uid = () =>
       : Math.random().toString(36).slice(2)
   }`;
 
-
 export const isGuestId = (id: string | null | undefined) => Boolean(id?.startsWith("guest-"));
 
 export function selfLabel(): string {
@@ -126,7 +125,6 @@ export function makeGuestExpense(input: {
     updated_at: now,
   };
 }
-
 
 export function makeGuestItemId() {
   return `guest-item-${uid()}`;
