@@ -61,6 +61,7 @@ function ActivityScreen() {
   const t = useT();
   const navigate = useNavigate();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [historyId, setHistoryId] = useState<string | null>(null);
   const feed = pari.activityFeed();
 
   const days = feed.reduce<Record<string, ActivityEntry[]>>((acc, entry) => {
