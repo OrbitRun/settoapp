@@ -6,6 +6,7 @@ import { Divider, Panel, Screen } from "@/components/pari/AppShell";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { Avatar } from "@/components/pari/Avatar";
 import { EmptyState } from "@/components/pari/EmptyState";
+import { FxSummary } from "@/components/pari/FxSummary";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
 import { formatMinorIn } from "@/lib/money";
@@ -122,25 +123,15 @@ function ResultScreen() {
           })}
         </p>
         {foreign ? (
-          <>
-            <p className="tnum mt-1 text-[15px] text-muted-foreground">
-              {t("currency.bookedAs", {
-                amount: formatMinorIn(expense.total_minor, expense.currency, { compact: false }),
-              })}
-            </p>
-            <p className="tnum mt-0.5 text-xs text-muted-foreground">
-              {t("currency.rateLine", {
-                base: originalCurrency,
-                rate: Number(expense.exchange_rate ?? 1)
-                  .toFixed(4)
-                  .replace(".", ","),
-                quote: expense.currency,
-                date: expense.exchange_rate_date
-                  ? shortDate(`${expense.exchange_rate_date}T12:00:00.000Z`)
-                  : shortDate(expense.created_at),
-              })}
-            </p>
-          </>
+          <FxSummary
+            className="mt-1"
+            originalCurrency={originalCurrency}
+            convertedMinor={expense.total_minor}
+            systemCurrency={expense.currency}
+            rate={Number(expense.exchange_rate ?? 1)}
+            rateDate={expense.exchange_rate_date ?? null}
+            fallbackDate={expense.created_at}
+          />
         ) : null}
       </div>
 

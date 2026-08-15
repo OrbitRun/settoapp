@@ -2,9 +2,9 @@ import { useState } from "react";
 import { ChevronDown, Settings2 } from "lucide-react";
 
 import { CurrencySheet } from "@/components/pari/CurrencySheet";
+import { FxSummary } from "@/components/pari/FxSummary";
 import { NumericField } from "@/components/pari/NumericField";
 import type { MoneyLock } from "@/hooks/useMoneyLock";
-import { shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
 import { currencyLabel, formatMinorIn, toMajor, toMinor } from "@/lib/money";
 
@@ -57,23 +57,13 @@ export function CurrencyPanel({
           ) : lock.failed && lock.rate == null ? (
             <p className="text-sm text-muted-foreground">{t("currency.rateFailed")}</p>
           ) : (
-            <>
-              <p className="tnum text-[15px] font-medium">
-                {t("currency.bookedAs", {
-                  amount: formatMinorIn(lock.convertedMinor ?? 0, lock.systemCurrency, {
-                    compact: false,
-                  }),
-                })}
-              </p>
-              <p className="tnum mt-1 text-xs text-muted-foreground">
-                {t("currency.rateLine", {
-                  base: lock.currency,
-                  rate: (lock.rate ?? 1).toFixed(4).replace(".", ","),
-                  quote: lock.systemCurrency,
-                  date: lock.rateDate ? shortDate(`${lock.rateDate}T12:00:00.000Z`) : "—",
-                })}
-              </p>
-            </>
+            <FxSummary
+              originalCurrency={lock.currency}
+              convertedMinor={lock.convertedMinor ?? 0}
+              systemCurrency={lock.systemCurrency}
+              rate={lock.rate ?? 1}
+              rateDate={lock.rateDate}
+            />
           )}
 
           <button

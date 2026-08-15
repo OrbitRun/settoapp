@@ -6,6 +6,7 @@ import { BottomNav, Divider, Panel, Screen, TopBar } from "@/components/pari/App
 import { EmptyState } from "@/components/pari/EmptyState";
 import { Avatar } from "@/components/pari/Avatar";
 import { MoneyAmount } from "@/components/pari/MoneyAmount";
+import { FxSummary } from "@/components/pari/FxSummary";
 import { formatMinorIn } from "@/lib/money";
 import { usePari } from "@/data/store";
 import { dayGroupLabel, shortDate } from "@/lib/dates";
@@ -139,27 +140,14 @@ function ActivityScreen() {
                                 />
                               </div>
                               {foreign ? (
-                                <div className="flex justify-between">
-                                  <span>
-                                    {t("currency.rateLine", {
-                                      base: originalCurrency ?? "",
-                                      rate: Number(expense.exchange_rate ?? 1)
-                                        .toFixed(4)
-                                        .replace(".", ","),
-                                      quote: expense.currency,
-                                      date: shortDate(
-                                        expense.exchange_rate_date
-                                          ? `${expense.exchange_rate_date}T12:00:00.000Z`
-                                          : expense.created_at,
-                                      ),
-                                    })}
-                                  </span>
-                                  <span>
-                                    {t("currency.bookedAs", {
-                                      amount: formatMinorIn(expense.total_minor, expense.currency),
-                                    })}
-                                  </span>
-                                </div>
+                                <FxSummary
+                                  originalCurrency={originalCurrency ?? ""}
+                                  convertedMinor={expense.total_minor}
+                                  systemCurrency={expense.currency}
+                                  rate={Number(expense.exchange_rate ?? 1)}
+                                  rateDate={expense.exchange_rate_date ?? null}
+                                  fallbackDate={expense.created_at}
+                                />
                               ) : null}
                               {group ? (
                                 <div className="flex justify-between">

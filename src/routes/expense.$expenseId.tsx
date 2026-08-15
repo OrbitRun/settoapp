@@ -19,6 +19,7 @@ import {
   type SplitRule,
 } from "@/components/pari/SplitRuleEditor";
 import { BottomSheet } from "@/components/pari/BottomSheet";
+import { FxSummary } from "@/components/pari/FxSummary";
 import { usePari } from "@/data/store";
 import type { Allocation, SplitMode } from "@/lib/split";
 import { formatMinorIn, toMajor, toMinor } from "@/lib/money";
@@ -239,11 +240,15 @@ function ExpenseDetailScreen() {
           {formatMinorIn(originalTotalMinor, originalCurrency, { compact: false })}
         </p>
         {originalCurrency !== expense.currency ? (
-          <p className="tnum mt-1 text-[15px] text-muted-foreground">
-            {t("currency.bookedAs", {
-              amount: formatMinorIn(expense.total_minor, expense.currency, { compact: false }),
-            })}
-          </p>
+          <FxSummary
+            className="mt-1"
+            originalCurrency={originalCurrency}
+            convertedMinor={expense.total_minor}
+            systemCurrency={expense.currency}
+            rate={Number(expense.exchange_rate ?? 1)}
+            rateDate={expense.exchange_rate_date ?? null}
+            fallbackDate={expense.created_at}
+          />
         ) : null}
         <p className="mt-2 text-sm text-muted-foreground">
           {shortDate(expense.expense_date)} ·{" "}
