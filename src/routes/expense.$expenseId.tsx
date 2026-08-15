@@ -333,6 +333,7 @@ function ExpenseDetailScreen() {
               rule={rule}
               people={people}
               totalMinor={totalMinor}
+              currency={currency}
               onChange={(patch) => setRule((prev) => ({ ...prev, ...patch }))}
             />
           </section>
@@ -379,7 +380,9 @@ function ExpenseDetailScreen() {
                       {item.quantity > 1 ? `${item.quantity} × ` : ""}
                       {item.name}
                     </span>
-                    <MoneyAmount minor={item.total_minor} tone="muted" />
+                    <span className="tnum text-sm text-muted-foreground">
+                      {formatMinorIn(item.total_minor, originalCurrency)}
+                    </span>
                   </div>
                 </div>
               ))}

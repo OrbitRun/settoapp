@@ -186,6 +186,7 @@ function ShareScreen() {
             rule={rule}
             people={participants}
             totalMinor={sharedTotal}
+            currency={draft.currency}
             onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
           />
         </section>

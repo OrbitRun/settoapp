@@ -243,6 +243,7 @@ function ManualExpenseScreen() {
             rule={rule}
             people={participants}
             totalMinor={draft.amountMinor}
+            currency={draft.currency}
             onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
           />
         </section>
