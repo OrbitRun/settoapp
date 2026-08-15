@@ -82,7 +82,9 @@ function ScanScreen() {
         amountMinor: parsed.totalMinor,
         items: parsed.items,
         receiptWarnings: parsed.warnings,
+        receiptDiscountMinor: parsed.receiptDiscountMinor,
       }));
+
       navigate({ to: "/split/review" });
     } catch (caught) {
       setReading(false);

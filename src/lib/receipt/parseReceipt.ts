@@ -4,11 +4,13 @@ import { parseReceiptImage, receiptErrorCode } from "./parseReceipt.functions";
 export type ParsedReceipt = {
   merchant: string;
   totalMinor: number;
+  receiptDiscountMinor: number;
   dateIso: string;
   items: DraftItem[];
   warnings: string[];
   confidence: number;
 };
+
 
 export { receiptErrorCode };
 export type { ReceiptErrorCode } from "./parseReceipt.functions";
@@ -80,6 +82,9 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
     name: item.name,
     quantity: item.quantity,
     unitPriceMinor: item.unitPriceMinor,
+    originalUnitPriceMinor: item.originalUnitPriceMinor,
+    discountMinor: item.discountMinor,
+    discountPercent: item.discountPercent,
     isShared: true,
     assigned: [],
   }));
@@ -99,9 +104,11 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
   return {
     merchant: parsed.merchant ?? "Receipt",
     totalMinor: parsed.totalMinor,
+    receiptDiscountMinor: parsed.receiptDiscountMinor,
     dateIso: toIsoDate(parsed.dateIso),
     items,
     warnings: parsed.warnings,
     confidence: parsed.confidence,
   };
+
 }

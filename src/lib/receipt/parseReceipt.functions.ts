@@ -26,13 +26,22 @@ export function receiptErrorCode(error: unknown): ReceiptErrorCode | null {
 export type ParsedReceiptLine = {
   name: string;
   quantity: number;
+  /** Effective price actually paid, per unit. This is what splitting uses. */
   unitPriceMinor: number;
+  /** Pre-discount price per unit, when the receipt printed one. */
+  originalUnitPriceMinor: number | null;
+  /** Total discount on this line (all units), always positive. */
+  discountMinor: number;
+  discountPercent: number | null;
   uncertain: boolean;
 };
 
 export type ParsedReceiptPayload = {
   merchant: string | null;
   totalMinor: number;
+  subtotalMinor: number | null;
+  /** Discount that applies to the whole receipt, not one line. Positive. */
+  receiptDiscountMinor: number;
   dateIso: string | null;
   currency: string | null;
   items: ParsedReceiptLine[];
@@ -43,18 +52,43 @@ export type ParsedReceiptPayload = {
 const SYSTEM_PROMPT = `You are parsing a retail or restaurant receipt from a photo.
 Read the actual image carefully.
 - Extract every visible purchased item you can identify. Do not invent items.
-- Preserve quantities, discounts and final line totals when visible.
-- Prices are per unit, in MAJOR currency units (e.g. 24.95), never cents.
+- Prices are in MAJOR currency units (e.g. 24.95), never cents.
+- "unit_price" is the price of ONE unit before discount. "original_total" is unit_price ×
+  quantity. "effective_total" is what was actually paid for the line after discount.
 - Receipt text may be Danish, English, Swedish, Norwegian, German or another European
   language. Do not require English terminology. Danish receipts commonly use
   TOTAL, I ALT, AT BETALE, NETTO, MOMS (tax), RABAT (discount), PRIS, VARE, ANTAL, KORT, KR.
-- MOMS, RABAT lines, loyalty text, payment/card lines and totals are not items.
+- MOMS, loyalty text, payment/card lines and totals are not items.
+
+DISCOUNTS — important:
+- Discount wording includes: Linierabat, Linjerabat, Rabat, Vare-rabat, Tilbud,
+  Kampagnerabat, Medlemsrabat, Bonus, Prisnedsættelse, Discount, Item discount, Promo,
+  Promotion, Coupon, Voucher, Saving, You saved.
+- A discount line is NEVER a purchased item. Never return it in "items".
+- A discount printed directly under (or on the same line as) an item belongs to that item:
+  set that item's "discount_amount" and "effective_total".
+- A discount printed between subtotal and total, or clearly applying to the whole basket,
+  is the receipt-level "discount" field instead.
+- Discounts may print as "-40,00", "40,00-" or plain "40,00" next to a discount label.
+  They are always deductions. A minus sign is not required. Always report discount amounts
+  as POSITIVE numbers.
+- If both a percentage and an amount are printed, the printed AMOUNT is authoritative;
+  put the percentage in "discount_percent" as metadata only. Do not recompute it.
+- If only a percentage is printed, derive the amount from the item's original total.
+- If you cannot tell which item a discount belongs to, put it in the receipt-level
+  "discount" field and add a warning. Never guess an item.
+
+Example: "R* SØD TØS  1x 299.95  259.95 / Linierabat 13.34% 40.00" with "I alt 259.95"
+=> one item: unit_price 299.95, quantity 1, original_total 299.95, discount_amount 40.00,
+   discount_percent 13.34, effective_total 259.95; total 259.95; no receipt-level discount.
+
 - The most important financial field is the final amount actually paid ("total").
 - Return uncertain information with lower confidence and a warning rather than failing.
   Mark an item you are unsure about with "uncertain": true.
 - If a field cannot be read, return null and add a short warning. Never fabricate values.
 - Only return an empty items array and total null if the image is genuinely not a receipt.
 - "confidence" is 0-1 for the overall read.`;
+
 
 const TIMEOUT_MS = 60_000;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -159,13 +193,27 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
                     items: {
                       type: "object",
                       additionalProperties: false,
-                      required: ["name", "quantity", "unit_price", "uncertain"],
+                      required: [
+                        "name",
+                        "quantity",
+                        "unit_price",
+                        "original_total",
+                        "discount_amount",
+                        "discount_percent",
+                        "effective_total",
+                        "uncertain",
+                      ],
                       properties: {
                         name: { type: "string" },
                         quantity: nullableNumber,
                         unit_price: nullableNumber,
+                        original_total: nullableNumber,
+                        discount_amount: nullableNumber,
+                        discount_percent: nullableNumber,
+                        effective_total: nullableNumber,
                         uncertain: { type: ["boolean", "null"] },
                       },
+
                     },
                   },
                 },
@@ -209,12 +257,17 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       currency?: string | null;
       date?: string | null;
       subtotal?: number | null;
+      discount?: number | null;
       confidence?: number | null;
       warnings?: string[] | null;
       items?: {
         name?: string;
         quantity?: number | null;
         unit_price?: number | null;
+        original_total?: number | null;
+        discount_amount?: number | null;
+        discount_percent?: number | null;
+        effective_total?: number | null;
         uncertain?: boolean | null;
       }[];
     };
@@ -234,20 +287,93 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       (warning): warning is string => typeof warning === "string" && warning.trim().length > 0,
     );
 
-    const items: ParsedReceiptLine[] = (parsed.items ?? [])
-      .filter((item) => (item?.name ?? "").trim().length > 0)
-      .map((item) => {
-        const unit = toMinor(item.unit_price);
-        return {
-          name: String(item.name).trim(),
-          quantity: Math.max(1, Math.round(Number(item.quantity ?? 1)) || 1),
-          unitPriceMinor: Math.max(0, unit ?? 0),
-          uncertain: Boolean(item.uncertain) || unit === null,
-        };
+    const rawItems = (parsed.items ?? []).filter((item) => (item?.name ?? "").trim().length > 0);
+
+    const items: ParsedReceiptLine[] = [];
+    let strayDiscountMinor = 0;
+
+    for (const raw of rawItems) {
+      const name = String(raw.name).trim();
+      const quantity = Math.max(1, Math.round(Number(raw.quantity ?? 1)) || 1);
+      const unit = toMinor(raw.unit_price);
+      let originalTotal = toMinor(raw.original_total) ?? (unit === null ? null : unit * quantity);
+      let discount = Math.abs(toMinor(raw.discount_amount) ?? 0);
+      let effectiveTotal = toMinor(raw.effective_total);
+      const percentValue = toMinor(raw.discount_percent);
+      const discountPercent = percentValue === null ? null : percentValue / 100;
+      let uncertain = Boolean(raw.uncertain);
+
+      // The model sometimes still emits a discount as its own "item" — fold it into
+      // the line above rather than dropping it or treating it as a purchase.
+      if (isDiscountLabel(name)) {
+        const amount = Math.abs(effectiveTotal ?? originalTotal ?? 0);
+        if (amount > 0) {
+          const previous = items[items.length - 1];
+          if (previous) {
+            previous.discountMinor += amount;
+            previous.unitPriceMinor = Math.max(
+              0,
+              Math.round((previous.unitPriceMinor * previous.quantity - amount) / previous.quantity),
+            );
+            if (discountPercent !== null) previous.discountPercent = discountPercent;
+          } else {
+            strayDiscountMinor += amount;
+          }
+        }
+        continue;
+      }
+
+      // Only a percentage printed: derive the amount from the original total.
+      if (discount === 0 && discountPercent !== null && originalTotal !== null && effectiveTotal === null) {
+        discount = Math.round((originalTotal * discountPercent) / 100);
+      }
+      if (effectiveTotal === null && originalTotal !== null) {
+        effectiveTotal = originalTotal - discount;
+      }
+      if (effectiveTotal !== null && originalTotal === null) {
+        originalTotal = effectiveTotal + discount;
+      }
+      if (effectiveTotal === null && originalTotal === null) {
+        effectiveTotal = 0;
+        originalTotal = 0;
+        uncertain = true;
+      }
+      if (discount === 0 && originalTotal! > effectiveTotal!) {
+        discount = originalTotal! - effectiveTotal!;
+      }
+      // Inconsistent trio: original − discount wins, and the line is flagged.
+      if (Math.abs(originalTotal! - discount - effectiveTotal!) > 1) {
+        effectiveTotal = originalTotal! - discount;
+        uncertain = true;
+      }
+
+      items.push({
+        name,
+        quantity,
+        unitPriceMinor: Math.max(0, Math.round(effectiveTotal! / quantity)),
+        originalUnitPriceMinor: discount > 0 ? Math.round(originalTotal! / quantity) : null,
+        discountMinor: Math.max(0, discount),
+        discountPercent,
+        uncertain: uncertain || (unit === null && originalTotal === 0),
       });
+    }
 
     const itemsTotal = items.reduce((sum, item) => sum + item.unitPriceMinor * item.quantity, 0);
     const reportedTotal = toMinor(parsed.total) ?? toMinor(parsed.subtotal);
+    const subtotalMinor = toMinor(parsed.subtotal);
+    let receiptDiscountMinor = Math.abs(toMinor(parsed.discount) ?? 0) + strayDiscountMinor;
+
+    // Guard against double-counting: if the lines already reconcile with the total,
+    // the receipt-level discount was just a summary of the line discounts.
+    if (
+      receiptDiscountMinor > 0 &&
+      reportedTotal &&
+      itemsTotal > 0 &&
+      Math.abs(itemsTotal - reportedTotal) <= 1 &&
+      Math.abs(itemsTotal - receiptDiscountMinor - reportedTotal) > 1
+    ) {
+      receiptDiscountMinor = 0;
+    }
 
     // Partial results are useful: a total without items, or items without a total,
     // both open the review screen. Only a fully empty read is a failure.
@@ -256,12 +382,17 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       throw receiptError("NO_RECEIPT_DETECTED", "No financial information found");
     }
 
-    const totalMinor = reportedTotal && reportedTotal > 0 ? reportedTotal : itemsTotal;
+    const netItemsTotal = itemsTotal - receiptDiscountMinor;
+    const totalMinor = reportedTotal && reportedTotal > 0 ? reportedTotal : Math.max(0, netItemsTotal);
 
     if (items.length === 0) warnings.push("NO_ITEMS_DETECTED");
     if (!reportedTotal) warnings.push("TOTAL_NOT_FOUND");
     if (items.some((item) => item.uncertain)) warnings.push("UNCERTAIN_ITEMS");
-    if (reportedTotal && itemsTotal > 0 && Math.abs(reportedTotal - itemsTotal) > 100) {
+    if (strayDiscountMinor > 0 || (receiptDiscountMinor > 0 && subtotalMinor === null)) {
+      warnings.push("UNASSIGNED_DISCOUNT");
+    }
+    // Reconciliation runs on effective totals, with a 1 kr. rounding tolerance.
+    if (reportedTotal && itemsTotal > 0 && Math.abs(reportedTotal - netItemsTotal) > 100) {
       warnings.push("TOTAL_MISMATCH");
     }
 
@@ -275,6 +406,7 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
     console.log("[receipt] receipt_parse_success", {
       items: items.length,
       totalMinor,
+      receiptDiscountMinor,
       warnings: warnings.length,
       confidence,
       ms: Date.now() - startedAt,
@@ -283,16 +415,27 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
     return {
       merchant: parsed.merchant?.trim() || null,
       totalMinor,
+      subtotalMinor,
+      receiptDiscountMinor,
       dateIso: parsed.date ?? null,
       currency: parsed.currency?.trim() || null,
       items,
       warnings,
       confidence,
     };
+
   });
 
 function stripFence(content: string): string {
   const trimmed = content.trim();
   if (!trimmed.startsWith("```")) return trimmed;
   return trimmed.replace(/^```(?:json)?\s*/i, "").replace(/```$/, "");
+}
+
+const DISCOUNT_LABELS =
+  /(linie ?rabat|linje ?rabat|vare ?-? ?rabat|kampagne ?rabat|medlems ?rabat|rabat|tilbud|prisneds(æ|ae)ttelse|bonus|discount|promo(tion)?|coupon|voucher|savings?|you saved|reduktion|nedslag)/i;
+
+/** True when a "line" is really a discount label, not a purchased product. */
+export function isDiscountLabel(name: string): boolean {
+  return DISCOUNT_LABELS.test(name.trim());
 }

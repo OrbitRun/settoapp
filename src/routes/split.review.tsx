@@ -7,7 +7,14 @@ import { FlowHeader } from "@/components/pari/FlowHeader";
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { ReceiptItemRow } from "@/components/pari/ReceiptItem";
-import { itemTotalMinor, itemsTotalMinor, type DraftItem } from "@/data/draft";
+import {
+  draftItemsNetTotalMinor,
+  itemOriginalTotalMinor,
+  itemTotalMinor,
+  itemsTotalMinor,
+  type DraftItem,
+} from "@/data/draft";
+
 import { usePari } from "@/data/store";
 import { currencyLabel, formatMinor, toMajor, toMinor } from "@/lib/money";
 import { NumericField } from "@/components/pari/NumericField";
@@ -26,6 +33,21 @@ export const Route = createFileRoute("/split/review")({
   component: ReviewScreen,
 });
 
+/** Keeps original / discount / paid consistent on a line, in whole øre. */
+function withMoney(item: DraftItem, originalLineMinor: number, discountLineMinor: number): DraftItem {
+  const quantity = Math.max(1, item.quantity);
+  const discount = Math.min(Math.max(0, discountLineMinor), originalLineMinor);
+  const paid = originalLineMinor - discount;
+  return {
+    ...item,
+    unitPriceMinor: Math.round(paid / quantity),
+    originalUnitPriceMinor: discount > 0 ? Math.round(originalLineMinor / quantity) : null,
+    discountMinor: discount,
+    discountPercent: null,
+  };
+}
+
+
 function ReviewScreen() {
   const pari = usePari();
   const navigate = useNavigate();
@@ -34,8 +56,14 @@ function ReviewScreen() {
   const [editing, setEditing] = useState<DraftItem | null>(null);
   const t = useT();
 
-  const itemsTotal = itemsTotalMinor(draft.items);
-  const difference = draft.amountMinor - itemsTotal;
+  const grossTotal = itemsTotalMinor(draft.items);
+  const receiptDiscount = draft.receiptDiscountMinor ?? 0;
+  const itemsTotal = draftItemsNetTotalMinor(draft);
+  const rawDifference = draft.amountMinor - itemsTotal;
+  // Whole-øre rounding noise is not a mismatch.
+  const difference = Math.abs(rawDifference) <= 1 ? 0 : rawDifference;
+  const unassignedDiscount = (draft.receiptWarnings ?? []).includes("UNASSIGNED_DISCOUNT");
+
 
   const update = (id: string, patch: Partial<DraftItem>) =>
     setDraft((prev) => ({
@@ -83,11 +111,18 @@ function ReviewScreen() {
         </p>
       </div>
 
-      {draft.receiptWarnings && draft.receiptWarnings.length > 0 ? (
+      {unassignedDiscount ? (
+        <div className="mb-4 rounded-2xl bg-surface-strong px-4 py-3 text-sm text-muted-foreground">
+          {t("receipt.unassignedDiscount", {
+            amount: formatMinor(receiptDiscount, { compact: false }),
+          })}
+        </div>
+      ) : draft.receiptWarnings && draft.receiptWarnings.length > 0 ? (
         <div className="mb-4 rounded-2xl bg-surface-strong px-4 py-3 text-sm text-muted-foreground">
           {t("receipt.checkLines")}
         </div>
       ) : null}
+
 
 
       <div className="mb-3 flex items-center justify-between px-4">
@@ -121,6 +156,20 @@ function ReviewScreen() {
             selectable
             selected={selected.includes(item.id)}
             isPrivate={!item.isShared}
+            detail={
+              (item.discountMinor ?? 0) > 0
+                ? t("receipt.discountLine", {
+                    original: formatMinor(itemOriginalTotalMinor(item), {
+                      currency: "",
+                      compact: false,
+                    }).trim(),
+                    amount: formatMinor(item.discountMinor ?? 0, {
+                      currency: "",
+                      compact: false,
+                    }).trim(),
+                  })
+                : undefined
+            }
             onClick={() => toggle(item.id)}
             right={
               <span className="flex items-center gap-3">
@@ -147,14 +196,21 @@ function ReviewScreen() {
       <div className="mt-5 space-y-2 px-4">
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>{t("receipt.detected")}</span>
-          <span className="tnum">{formatMinor(itemsTotal, { compact: false })}</span>
+          <span className="tnum">{formatMinor(grossTotal, { compact: false })}</span>
         </div>
+        {receiptDiscount > 0 ? (
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>{t("receipt.discount")}</span>
+            <span className="tnum">−{formatMinor(receiptDiscount, { compact: false })}</span>
+          </div>
+        ) : null}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("receipt.total")}</span>
           <span className="tnum font-medium">
             {formatMinor(draft.amountMinor, { compact: false })}
           </span>
         </div>
+
         <p className="pt-1 text-sm">
           {difference === 0 ? (
             <span className="inline-flex items-center gap-1.5 text-positive">
@@ -201,10 +257,14 @@ function ReviewScreen() {
             />
             <div className="flex gap-2">
               <NumericField
-                value={toMajor(editing.unitPriceMinor)}
-                onChange={(next) => setEditing({ ...editing, unitPriceMinor: toMinor(next) })}
+                value={toMajor(itemOriginalTotalMinor(editing))}
+                onChange={(next) => {
+                  const original = Math.max(0, toMinor(next));
+                  const discount = Math.min(editing.discountMinor ?? 0, original);
+                  setEditing(withMoney(editing, original, discount));
+                }}
                 min={0}
-                ariaLabel={t("receipt.price")}
+                ariaLabel={t("receipt.originalPrice")}
                 suffix={<span className="text-xs">{currencyLabel()}</span>}
                 className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
                 inputClassName="text-[15px]"
@@ -220,6 +280,40 @@ function ReviewScreen() {
                 inputClassName="text-[15px]"
               />
             </div>
+
+            <div className="flex gap-2">
+              <NumericField
+                value={toMajor(editing.discountMinor ?? 0)}
+                onChange={(next) => {
+                  const original = itemOriginalTotalMinor(editing);
+                  const discount = Math.min(Math.max(0, toMinor(next)), original);
+                  setEditing(withMoney(editing, original, discount));
+                }}
+                min={0}
+                ariaLabel={t("receipt.discount")}
+                suffix={<span className="text-xs">{currencyLabel()}</span>}
+                className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
+                inputClassName="text-[15px]"
+              />
+              <NumericField
+                value={toMajor(itemTotalMinor(editing))}
+                onChange={(next) => {
+                  const paid = Math.max(0, toMinor(next));
+                  const original = Math.max(itemOriginalTotalMinor(editing), paid);
+                  setEditing(withMoney(editing, original, original - paid));
+                }}
+                min={0}
+                ariaLabel={t("receipt.paidPrice")}
+                suffix={<span className="text-xs">{currencyLabel()}</span>}
+                className="h-12 flex-1 rounded-2xl bg-surface-strong px-4"
+                inputClassName="text-[15px]"
+              />
+            </div>
+
+            <p className="px-1 text-xs text-muted-foreground">
+              {t("receipt.originalPrice")} · {t("receipt.discount")} · {t("receipt.paidPrice")}
+            </p>
+
 
             <PrimaryButton
               onClick={() => {
