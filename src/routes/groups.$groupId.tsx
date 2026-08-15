@@ -185,6 +185,10 @@ function GroupDetailScreen() {
               )}
             </Panel>
 
+            <GroupPayments groupId={groupId} />
+
+
+
             <div className="flex flex-col gap-2">
               <button
                 type="button"
