@@ -129,6 +129,11 @@ function ActivityScreen() {
                           <p className="mt-0.5 text-[13px] text-muted-foreground">
                             {shortDate(entry.created_at)}
                             {group ? ` · ${group.name}` : ""}
+                            {isDeleted
+                              ? ` · ${t("activity.deletedTag")}`
+                              : wasEdited
+                                ? ` · ${t("activity.edited")}`
+                                : ""}
                           </p>
                         </div>
                         {rowAmount !== undefined ? (
