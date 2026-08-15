@@ -145,9 +145,9 @@ function ReviewScreen() {
           detectedNote={
             draft.currencyConfirmed
               ? undefined
-              : draft.currencyEvidence
-                ? `${t("currency.detected")} · ${draft.currencyEvidence}`
-                : t("currency.detected")
+              : draft.currencyConfidence === "high"
+                ? t("currency.detected")
+                : t("currency.inferred")
           }
         />
       </div>
