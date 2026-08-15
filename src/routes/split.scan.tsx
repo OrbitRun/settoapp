@@ -83,7 +83,15 @@ function ScanScreen() {
         items: parsed.items,
         receiptWarnings: parsed.warnings,
         receiptDiscountMinor: parsed.receiptDiscountMinor,
+        expenseDate: parsed.dateIso,
+        // The receipt's own currency wins; the user can still change it in review.
+        currency: parsed.currency || pari.currency,
+        currencyConfidence: parsed.currencyConfidence,
+        currencyEvidence: parsed.currencyEvidence,
+        currencyConfirmed: false,
+        totalConfidence: parsed.totalConfidence,
       }));
+
 
       navigate({ to: "/split/review" });
     } catch (caught) {
