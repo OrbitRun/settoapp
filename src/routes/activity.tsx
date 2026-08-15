@@ -142,7 +142,12 @@ function ActivityScreen() {
                         <Avatar name={actor} size="sm" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[15px]">
-                            {t(KEYS[entry.activity_type], { actor, title })}
+                            {settlement
+                              ? t("activity.settlementPaid", {
+                                  from: settlement.from,
+                                  to: settlement.to,
+                                })
+                              : t(KEYS[entry.activity_type], { actor, title })}
                           </p>
                           <p className="mt-0.5 text-[13px] text-muted-foreground">
                             {shortDate(entry.created_at)}
