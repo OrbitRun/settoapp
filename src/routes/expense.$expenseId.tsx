@@ -80,7 +80,8 @@ function ExpenseDetailScreen() {
   const navigate = useNavigate();
 
   const expense = pari.expenseById(expenseId);
-  const allocations = pari.expenseAllocations(expenseId);
+  // Shown and edited in the original currency; converted values are derived on save.
+  const allocations = pari.expenseOriginalAllocations(expenseId);
   const items = pari.expenseItems(expenseId);
 
   const [editing, setEditing] = useState(false);
@@ -326,6 +327,8 @@ function ExpenseDetailScreen() {
                 onChange={(mode) => setRule((prev) => seedRule(prev, people, mode))}
               />
             </div>
+            <CurrencyPanel lock={lock} onCurrencyChange={setCurrency} />
+
             <SplitRuleEditor
               rule={rule}
               people={people}
@@ -358,7 +361,9 @@ function ExpenseDetailScreen() {
                       </span>
                     ) : null}
                   </span>
-                  <MoneyAmount minor={allocation.amountMinor} />
+                  <span className="tnum text-[15px] font-medium">
+                    {formatMinorIn(allocation.amountMinor, originalCurrency)}
+                  </span>
                 </div>
               </div>
             ))}
