@@ -586,7 +586,7 @@ const da: Dict = {
   "currency.change": "Skift",
   "currency.splitIn": "Deles i {currency}",
   "currency.bookedAs": "Bogføres som {amount}",
-  "currency.rateLine": "1 {base} = {rate} {quote} · {date}",
+  "currency.rateLine": "1 {base} = {rate} {quote} • {date}",
   "currency.rateLoading": "Henter dagens kurs…",
   "currency.rateFailed": "Vi kunne ikke hente en kurs. Indtast den selv.",
   "currency.manualRate": "Valutakurs",
