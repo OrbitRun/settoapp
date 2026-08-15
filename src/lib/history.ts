@@ -163,10 +163,11 @@ export function hasChanges(changes: ExpenseChangeSet | null | undefined) {
   return Boolean(changes) && Object.keys(changes as object).length > 0;
 }
 
-export type ChangeLine = { label: string; details: string[] };
+export type ChangeDetail = { name?: string; value: string };
+export type ChangeLine = { key: string; label: string; details: ChangeDetail[] };
 
 /** Keeps very long item lists from turning the history into a data dump. */
-const MAX_ITEM_LINES = 4;
+const MAX_ITEM_LINES = 6;
 
 export function describeChanges(
   changes: ExpenseChangeSet,
@@ -178,79 +179,93 @@ export function describeChanges(
 
   if (changes.title) {
     lines.push({
+      key: "title",
       label: t("history.titleChanged"),
-      details: [arrow(`"${changes.title.from}"`, `"${changes.title.to}"`)],
+      details: [{ value: arrow(changes.title.from, changes.title.to) }],
     });
   }
 
   if (changes.amount) {
     lines.push({
+      key: "amount",
       label: t("history.amountChanged"),
       details: [
-        arrow(
-          formatMinorIn(changes.amount.from, changes.amount.currency, { compact: false }),
-          formatMinorIn(changes.amount.to, changes.amount.currency, { compact: false }),
-        ),
+        {
+          value: arrow(
+            formatMinorIn(changes.amount.from, changes.amount.currency, { compact: false }),
+            formatMinorIn(changes.amount.to, changes.amount.currency, { compact: false }),
+          ),
+        },
       ],
     });
   }
 
   if (changes.payer) {
     lines.push({
+      key: "payer",
       label: t("history.payerChanged"),
-      details: [arrow(personName(changes.payer.from), personName(changes.payer.to))],
+      details: [{ value: arrow(personName(changes.payer.from), personName(changes.payer.to)) }],
     });
   }
 
   if (changes.group) {
     lines.push({
+      key: "group",
       label: t("history.groupChanged"),
       details: [
-        arrow(
-          changes.group.from ? groupName(changes.group.from) : t("history.noGroup"),
-          changes.group.to ? groupName(changes.group.to) : t("history.noGroup"),
-        ),
+        {
+          value: arrow(
+            changes.group.from ? groupName(changes.group.from) : t("history.noGroup"),
+            changes.group.to ? groupName(changes.group.to) : t("history.noGroup"),
+          ),
+        },
       ],
     });
   }
 
-  const splitDetails: string[] = [];
+  const splitDetails: ChangeDetail[] = [];
   if (changes.splitMode) {
-    splitDetails.push(
-      arrow(t(MODE_KEYS[changes.splitMode.from]), t(MODE_KEYS[changes.splitMode.to])),
-    );
+    splitDetails.push({
+      value: arrow(t(MODE_KEYS[changes.splitMode.from]), t(MODE_KEYS[changes.splitMode.to])),
+    });
   }
+  const pct = (value: number) =>
+    `${new Intl.NumberFormat("da-DK", { maximumFractionDigits: 2 }).format(value)} %`;
   for (const value of changes.splitValues ?? []) {
     const name = personName(value.personId);
     if (value.fromPercentage !== undefined || value.toPercentage !== undefined) {
-      splitDetails.push(`${name}: ${arrow(`${value.fromPercentage} %`, `${value.toPercentage} %`)}`);
+      splitDetails.push({
+        name,
+        value: arrow(pct(value.fromPercentage ?? 0), pct(value.toPercentage ?? 0)),
+      });
     } else if (value.fromShares !== undefined || value.toShares !== undefined) {
       const unit = (count: number) =>
         `${count} ${count === 1 ? t("history.shareOne") : t("history.shareMany")}`;
-      splitDetails.push(`${name}: ${arrow(unit(value.fromShares ?? 0), unit(value.toShares ?? 0))}`);
+      splitDetails.push({ name, value: arrow(unit(value.fromShares ?? 0), unit(value.toShares ?? 0)) });
     } else if (value.fromAmountMinor !== undefined && changes.amount === undefined) {
-      splitDetails.push(
-        `${name}: ${arrow(
+      splitDetails.push({
+        name,
+        value: arrow(
           formatMinor(value.fromAmountMinor, { compact: false }),
           formatMinor(value.toAmountMinor ?? 0, { compact: false }),
-        )}`,
-      );
+        ),
+      });
     }
   }
   if (splitDetails.length > 0) {
-    lines.push({ label: t("history.splitChanged"), details: splitDetails });
+    lines.push({ key: "split", label: t("history.splitChanged"), details: splitDetails });
   }
 
-  const peopleDetails = [
-    ...(changes.participantsAdded ?? []).map((id) =>
-      t("history.personAdded", { name: personName(id) }),
-    ),
-    ...(changes.participantsRemoved ?? []).map((id) =>
-      t("history.personRemoved", { name: personName(id) }),
-    ),
+  const peopleDetails: ChangeDetail[] = [
+    ...(changes.participantsAdded ?? []).map((id) => ({
+      value: t("history.personAdded", { name: personName(id) }),
+    })),
+    ...(changes.participantsRemoved ?? []).map((id) => ({
+      value: t("history.personRemoved", { name: personName(id) }),
+    })),
   ];
   if (peopleDetails.length > 0) {
-    lines.push({ label: t("history.peopleChanged"), details: peopleDetails });
+    lines.push({ key: "people", label: t("history.peopleChanged"), details: peopleDetails });
   }
 
   if (changes.fx) {
@@ -259,29 +274,35 @@ export function describeChanges(
         maximumFractionDigits: 4,
       })} ${changes.fx!.systemCurrency}`;
     lines.push({
+      key: "fx",
       label: t("history.rateChanged"),
-      details: [arrow(rate(changes.fx.fromRate), rate(changes.fx.toRate))],
+      details: [{ value: arrow(rate(changes.fx.fromRate), rate(changes.fx.toRate)) }],
     });
   }
 
   if (changes.items) {
     const { added, removed, changed, currency } = changes.items;
     const count = added.length + removed.length + changed.length;
-    const details = [
-      ...changed.map(
-        (item) =>
-          `${item.name}: ${arrow(
-            formatMinorIn(item.from, currency, { compact: false }),
-            formatMinorIn(item.to, currency, { compact: false }),
-          )}`,
-      ),
-      ...added.map((name) => t("history.itemAdded", { name })),
-      ...removed.map((name) => t("history.itemRemoved", { name })),
+    const details: ChangeDetail[] = [
+      {
+        value:
+          count === 1 ? t("history.itemsChangedOne") : t("history.itemsChanged", { count }),
+      },
+      ...changed.map((item) => ({
+        name: item.name,
+        value: arrow(
+          formatMinorIn(item.from, currency, { compact: false }),
+          formatMinorIn(item.to, currency, { compact: false }),
+        ),
+      })),
+      ...added.map((name) => ({ value: t("history.itemAdded", { name }) })),
+      ...removed.map((name) => ({ value: t("history.itemRemoved", { name }) })),
     ];
-    lines.push({
-      label: t("history.itemsChanged", { count }),
-      details: details.length > MAX_ITEM_LINES ? [] : details,
-    });
+    const visible = details.slice(0, MAX_ITEM_LINES + 1);
+    if (details.length > visible.length) {
+      visible.push({ value: t("history.moreChanges", { count: details.length - visible.length }) });
+    }
+    lines.push({ key: "items", label: t("history.items"), details: visible });
   }
 
   return lines;
