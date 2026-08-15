@@ -26,13 +26,22 @@ export function receiptErrorCode(error: unknown): ReceiptErrorCode | null {
 export type ParsedReceiptLine = {
   name: string;
   quantity: number;
+  /** Effective price actually paid, per unit. This is what splitting uses. */
   unitPriceMinor: number;
+  /** Pre-discount price per unit, when the receipt printed one. */
+  originalUnitPriceMinor: number | null;
+  /** Total discount on this line (all units), always positive. */
+  discountMinor: number;
+  discountPercent: number | null;
   uncertain: boolean;
 };
 
 export type ParsedReceiptPayload = {
   merchant: string | null;
   totalMinor: number;
+  subtotalMinor: number | null;
+  /** Discount that applies to the whole receipt, not one line. Positive. */
+  receiptDiscountMinor: number;
   dateIso: string | null;
   currency: string | null;
   items: ParsedReceiptLine[];
@@ -43,18 +52,43 @@ export type ParsedReceiptPayload = {
 const SYSTEM_PROMPT = `You are parsing a retail or restaurant receipt from a photo.
 Read the actual image carefully.
 - Extract every visible purchased item you can identify. Do not invent items.
-- Preserve quantities, discounts and final line totals when visible.
-- Prices are per unit, in MAJOR currency units (e.g. 24.95), never cents.
+- Prices are in MAJOR currency units (e.g. 24.95), never cents.
+- "unit_price" is the price of ONE unit before discount. "original_total" is unit_price ×
+  quantity. "effective_total" is what was actually paid for the line after discount.
 - Receipt text may be Danish, English, Swedish, Norwegian, German or another European
   language. Do not require English terminology. Danish receipts commonly use
   TOTAL, I ALT, AT BETALE, NETTO, MOMS (tax), RABAT (discount), PRIS, VARE, ANTAL, KORT, KR.
-- MOMS, RABAT lines, loyalty text, payment/card lines and totals are not items.
+- MOMS, loyalty text, payment/card lines and totals are not items.
+
+DISCOUNTS — important:
+- Discount wording includes: Linierabat, Linjerabat, Rabat, Vare-rabat, Tilbud,
+  Kampagnerabat, Medlemsrabat, Bonus, Prisnedsættelse, Discount, Item discount, Promo,
+  Promotion, Coupon, Voucher, Saving, You saved.
+- A discount line is NEVER a purchased item. Never return it in "items".
+- A discount printed directly under (or on the same line as) an item belongs to that item:
+  set that item's "discount_amount" and "effective_total".
+- A discount printed between subtotal and total, or clearly applying to the whole basket,
+  is the receipt-level "discount" field instead.
+- Discounts may print as "-40,00", "40,00-" or plain "40,00" next to a discount label.
+  They are always deductions. A minus sign is not required. Always report discount amounts
+  as POSITIVE numbers.
+- If both a percentage and an amount are printed, the printed AMOUNT is authoritative;
+  put the percentage in "discount_percent" as metadata only. Do not recompute it.
+- If only a percentage is printed, derive the amount from the item's original total.
+- If you cannot tell which item a discount belongs to, put it in the receipt-level
+  "discount" field and add a warning. Never guess an item.
+
+Example: "R* SØD TØS  1x 299.95  259.95 / Linierabat 13.34% 40.00" with "I alt 259.95"
+=> one item: unit_price 299.95, quantity 1, original_total 299.95, discount_amount 40.00,
+   discount_percent 13.34, effective_total 259.95; total 259.95; no receipt-level discount.
+
 - The most important financial field is the final amount actually paid ("total").
 - Return uncertain information with lower confidence and a warning rather than failing.
   Mark an item you are unsure about with "uncertain": true.
 - If a field cannot be read, return null and add a short warning. Never fabricate values.
 - Only return an empty items array and total null if the image is genuinely not a receipt.
 - "confidence" is 0-1 for the overall read.`;
+
 
 const TIMEOUT_MS = 60_000;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
