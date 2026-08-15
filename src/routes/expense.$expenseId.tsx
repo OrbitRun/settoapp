@@ -20,6 +20,8 @@ import {
 } from "@/components/pari/SplitRuleEditor";
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { FxSummary } from "@/components/pari/FxSummary";
+import { ExpenseHistory } from "@/components/pari/ExpenseHistory";
+
 import { usePari } from "@/data/store";
 import type { Allocation, SplitMode } from "@/lib/split";
 import { formatMinorIn, toMajor, toMinor } from "@/lib/money";
