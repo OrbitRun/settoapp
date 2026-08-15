@@ -1,4 +1,5 @@
 import type { DraftItem } from "@/data/draft";
+import type { Confidence } from "@/lib/fx";
 import { parseReceiptImage, receiptErrorCode } from "./parseReceipt.functions";
 
 export type ParsedReceipt = {
@@ -6,6 +7,11 @@ export type ParsedReceipt = {
   totalMinor: number;
   receiptDiscountMinor: number;
   dateIso: string;
+  /** ISO code detected on the receipt, null when it could not be read. */
+  currency: string | null;
+  currencyConfidence: Confidence;
+  currencyEvidence: string | null;
+  totalConfidence: Confidence;
   items: DraftItem[];
   warnings: string[];
   confidence: number;
@@ -14,6 +20,7 @@ export type ParsedReceipt = {
 
 export { receiptErrorCode };
 export type { ReceiptErrorCode } from "./parseReceipt.functions";
+
 
 /** Small print needs resolution — only downscale when the photo is bigger than this. */
 const MAX_EDGE = 2200;
@@ -85,6 +92,8 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
     originalUnitPriceMinor: item.originalUnitPriceMinor,
     discountMinor: item.discountMinor,
     discountPercent: item.discountPercent,
+    // Confidence describes legibility only — every readable line still starts shared.
+    confidence: item.confidence,
     isShared: true,
     assigned: [],
   }));
@@ -96,6 +105,7 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
       name: parsed.merchant ?? "Total",
       quantity: 1,
       unitPriceMinor: parsed.totalMinor,
+      confidence: "low",
       isShared: true,
       assigned: [],
     });
@@ -106,9 +116,14 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
     totalMinor: parsed.totalMinor,
     receiptDiscountMinor: parsed.receiptDiscountMinor,
     dateIso: toIsoDate(parsed.dateIso),
+    currency: parsed.currency,
+    currencyConfidence: parsed.currencyConfidence,
+    currencyEvidence: parsed.currencyEvidence,
+    totalConfidence: parsed.totalConfidence,
     items,
     warnings: parsed.warnings,
     confidence: parsed.confidence,
   };
+
 
 }

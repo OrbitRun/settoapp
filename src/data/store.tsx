@@ -23,7 +23,9 @@ import {
   type SplitMode,
 } from "@/lib/split";
 import { detectLanguage, type Language } from "@/lib/i18n";
+import { lockMoney, type MoneyContext } from "@/lib/expense-money";
 import { emptyDraft, itemTotalMinor, type DraftItem, type SplitDraft } from "./draft";
+
 import {
   emptyPariData,
   type ActivityEntry,
@@ -68,12 +70,17 @@ export type AddExpenseInput = {
   title: string;
   merchant: string | null;
   paidByPersonId: string;
+  /** Total in the ORIGINAL currency. Conversion happens inside the store. */
   totalMinor: number;
+  /** Shares in the ORIGINAL currency. */
   allocations: Allocation[];
   source: "manual" | "receipt";
   items?: DraftItem[];
   expenseDate?: string;
+  /** Omitted when the purchase was already in the system currency. */
+  money?: MoneyContext;
 };
+
 
 type CreateGroupInput = {
   name: string;
@@ -664,6 +671,12 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const addExpense = async (input: AddExpenseInput): Promise<Expense | null> => {
       if (!userId) return null;
       const title = input.title || input.merchant || "Udgift";
+      const locked = lockMoney({
+        systemCurrency: profile?.currency ?? "DKK",
+        originalTotalMinor: input.totalMinor,
+        allocations: input.allocations,
+        money: input.money,
+      });
       const { data: created, error } = await supabase
         .from("expenses")
         .insert({
@@ -672,9 +685,15 @@ export function PariProvider({ children }: { children: ReactNode }) {
           paid_by_person_id: input.paidByPersonId,
           title,
           merchant: input.merchant,
-          total_minor: input.totalMinor,
+          total_minor: locked.totalMinor,
           source_type: input.source,
-          currency: profile?.currency ?? "DKK",
+          currency: locked.currency,
+          original_currency: locked.originalCurrency,
+          original_total_minor: locked.originalTotalMinor,
+          exchange_rate: locked.exchangeRate,
+          exchange_rate_date: locked.exchangeRateDate,
+          exchange_rate_source: locked.exchangeRateSource,
+          card_charged_minor: locked.cardChargedMinor,
           expense_date: input.expenseDate ?? nowIso(),
         })
         .select()
@@ -686,18 +705,20 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
       const expenseId = created.id as string;
 
-      if (input.allocations.length > 0) {
+      if (locked.allocations.length > 0) {
         await supabase.from("expense_splits").insert(
-          input.allocations.map((allocation) => ({
+          locked.allocations.map((allocation) => ({
             owner_user_id: userId,
             expense_id: expenseId,
             person_id: allocation.personId,
             amount_minor: allocation.amountMinor,
+            original_amount_minor: locked.originalByPerson[allocation.personId] ?? null,
             percentage: allocation.percentage ?? null,
             shares: allocation.shares ?? null,
           })),
         );
       }
+
 
       if (input.items && input.items.length > 0) {
         await supabase.from("expense_items").insert(
@@ -724,6 +745,32 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const updateExpense = async (id: string, input: UpdateExpenseInput) => {
       if (!userId) return;
+      const current = expenseById(id);
+      // Editing keeps the expense in its original currency; the rate stays locked
+      // unless the user supplies a new one (manual override or card amount).
+      const money: MoneyContext | undefined = input.money ?? (
+        current && current.original_currency && current.original_currency !== current.currency
+          ? {
+              currency: current.original_currency,
+              exchangeRate: Number(current.exchange_rate) || 1,
+              exchangeRateDate: current.exchange_rate_date,
+              exchangeRateSource: current.exchange_rate_source,
+              cardChargedMinor: current.card_charged_minor,
+            }
+          : undefined
+      );
+
+      const locked =
+        input.totalMinor !== undefined || input.allocations || input.money
+          ? lockMoney({
+              systemCurrency: profile?.currency ?? current?.currency ?? "DKK",
+              originalTotalMinor:
+                input.totalMinor ?? current?.original_total_minor ?? current?.total_minor ?? 0,
+              allocations: input.allocations ?? [],
+              ...(money ? { money } : {}),
+            })
+          : null;
+
       const patch: {
         title?: string;
         merchant?: string | null;
@@ -731,33 +778,51 @@ export function PariProvider({ children }: { children: ReactNode }) {
         total_minor?: number;
         expense_date?: string;
         group_id?: string | null;
+        currency?: string;
+        original_currency?: string;
+        original_total_minor?: number;
+        exchange_rate?: number;
+        exchange_rate_date?: string | null;
+        exchange_rate_source?: string;
+        card_charged_minor?: number | null;
       } = {};
       if (input.title !== undefined) patch.title = input.title;
       if (input.merchant !== undefined) patch.merchant = input.merchant;
       if (input.paidByPersonId !== undefined) patch.paid_by_person_id = input.paidByPersonId;
-      if (input.totalMinor !== undefined) patch.total_minor = input.totalMinor;
       if (input.expenseDate !== undefined) patch.expense_date = input.expenseDate;
       if (input.groupId !== undefined) patch.group_id = input.groupId;
+      if (locked) {
+        patch.total_minor = locked.totalMinor;
+        patch.currency = locked.currency;
+        patch.original_currency = locked.originalCurrency;
+        patch.original_total_minor = locked.originalTotalMinor;
+        patch.exchange_rate = locked.exchangeRate;
+        patch.exchange_rate_date = locked.exchangeRateDate;
+        patch.exchange_rate_source = locked.exchangeRateSource;
+        patch.card_charged_minor = locked.cardChargedMinor;
+      }
 
       if (Object.keys(patch).length > 0) {
         await supabase.from("expenses").update(patch).eq("id", id);
       }
 
-      if (input.allocations) {
+      if (input.allocations && locked) {
         await supabase.from("expense_splits").delete().eq("expense_id", id);
-        if (input.allocations.length > 0) {
+        if (locked.allocations.length > 0) {
           await supabase.from("expense_splits").insert(
-            input.allocations.map((allocation) => ({
+            locked.allocations.map((allocation) => ({
               owner_user_id: userId,
               expense_id: id,
               person_id: allocation.personId,
               amount_minor: allocation.amountMinor,
+              original_amount_minor: locked.originalByPerson[allocation.personId] ?? null,
               percentage: allocation.percentage ?? null,
               shares: allocation.shares ?? null,
             })),
           );
         }
       }
+
 
       // One meaningful activity entry per edit — never one per changed field.
       const existing = expenseById(id);

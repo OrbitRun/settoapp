@@ -59,8 +59,20 @@ export type Expense = {
   title: string;
   merchant: string | null;
   expense_date: string;
+  /** System currency at the time of saving. total_minor is in this currency. */
   currency: string;
+  /** Converted amount, in system currency. Balances and settlement use this. */
   total_minor: number;
+  /** Currency the money was actually spent in. */
+  original_currency: string | null;
+  /** Amount as printed on the receipt, in the original currency. */
+  original_total_minor: number | null;
+  /** Locked at confirmation: original -> system. 1 when they are the same. */
+  exchange_rate: number;
+  exchange_rate_date: string | null;
+  exchange_rate_source: string;
+  /** What the bank actually charged, when the user entered it. */
+  card_charged_minor: number | null;
   source_type: ExpenseSource;
   receipt_image_url: string | null;
   created_at: string;
@@ -83,10 +95,14 @@ export type ExpenseSplit = {
   id: string;
   expense_id: string;
   person_id: string;
+  /** Share in system currency. */
   amount_minor: number;
+  /** Share in the original currency, before conversion. */
+  original_amount_minor: number | null;
   percentage: number | null;
   shares: number | null;
 };
+
 
 export type ItemSplit = {
   id: string;

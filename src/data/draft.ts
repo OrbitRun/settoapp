@@ -6,6 +6,7 @@ import {
   type Allocation,
   type SplitMode,
 } from "@/lib/split";
+import type { Confidence } from "@/lib/fx";
 
 export type DraftItem = {
   id: string;
@@ -18,6 +19,8 @@ export type DraftItem = {
   /** Discount for the whole line (all units), positive. Display only. */
   discountMinor?: number;
   discountPercent?: number | null;
+  /** How legible the line was. Never means "excluded from the split". */
+  confidence?: Confidence;
   /** false = private, kept out of the shared expense */
   isShared: boolean;
   /** person ids sharing this item; empty means "everyone in the expense" */
@@ -43,7 +46,21 @@ export type SplitDraft = {
   receiptWarnings?: string[];
   /** Discount that applies to the whole receipt rather than a single line. */
   receiptDiscountMinor?: number;
+
+  /**
+   * The currency the money was actually spent in. Every amount in the draft —
+   * items, discounts, amountMinor — is in this currency. Conversion to the
+   * system currency happens only when the expense is confirmed.
+   */
+  currency: string;
+  currencyConfidence: Confidence;
+  currencyEvidence?: string | null;
+  /** True once the user has picked the currency by hand. */
+  currencyConfirmed: boolean;
+  /** ISO date of the purchase, used to look up the rate. */
+  dateIso?: string | null;
 };
+
 
 
 
@@ -180,7 +197,7 @@ export const splitModeHintKey: Record<SplitMode, string> = {
 };
 
 
-export function emptyDraft(paidByPersonId: string): SplitDraft {
+export function emptyDraft(paidByPersonId: string, currency = "DKK"): SplitDraft {
   return {
     source: "manual",
     title: "",
@@ -196,5 +213,10 @@ export function emptyDraft(paidByPersonId: string): SplitDraft {
     items: [],
     splitByItem: false,
     usingGroupDefault: false,
+    currency,
+    currencyConfidence: "high",
+    currencyConfirmed: false,
+    dateIso: null,
   };
+
 }
