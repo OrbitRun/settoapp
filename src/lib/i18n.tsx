@@ -582,6 +582,28 @@ const da: Dict = {
   "receipt.paidPrice": "Betalt",
   "receipt.unassignedDiscount":
     "En rabat på {amount} gælder hele kvitteringen og fordeles på varerne.",
+  "receipt.checkLine": "Tjek denne linje",
+  "receipt.lowConfidence": "Nogle linjer var svære at læse — tryk for at tjekke dem.",
+  "receipt.confidenceLegend": "Linjer vi var i tvivl om er markeret.",
+
+  "currency.pick": "Valuta",
+  "currency.receiptCurrency": "Kvitteringens valuta",
+  "currency.expenseCurrency": "Valuta",
+  "currency.detected": "Fundet på kvitteringen",
+  "currency.change": "Skift",
+  "currency.splitIn": "Deles i {currency}",
+  "currency.bookedAs": "Bogføres som {amount}",
+  "currency.rateLine": "1 {base} = {rate} {quote} · {date}",
+  "currency.rateLoading": "Henter dagens kurs…",
+  "currency.rateFailed": "Vi kunne ikke hente en kurs. Indtast den selv.",
+  "currency.manualRate": "Valutakurs",
+  "currency.cardAmount": "Faktisk kortbeløb",
+  "currency.cardAmountHint": "Valgfrit — brug beløbet banken trak.",
+  "currency.original": "Original",
+  "currency.converted": "Omregnet",
+  "currency.rateLocked": "Kurs låst {date}",
+
+
 
   "receipt.missing": "Der mangler {amount}",
   "receipt.tooMuch": "Der er {amount} for meget",
