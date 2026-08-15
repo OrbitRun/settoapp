@@ -257,12 +257,17 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       currency?: string | null;
       date?: string | null;
       subtotal?: number | null;
+      discount?: number | null;
       confidence?: number | null;
       warnings?: string[] | null;
       items?: {
         name?: string;
         quantity?: number | null;
         unit_price?: number | null;
+        original_total?: number | null;
+        discount_amount?: number | null;
+        discount_percent?: number | null;
+        effective_total?: number | null;
         uncertain?: boolean | null;
       }[];
     };
@@ -282,20 +287,93 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       (warning): warning is string => typeof warning === "string" && warning.trim().length > 0,
     );
 
-    const items: ParsedReceiptLine[] = (parsed.items ?? [])
-      .filter((item) => (item?.name ?? "").trim().length > 0)
-      .map((item) => {
-        const unit = toMinor(item.unit_price);
-        return {
-          name: String(item.name).trim(),
-          quantity: Math.max(1, Math.round(Number(item.quantity ?? 1)) || 1),
-          unitPriceMinor: Math.max(0, unit ?? 0),
-          uncertain: Boolean(item.uncertain) || unit === null,
-        };
+    const rawItems = (parsed.items ?? []).filter((item) => (item?.name ?? "").trim().length > 0);
+
+    const items: ParsedReceiptLine[] = [];
+    let strayDiscountMinor = 0;
+
+    for (const raw of rawItems) {
+      const name = String(raw.name).trim();
+      const quantity = Math.max(1, Math.round(Number(raw.quantity ?? 1)) || 1);
+      const unit = toMinor(raw.unit_price);
+      let originalTotal = toMinor(raw.original_total) ?? (unit === null ? null : unit * quantity);
+      let discount = Math.abs(toMinor(raw.discount_amount) ?? 0);
+      let effectiveTotal = toMinor(raw.effective_total);
+      const percentValue = toMinor(raw.discount_percent);
+      const discountPercent = percentValue === null ? null : percentValue / 100;
+      let uncertain = Boolean(raw.uncertain);
+
+      // The model sometimes still emits a discount as its own "item" — fold it into
+      // the line above rather than dropping it or treating it as a purchase.
+      if (isDiscountLabel(name)) {
+        const amount = Math.abs(effectiveTotal ?? originalTotal ?? 0);
+        if (amount > 0) {
+          const previous = items[items.length - 1];
+          if (previous) {
+            previous.discountMinor += amount;
+            previous.unitPriceMinor = Math.max(
+              0,
+              Math.round((previous.unitPriceMinor * previous.quantity - amount) / previous.quantity),
+            );
+            if (discountPercent !== null) previous.discountPercent = discountPercent;
+          } else {
+            strayDiscountMinor += amount;
+          }
+        }
+        continue;
+      }
+
+      // Only a percentage printed: derive the amount from the original total.
+      if (discount === 0 && discountPercent !== null && originalTotal !== null && effectiveTotal === null) {
+        discount = Math.round((originalTotal * discountPercent) / 100);
+      }
+      if (effectiveTotal === null && originalTotal !== null) {
+        effectiveTotal = originalTotal - discount;
+      }
+      if (effectiveTotal !== null && originalTotal === null) {
+        originalTotal = effectiveTotal + discount;
+      }
+      if (effectiveTotal === null && originalTotal === null) {
+        effectiveTotal = 0;
+        originalTotal = 0;
+        uncertain = true;
+      }
+      if (discount === 0 && originalTotal! > effectiveTotal!) {
+        discount = originalTotal! - effectiveTotal!;
+      }
+      // Inconsistent trio: original − discount wins, and the line is flagged.
+      if (Math.abs(originalTotal! - discount - effectiveTotal!) > 1) {
+        effectiveTotal = originalTotal! - discount;
+        uncertain = true;
+      }
+
+      items.push({
+        name,
+        quantity,
+        unitPriceMinor: Math.max(0, Math.round(effectiveTotal! / quantity)),
+        originalUnitPriceMinor: discount > 0 ? Math.round(originalTotal! / quantity) : null,
+        discountMinor: Math.max(0, discount),
+        discountPercent,
+        uncertain: uncertain || (unit === null && originalTotal === 0),
       });
+    }
 
     const itemsTotal = items.reduce((sum, item) => sum + item.unitPriceMinor * item.quantity, 0);
     const reportedTotal = toMinor(parsed.total) ?? toMinor(parsed.subtotal);
+    const subtotalMinor = toMinor(parsed.subtotal);
+    let receiptDiscountMinor = Math.abs(toMinor(parsed.discount) ?? 0) + strayDiscountMinor;
+
+    // Guard against double-counting: if the lines already reconcile with the total,
+    // the receipt-level discount was just a summary of the line discounts.
+    if (
+      receiptDiscountMinor > 0 &&
+      reportedTotal &&
+      itemsTotal > 0 &&
+      Math.abs(itemsTotal - reportedTotal) <= 1 &&
+      Math.abs(itemsTotal - receiptDiscountMinor - reportedTotal) > 1
+    ) {
+      receiptDiscountMinor = 0;
+    }
 
     // Partial results are useful: a total without items, or items without a total,
     // both open the review screen. Only a fully empty read is a failure.
@@ -304,12 +382,17 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       throw receiptError("NO_RECEIPT_DETECTED", "No financial information found");
     }
 
-    const totalMinor = reportedTotal && reportedTotal > 0 ? reportedTotal : itemsTotal;
+    const netItemsTotal = itemsTotal - receiptDiscountMinor;
+    const totalMinor = reportedTotal && reportedTotal > 0 ? reportedTotal : Math.max(0, netItemsTotal);
 
     if (items.length === 0) warnings.push("NO_ITEMS_DETECTED");
     if (!reportedTotal) warnings.push("TOTAL_NOT_FOUND");
     if (items.some((item) => item.uncertain)) warnings.push("UNCERTAIN_ITEMS");
-    if (reportedTotal && itemsTotal > 0 && Math.abs(reportedTotal - itemsTotal) > 100) {
+    if (strayDiscountMinor > 0 || (receiptDiscountMinor > 0 && subtotalMinor === null)) {
+      warnings.push("UNASSIGNED_DISCOUNT");
+    }
+    // Reconciliation runs on effective totals, with a 1 kr. rounding tolerance.
+    if (reportedTotal && itemsTotal > 0 && Math.abs(reportedTotal - netItemsTotal) > 100) {
       warnings.push("TOTAL_MISMATCH");
     }
 
@@ -323,6 +406,7 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
     console.log("[receipt] receipt_parse_success", {
       items: items.length,
       totalMinor,
+      receiptDiscountMinor,
       warnings: warnings.length,
       confidence,
       ms: Date.now() - startedAt,
@@ -331,12 +415,15 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
     return {
       merchant: parsed.merchant?.trim() || null,
       totalMinor,
+      subtotalMinor,
+      receiptDiscountMinor,
       dateIso: parsed.date ?? null,
       currency: parsed.currency?.trim() || null,
       items,
       warnings,
       confidence,
     };
+
   });
 
 function stripFence(content: string): string {
