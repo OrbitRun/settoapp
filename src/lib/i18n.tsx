@@ -65,6 +65,7 @@ const en: Dict = {
   "groups.shouldReceive": "You should receive money",
   "groups.shouldPay": "You should pay this",
   "groups.addExpense": "Add expense",
+  "groups.payments": "Payments",
   "groups.settleUp": "Settle up",
   "groups.gone": "This group no longer exists",
 
@@ -493,6 +494,7 @@ const da: Dict = {
   "groups.shouldReceive": "Du skal have penge",
   "groups.shouldPay": "Du skal betale",
   "groups.addExpense": "Tilføj udgift",
+  "groups.payments": "Betalinger",
   "groups.settleUp": "Gør op",
   "groups.gone": "Denne gruppe findes ikke længere",
 
