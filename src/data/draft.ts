@@ -57,9 +57,12 @@ export type SplitDraft = {
   currencyEvidence?: string | null;
   /** True once the user has picked the currency by hand. */
   currencyConfirmed: boolean;
+  /** How sure the reader was about the receipt total. */
+  totalConfidence?: Confidence;
   /** ISO date of the purchase, used to look up the rate. */
   dateIso?: string | null;
 };
+
 
 
 
