@@ -48,7 +48,7 @@ export function MoneyAmount({
         className,
       )}
     >
-      {formatMinor(minor, { currency, showSign, compact })}
+      {formatMinor(minor, { ...(currency ? { currency } : {}), showSign, compact })}
     </span>
   );
 }
