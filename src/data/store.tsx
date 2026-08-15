@@ -23,6 +23,7 @@ import {
   type SplitMode,
 } from "@/lib/split";
 import { detectLanguage, type Language } from "@/lib/i18n";
+import { diffExpense, type ExpenseSnapshot } from "@/lib/history";
 import { lockMoney, type MoneyContext } from "@/lib/expense-money";
 import { emptyDraft, itemTotalMinor, type DraftItem, type SplitDraft } from "./draft";
 
@@ -647,7 +648,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       entityType: "expense" | "settlement" | "group",
       entityId: string | null,
       groupId: string | null,
-      metadata: Record<string, string | number>,
+      metadata: Record<string, unknown>,
     ) => {
       if (!userId) return;
       await supabase.from("activity").insert({
@@ -657,7 +658,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
         activity_type: type,
         entity_type: entityType,
         entity_id: entityId,
-        metadata,
+        metadata: metadata as never,
       });
     };
 
@@ -738,6 +739,24 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const updateExpense = async (id: string, input: UpdateExpenseInput) => {
       if (!userId) return;
       const current = expenseById(id);
+      // Snapshot the expense as it stands so the edit can be described later
+      // in human terms instead of as a raw database diff.
+      const before: ExpenseSnapshot | null = current
+        ? {
+            title: current.title,
+            totalMinor: current.original_total_minor ?? current.total_minor,
+            currency: current.original_currency ?? current.currency,
+            systemCurrency: current.currency,
+            exchangeRate: Number(current.exchange_rate) || 1,
+            payerId: current.paid_by_person_id,
+            groupId: current.group_id,
+            allocations: expenseOriginalAllocations(id),
+            items: expenseItems(id).map((item) => ({
+              name: item.name,
+              totalMinor: item.total_minor,
+            })),
+          }
+        : null;
       // Editing keeps the expense in its original currency; the rate stays locked
       // unless the user supplies a new one (manual override or card amount).
       const money: MoneyContext | undefined =
@@ -817,6 +836,28 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
       // One meaningful activity entry per edit — never one per changed field.
       const existing = expenseById(id);
+      const after: ExpenseSnapshot | null = before
+        ? {
+            title: input.title ?? before.title,
+            totalMinor: locked ? locked.originalTotalMinor : before.totalMinor,
+            currency: locked ? locked.originalCurrency : before.currency,
+            systemCurrency: locked ? locked.currency : before.systemCurrency,
+            exchangeRate: locked ? locked.exchangeRate : before.exchangeRate,
+            payerId: input.paidByPersonId ?? before.payerId,
+            groupId: input.groupId !== undefined ? input.groupId : before.groupId,
+            allocations:
+              input.allocations && locked
+                ? locked.allocations.map((allocation) => ({
+                    ...allocation,
+                    amountMinor:
+                      locked.originalByPerson[allocation.personId] ?? allocation.amountMinor,
+                  }))
+                : before.allocations,
+            items: before.items,
+          }
+        : null;
+      const changes = before && after ? diffExpense(before, after) : {};
+
       await logActivity(
         "expense_updated",
         "expense",
@@ -825,6 +866,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
         {
           title: input.title ?? existing?.title ?? "",
           amount_minor: input.totalMinor ?? existing?.total_minor ?? 0,
+          ...(Object.keys(changes).length > 0 ? { changes } : {}),
         },
       );
 

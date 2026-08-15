@@ -20,6 +20,8 @@ import {
 } from "@/components/pari/SplitRuleEditor";
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { FxSummary } from "@/components/pari/FxSummary";
+import { ExpenseHistory } from "@/components/pari/ExpenseHistory";
+
 import { usePari } from "@/data/store";
 import type { Allocation, SplitMode } from "@/lib/split";
 import { formatMinorIn, toMajor, toMinor } from "@/lib/money";
@@ -405,7 +407,10 @@ function ExpenseDetailScreen() {
             </Panel>
           ) : null}
 
+          <ExpenseHistory expenseId={expense.id} />
+
           <div className="space-y-2">
+
             <PrimaryButton onClick={startEditing}>{t("common.edit")}</PrimaryButton>
             <SecondaryButton onClick={() => setConfirmDelete(true)} className="text-negative">
               <Trash2 className="h-4 w-4" strokeWidth={1.8} />
