@@ -45,8 +45,14 @@ function ManualExpenseScreen() {
   const { draft, setDraft } = pari;
   const [showPaidBy, setShowPaidBy] = useState(false);
   const [busy, setBusy] = useState(false);
+  const lock = useMoneyLock({
+    currency: draft.currency,
+    systemCurrency: pari.currency,
+    totalMinor: draft.amountMinor,
+  });
   const amountText =
     draft.amountMinor > 0 ? formatMinorNumber(draft.amountMinor) : "0";
+
   const heroSize =
     amountText.length <= 5 ? 60 : amountText.length <= 7 ? 52 : amountText.length <= 10 ? 42 : 32;
   const suffixSize = Math.max(18, Math.round(heroSize / 3));
