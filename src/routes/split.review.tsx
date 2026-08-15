@@ -141,6 +141,20 @@ function ReviewScreen() {
             selectable
             selected={selected.includes(item.id)}
             isPrivate={!item.isShared}
+            detail={
+              (item.discountMinor ?? 0) > 0
+                ? t("receipt.discountLine", {
+                    original: formatMinor(itemOriginalTotalMinor(item), {
+                      currency: "",
+                      compact: false,
+                    }).trim(),
+                    amount: formatMinor(item.discountMinor ?? 0, {
+                      currency: "",
+                      compact: false,
+                    }).trim(),
+                  })
+                : undefined
+            }
             onClick={() => toggle(item.id)}
             right={
               <span className="flex items-center gap-3">
@@ -167,14 +181,21 @@ function ReviewScreen() {
       <div className="mt-5 space-y-2 px-4">
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>{t("receipt.detected")}</span>
-          <span className="tnum">{formatMinor(itemsTotal, { compact: false })}</span>
+          <span className="tnum">{formatMinor(grossTotal, { compact: false })}</span>
         </div>
+        {receiptDiscount > 0 ? (
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>{t("receipt.discount")}</span>
+            <span className="tnum">−{formatMinor(receiptDiscount, { compact: false })}</span>
+          </div>
+        ) : null}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("receipt.total")}</span>
           <span className="tnum font-medium">
             {formatMinor(draft.amountMinor, { compact: false })}
           </span>
         </div>
+
         <p className="pt-1 text-sm">
           {difference === 0 ? (
             <span className="inline-flex items-center gap-1.5 text-positive">
