@@ -10,6 +10,7 @@ export function FxSummary({
   rate,
   rateDate,
   fallbackDate,
+  alignment = "left",
   className,
 }: {
   originalCurrency: string;
@@ -18,13 +19,20 @@ export function FxSummary({
   rate: number;
   rateDate: string | null;
   fallbackDate?: string;
+  alignment?: "left" | "center";
   className?: string;
 }) {
   const t = useT();
   const dateIso = rateDate ? `${rateDate}T12:00:00.000Z` : fallbackDate;
 
   return (
-    <div className={cn("w-full space-y-0.5 text-left", className)}>
+    <div
+      className={cn(
+        "w-full space-y-0.5",
+        alignment === "center" ? "text-center" : "text-left",
+        className,
+      )}
+    >
       <p className="text-[15px] text-muted-foreground">
         {t("currency.bookedAs", {
           amount: formatMinorIn(convertedMinor, systemCurrency, { compact: false }),
