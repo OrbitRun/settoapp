@@ -132,17 +132,44 @@ function ReviewScreen() {
         </p>
       </div>
 
+      <div className="mb-4">
+        <CurrencyPanel
+          lock={lock}
+          onCurrencyChange={(currency) =>
+            setDraft((prev) => ({
+              ...prev,
+              currency,
+              currencyConfidence: "high",
+              currencyConfirmed: true,
+            }))
+          }
+          detectedNote={
+            draft.currencyConfirmed
+              ? undefined
+              : draft.currencyEvidence
+                ? `${t("currency.detected")} · ${draft.currencyEvidence}`
+                : t("currency.detected")
+          }
+        />
+      </div>
+
       {unassignedDiscount ? (
         <div className="mb-4 rounded-2xl bg-surface-strong px-4 py-3 text-sm text-muted-foreground">
           {t("receipt.unassignedDiscount", {
             amount: money(receiptDiscount, { compact: false }),
           })}
         </div>
+      ) : unsureLines > 0 ? (
+        <div className="mb-4 rounded-2xl bg-warning-soft px-4 py-3 text-sm">
+          {t("receipt.lowConfidence")}
+        </div>
       ) : draft.receiptWarnings && draft.receiptWarnings.length > 0 ? (
         <div className="mb-4 rounded-2xl bg-surface-strong px-4 py-3 text-sm text-muted-foreground">
           {t("receipt.checkLines")}
         </div>
       ) : null}
+
+
 
 
 
