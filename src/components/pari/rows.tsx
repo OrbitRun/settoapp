@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 
 import { shortDate } from "@/lib/dates";
-import { formatMinor } from "@/lib/money";
+import { formatMinor, formatMinorIn } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { useI18n, useT } from "@/lib/i18n";
 import { AvatarStack } from "./Avatar";
@@ -81,10 +81,7 @@ export function ExpenseRow({
   className?: string;
 }) {
   const foreign =
-    originalCurrency != null &&
-    originalAmountMinor != null &&
-    originalCurrency !== (currency ?? originalCurrency ? currency : undefined) &&
-    originalCurrency !== currency;
+    originalCurrency != null && originalAmountMinor != null && originalCurrency !== currency;
 
   const inner = (
     <>

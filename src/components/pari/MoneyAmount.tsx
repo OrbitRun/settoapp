@@ -23,7 +23,7 @@ export function MoneyAmount({
 }: {
   minor: number;
   size?: Size;
-  currency?: string;
+  currency?: string | undefined;
   showSign?: boolean;
   compact?: boolean;
   tone?: "default" | "positive" | "negative" | "muted";
