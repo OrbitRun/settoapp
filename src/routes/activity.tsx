@@ -97,6 +97,15 @@ function ActivityScreen() {
                       ? pari.expenseById(entry.entity_id)
                       : undefined;
                   const open = openId === entry.id;
+                  const history =
+                    entry.entity_type === "expense" && entry.entity_id
+                      ? pari.expenseHistory(entry.entity_id)
+                      : [];
+                  const isDeleted = history.some((h) => h.activity_type === "expense_deleted");
+                  const wasEdited = history.some(
+                    (h) =>
+                      h.activity_type === "expense_updated" || h.activity_type === "split_changed",
+                  );
                   const originalCurrency =
                     expense?.original_currency ?? expense?.currency ?? undefined;
                   const foreign = expense != null && originalCurrency !== expense.currency;
