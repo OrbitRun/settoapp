@@ -16,7 +16,9 @@ import {
 } from "@/data/draft";
 
 import { usePari } from "@/data/store";
-import { currencyLabel, formatMinor, toMajor, toMinor } from "@/lib/money";
+import { CurrencyPanel } from "@/components/pari/CurrencyPanel";
+import { useMoneyLock } from "@/hooks/useMoneyLock";
+import { currencyLabel, formatMinorIn, toMajor, toMinor } from "@/lib/money";
 import { NumericField } from "@/components/pari/NumericField";
 import { shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
@@ -107,14 +109,14 @@ function ReviewScreen() {
           {draft.merchant ?? t("split.receipt")}
         </h1>
         <p className="tnum mt-2 text-[17px] text-muted-foreground">
-          {formatMinor(draft.amountMinor, { compact: false })}
+          {money(draft.amountMinor, { compact: false })}
         </p>
       </div>
 
       {unassignedDiscount ? (
         <div className="mb-4 rounded-2xl bg-surface-strong px-4 py-3 text-sm text-muted-foreground">
           {t("receipt.unassignedDiscount", {
-            amount: formatMinor(receiptDiscount, { compact: false }),
+            amount: money(receiptDiscount, { compact: false }),
           })}
         </div>
       ) : draft.receiptWarnings && draft.receiptWarnings.length > 0 ? (
@@ -159,11 +161,11 @@ function ReviewScreen() {
             detail={
               (item.discountMinor ?? 0) > 0
                 ? t("receipt.discountLine", {
-                    original: formatMinor(itemOriginalTotalMinor(item), {
+                    original: money(itemOriginalTotalMinor(item), {
                       currency: "",
                       compact: false,
                     }).trim(),
-                    amount: formatMinor(item.discountMinor ?? 0, {
+                    amount: money(item.discountMinor ?? 0, {
                       currency: "",
                       compact: false,
                     }).trim(),
@@ -174,7 +176,7 @@ function ReviewScreen() {
             right={
               <span className="flex items-center gap-3">
                 <span className="tnum">
-                  {formatMinor(itemTotalMinor(item), { currency: "" }).trim()}
+                  {money(itemTotalMinor(item), { currency: "" }).trim()}
                 </span>
                 <button
                   type="button"
@@ -196,18 +198,18 @@ function ReviewScreen() {
       <div className="mt-5 space-y-2 px-4">
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>{t("receipt.detected")}</span>
-          <span className="tnum">{formatMinor(grossTotal, { compact: false })}</span>
+          <span className="tnum">{money(grossTotal, { compact: false })}</span>
         </div>
         {receiptDiscount > 0 ? (
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>{t("receipt.discount")}</span>
-            <span className="tnum">−{formatMinor(receiptDiscount, { compact: false })}</span>
+            <span className="tnum">−{money(receiptDiscount, { compact: false })}</span>
           </div>
         ) : null}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("receipt.total")}</span>
           <span className="tnum font-medium">
-            {formatMinor(draft.amountMinor, { compact: false })}
+            {money(draft.amountMinor, { compact: false })}
           </span>
         </div>
 
@@ -219,9 +221,9 @@ function ReviewScreen() {
           ) : (
             <span className="text-muted-foreground">
               {difference > 0
-                ? t("receipt.missing", { amount: formatMinor(difference, { compact: false }) })
+                ? t("receipt.missing", { amount: money(difference, { compact: false }) })
                 : t("receipt.tooMuch", {
-                    amount: formatMinor(-difference, { compact: false }),
+                    amount: money(-difference, { compact: false }),
                   })}
             </span>
           )}
