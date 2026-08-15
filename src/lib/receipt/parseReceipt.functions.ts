@@ -431,3 +431,11 @@ function stripFence(content: string): string {
   if (!trimmed.startsWith("```")) return trimmed;
   return trimmed.replace(/^```(?:json)?\s*/i, "").replace(/```$/, "");
 }
+
+const DISCOUNT_LABELS =
+  /(linie ?rabat|linje ?rabat|vare ?-? ?rabat|kampagne ?rabat|medlems ?rabat|rabat|tilbud|prisneds(æ|ae)ttelse|bonus|discount|promo(tion)?|coupon|voucher|savings?|you saved|reduktion|nedslag)/i;
+
+/** True when a "line" is really a discount label, not a purchased product. */
+export function isDiscountLabel(name: string): boolean {
+  return DISCOUNT_LABELS.test(name.trim());
+}
