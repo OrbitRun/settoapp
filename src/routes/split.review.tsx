@@ -58,6 +58,22 @@ function ReviewScreen() {
   const [editing, setEditing] = useState<DraftItem | null>(null);
   const t = useT();
 
+  // The review screen stays entirely in the receipt's own currency.
+  const money = (
+    minor: number,
+    options: { currency?: string; compact?: boolean } = {},
+  ) =>
+    formatMinorIn(minor, options.currency ?? draft.currency, {
+      compact: options.compact ?? true,
+    });
+
+  const lock = useMoneyLock({
+    currency: draft.currency,
+    systemCurrency: pari.currency,
+    totalMinor: draft.amountMinor,
+    dateIso: draft.dateIso ?? null,
+  });
+
   const grossTotal = itemsTotalMinor(draft.items);
   const receiptDiscount = draft.receiptDiscountMinor ?? 0;
   const itemsTotal = draftItemsNetTotalMinor(draft);
@@ -65,6 +81,9 @@ function ReviewScreen() {
   // Whole-øre rounding noise is not a mismatch.
   const difference = Math.abs(rawDifference) <= 1 ? 0 : rawDifference;
   const unassignedDiscount = (draft.receiptWarnings ?? []).includes("UNASSIGNED_DISCOUNT");
+  const unsureLines = draft.items.filter((item) => item.confidence === "low").length;
+
+
 
 
   const update = (id: string, patch: Partial<DraftItem>) =>
