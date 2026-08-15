@@ -658,7 +658,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
         activity_type: type,
         entity_type: entityType,
         entity_id: entityId,
-        metadata,
+        metadata: metadata as never,
       });
     };
 
