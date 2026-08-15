@@ -101,10 +101,8 @@ export function NumericField({
 
         onChange={(event) => {
           let raw = event.target.value.replace(/[^\d.,]/g, "");
-          // Typing over the resting "0" replaces it, wherever the caret sat.
-          if (text === "0" && raw !== "0" && raw.includes("0")) {
-            raw = raw.replace("0", "");
-          }
+          // Replace a leading zero (e.g. "05" -> "5") while keeping real zeros
+          // inside multi-digit numbers ("250" stays "250").
           raw = raw.replace(/^0+(?=\d)/, "");
           setText(raw);
           if (commitOnly) return; // draft only — report on commit
