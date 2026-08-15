@@ -405,7 +405,10 @@ function ExpenseDetailScreen() {
             </Panel>
           ) : null}
 
+          <ExpenseHistory expenseId={expense.id} />
+
           <div className="space-y-2">
+
             <PrimaryButton onClick={startEditing}>{t("common.edit")}</PrimaryButton>
             <SecondaryButton onClick={() => setConfirmDelete(true)} className="text-negative">
               <Trash2 className="h-4 w-4" strokeWidth={1.8} />
