@@ -9,7 +9,7 @@ import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { FxSummary } from "@/components/pari/FxSummary";
 import { formatMinorIn } from "@/lib/money";
 import { usePari } from "@/data/store";
-import { dayGroupLabel, shortDate } from "@/lib/dates";
+import { dayGroupLabel, shortDate, timeOfDay } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { ActivityEntry } from "@/data/types";
@@ -46,11 +46,22 @@ const KEYS: Record<ActivityEntry["activity_type"], string> = {
   group_created: "activity.groupCreated",
 };
 
+/** History lines describe what happened to the expense, never who is in the feed. */
+const HISTORY_KEYS: Record<ActivityEntry["activity_type"], string> = {
+  expense_added: "activity.historyCreated",
+  expense_updated: "activity.historyEdited",
+  expense_deleted: "activity.historyDeleted",
+  split_changed: "activity.historySplit",
+  settlement_marked: "activity.historyEdited",
+  group_created: "activity.historyCreated",
+};
+
 function ActivityScreen() {
   const pari = usePari();
   const t = useT();
   const navigate = useNavigate();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [historyId, setHistoryId] = useState<string | null>(null);
   const feed = pari.activityFeed();
 
   const days = feed.reduce<Record<string, ActivityEntry[]>>((acc, entry) => {
@@ -87,6 +98,15 @@ function ActivityScreen() {
                       ? pari.expenseById(entry.entity_id)
                       : undefined;
                   const open = openId === entry.id;
+                  const history =
+                    entry.entity_type === "expense" && entry.entity_id
+                      ? pari.expenseHistory(entry.entity_id)
+                      : [];
+                  const isDeleted = history.some((h) => h.activity_type === "expense_deleted");
+                  const wasEdited = history.some(
+                    (h) =>
+                      h.activity_type === "expense_updated" || h.activity_type === "split_changed",
+                  );
                   const originalCurrency =
                     expense?.original_currency ?? expense?.currency ?? undefined;
                   const foreign = expense != null && originalCurrency !== expense.currency;
@@ -110,6 +130,11 @@ function ActivityScreen() {
                           <p className="mt-0.5 text-[13px] text-muted-foreground">
                             {shortDate(entry.created_at)}
                             {group ? ` · ${group.name}` : ""}
+                            {isDeleted
+                              ? ` · ${t("activity.deletedTag")}`
+                              : wasEdited
+                                ? ` · ${t("activity.edited")}`
+                                : ""}
                           </p>
                         </div>
                         {rowAmount !== undefined ? (
@@ -202,6 +227,41 @@ function ActivityScreen() {
                               ) : null}
                             </div>
                           )}
+
+                          {history.length > 1 ? (
+                            <div className="pt-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setHistoryId(historyId === entry.id ? null : entry.id)
+                                }
+                                className="text-[12px] text-muted-foreground/80 underline-offset-2 hover:underline"
+                              >
+                                {isDeleted ? t("activity.deletedTag") : t("activity.edited")}
+                              </button>
+                              {historyId === entry.id ? (
+                                <div className="animate-rise mt-2 space-y-1.5">
+                                  <p className="text-[12px] uppercase tracking-wide text-muted-foreground/70">
+                                    {t("activity.history")}
+                                  </p>
+                                  {history.map((event) => (
+                                    <div key={event.id} className="flex justify-between">
+                                      <span>
+                                        {t(HISTORY_KEYS[event.activity_type], {
+                                          actor: event.actor_person_id
+                                            ? pari.personName(event.actor_person_id)
+                                            : pari.currentProfileName,
+                                        })}
+                                      </span>
+                                      <span className="text-muted-foreground/80">
+                                        {shortDate(event.created_at)} · {timeOfDay(event.created_at)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>

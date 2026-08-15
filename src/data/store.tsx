@@ -143,6 +143,8 @@ type PariContextValue = {
   settlementPlan: (groupId: string) => SettlementStep[];
   recentExpenses: (limit?: number) => Expense[];
   activityFeed: () => ActivityEntry[];
+  /** Audit trail for one expense (created / edited / deleted), oldest first. */
+  expenseHistory: (expenseId: string) => ActivityEntry[];
   groupDefaultPercentages: (groupId: string) => Record<string, number> | null;
   groupRule: (groupId: string) => GroupRule | null;
   addExpense: (input: AddExpenseInput) => Promise<Expense | null>;
@@ -586,28 +588,23 @@ export function PariProvider({ children }: { children: ReactNode }) {
         .slice(0, limit);
 
     /**
-     * The default feed hides audit noise: deletions stay in the database but
-     * never surface, entries pointing at expenses that no longer exist are
-     * dropped, and repeated edits of the same expense collapse into one row.
+     * One visible row per economic event: an expense surfaces through its
+     * creation entry only, so later edits and its deletion stay in the
+     * database as history instead of climbing to the top of the feed.
      */
     const activityFeed = () => {
       const sorted = [...data.activity].sort((a, b) => b.created_at.localeCompare(a.created_at));
-      const seenEdits = new Set<string>();
       return sorted.filter((entry) => {
-        if (entry.activity_type === "expense_deleted") return false;
-        if (entry.entity_type === "expense") {
-          if (!entry.entity_id || !expenseById(entry.entity_id)) return false;
-          if (
-            entry.activity_type === "expense_updated" ||
-            entry.activity_type === "split_changed"
-          ) {
-            if (seenEdits.has(entry.entity_id)) return false;
-            seenEdits.add(entry.entity_id);
-          }
-        }
-        return true;
+        if (entry.entity_type !== "expense") return true;
+        return entry.activity_type === "expense_added" && Boolean(entry.entity_id);
       });
     };
+
+    /** Full audit trail for one expense, oldest first. */
+    const expenseHistory = (expenseId: string) =>
+      data.activity
+        .filter((entry) => entry.entity_type === "expense" && entry.entity_id === expenseId)
+        .sort((a, b) => a.created_at.localeCompare(b.created_at));
 
     const groupRule = (groupId: string): GroupRule | null => {
       const group = data.groups.find((g) => g.id === groupId);
@@ -837,7 +834,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const deleteExpense = async (id: string) => {
       const existing = expenseById(id);
       await supabase.from("expenses").delete().eq("id", id);
-      await logActivity("expense_deleted", "expense", null, existing?.group_id ?? null, {
+      // Keeps the deletion attached to the expense's own history instead of
+      // becoming a separate feed row.
+      await logActivity("expense_deleted", "expense", id, existing?.group_id ?? null, {
         title: existing?.title ?? "",
         amount_minor: existing?.total_minor ?? 0,
       });
@@ -1222,6 +1221,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       settlementPlan,
       recentExpenses,
       activityFeed,
+      expenseHistory,
       groupDefaultPercentages,
       groupRule,
       addExpense: isGuest ? guestAddExpense : addExpense,
