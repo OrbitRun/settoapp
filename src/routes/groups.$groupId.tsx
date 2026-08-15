@@ -171,35 +171,16 @@ function GroupDetailScreen() {
                       </button>
 
                       {open ? (
-                        <div className="animate-rise space-y-2 px-4 pb-5 text-center">
-                          <p className="tnum text-[22px] font-semibold tracking-[-0.03em]">
-                            {formatMinorIn(displayMinor, displayCurrency, { compact: false })}
-                          </p>
-                          {foreign ? (
-                            <FxSummary
-                              alignment="center"
-                              originalCurrency={displayCurrency}
-                              convertedMinor={expense.total_minor}
-                              systemCurrency={expense.currency}
-                              rate={Number(expense.exchange_rate ?? 1)}
-                              rateDate={expense.exchange_rate_date ?? null}
-                            />
-                          ) : null}
-                          <p className="text-sm text-muted-foreground">
-                            {shortDate(expense.expense_date)} ·{" "}
-                            {t("home.paidBy", {
-                              name: pari.personName(expense.paid_by_person_id),
-                            })}
-                          </p>
-                          <Link
-                            to="/expense/$expenseId"
-                            params={{ expenseId: expense.id }}
-                            className="inline-block pt-1 text-[13px] font-medium text-foreground"
-                          >
-                            {t("expense.title")} →
-                          </Link>
+                        <div className="animate-rise px-4 pb-5">
+                          <ExpenseActivityCard
+                            expense={expense}
+                            showHeader={false}
+                            showGroup={false}
+                            showHistory={false}
+                          />
                         </div>
                       ) : null}
+
                     </div>
                   );
                 })
