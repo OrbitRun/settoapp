@@ -11,6 +11,7 @@ export function useExchangeRate(
   originalCurrency: string,
   systemCurrency: string,
   dateIso?: string | null,
+  options: { enabled?: boolean } = {},
 ) {
   const fetchRate = useServerFn(getExchangeRate);
   const date = (dateIso ?? new Date().toISOString()).slice(0, 10);
@@ -19,7 +20,7 @@ export function useExchangeRate(
   const query = useQuery({
     queryKey: ["fx", originalCurrency, systemCurrency, date],
     queryFn: () => fetchRate({ data: { base: originalCurrency, quote: systemCurrency, date } }),
-    enabled: !same,
+    enabled: !same && options.enabled !== false,
     staleTime: 1000 * 60 * 60,
     retry: 1,
   });

@@ -41,7 +41,7 @@ export function MoneyAmount({
   return (
     <span
       className={cn(
-        "tnum font-medium tracking-[-0.02em]",
+        "tnum whitespace-nowrap font-medium tracking-[-0.02em]",
         SIZES[size],
         size === "hero" && "font-semibold tracking-[-0.035em]",
         toneClass,
