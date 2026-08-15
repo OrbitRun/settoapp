@@ -131,23 +131,83 @@ function GroupDetailScreen() {
                   description={t("groups.noExpensesHint")}
                 />
               ) : (
-                expenses.map((expense, index) => (
-                  <div key={expense.id}>
-                    {index > 0 ? <Divider /> : null}
-                    <ExpenseRow
-                      title={expense.title}
-                      subtitle={t("home.paidBy", {
-                        name: pari.personName(expense.paid_by_person_id),
-                      })}
-                      dateIso={expense.expense_date}
-                      amountMinor={expense.total_minor}
-                      currency={expense.currency}
-                      originalAmountMinor={expense.original_total_minor ?? undefined}
-                      originalCurrency={expense.original_currency ?? undefined}
-                      expenseId={expense.id}
-                    />
-                  </div>
-                ))
+                expenses.map((expense, index) => {
+                  const open = openExpenseId === expense.id;
+                  const foreign =
+                    expense.original_currency != null &&
+                    expense.original_total_minor != null &&
+                    expense.original_currency !== expense.currency;
+                  return (
+                    <div key={expense.id}>
+                      {index > 0 ? <Divider /> : null}
+                      <button
+                        type="button"
+                        onClick={() => setOpenExpenseId(open ? null : expense.id)}
+                        className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-surface-strong/60"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[15px] font-medium tracking-tight">
+                            {expense.title}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            {shortDate(expense.expense_date)} ·{" "}
+                            {t("home.paidBy", {
+                              name: pari.personName(expense.paid_by_person_id),
+                            })}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <MoneyAmount
+                            minor={expense.original_total_minor ?? expense.total_minor}
+                            currency={foreign ? expense.original_currency : expense.currency}
+                          />
+                        </div>
+                        <ChevronDown
+                          className={cn(
+                            "h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform",
+                            open && "rotate-180",
+                          )}
+                          strokeWidth={1.6}
+                        />
+                      </button>
+
+                      {open ? (
+                        <div className="animate-rise space-y-2 px-4 pb-5 text-center">
+                          <p className="tnum text-[22px] font-semibold tracking-[-0.03em]">
+                            {formatMinorIn(
+                              expense.original_total_minor ?? expense.total_minor,
+                              foreign ? expense.original_currency : expense.currency,
+                              { compact: false },
+                            )}
+                          </p>
+                          {foreign ? (
+                            <FxSummary
+                              alignment="center"
+                              originalCurrency={expense.original_currency ?? ""}
+                              convertedMinor={expense.total_minor}
+                              systemCurrency={expense.currency}
+                              rate={Number(expense.exchange_rate ?? 1)}
+                              rateDate={expense.exchange_rate_date ?? null}
+                            />
+                          ) : null}
+                          <p className="text-sm text-muted-foreground">
+                            {shortDate(expense.expense_date)} ·{" "}
+                            {t("home.paidBy", {
+                              name: pari.personName(expense.paid_by_person_id),
+                            })}
+                          </p>
+                          <Link
+                            to="/expense/$expenseId"
+                            params={{ expenseId: expense.id }}
+                            className="inline-block pt-1 text-[13px] font-medium text-foreground"
+                          >
+                            {t("expense.title")} →
+                          </Link>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })
               )}
             </Panel>
 
