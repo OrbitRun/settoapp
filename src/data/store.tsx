@@ -141,6 +141,7 @@ type PariContextValue = {
   expenseById: (id: string) => Expense | undefined;
   expenseItems: (expenseId: string) => ExpenseItem[];
   expenseAllocations: (expenseId: string) => Allocation[];
+  expenseOriginalAllocations: (expenseId: string) => Allocation[];
   groupBalances: (groupId: string) => Balance[];
   myGroupBalance: (groupId: string) => number;
   netBalance: number;
@@ -1241,6 +1242,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       expenseById,
       expenseItems,
       expenseAllocations,
+      expenseOriginalAllocations,
       groupBalances,
       myGroupBalance,
       netBalance,
