@@ -70,7 +70,7 @@ export function CurrencyPanel({
                   base: lock.currency,
                   rate: (lock.rate ?? 1).toFixed(4).replace(".", ","),
                   quote: lock.systemCurrency,
-                  date: shortDate(`${lock.rateDate}T12:00:00.000Z`),
+                  date: lock.rateDate ? shortDate(`${lock.rateDate}T12:00:00.000Z`) : "—",
                 })}
               </p>
             </>
