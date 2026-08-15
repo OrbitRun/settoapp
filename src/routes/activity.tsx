@@ -241,6 +241,38 @@ function ActivityScreen() {
                                 {t("expense.title")} →
                               </button>
                             </>
+                          ) : settlement ? (
+                            <div className="space-y-1.5">
+                              <p className="text-foreground">{t("activity.payment")}</p>
+                              <div className="flex justify-between">
+                                <span>{t("activity.paymentFrom")}</span>
+                                <span>{settlement.from}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>{t("activity.paymentTo")}</span>
+                                <span>{settlement.to}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>{t("activity.paymentAmount")}</span>
+                                {amount !== undefined ? (
+                                  <MoneyAmount minor={amount} tone="muted" />
+                                ) : null}
+                              </div>
+                              <div className="flex justify-between">
+                                <span>{t("activity.paymentRemaining")}</span>
+                                {settlement.remaining > 0 ? (
+                                  <MoneyAmount minor={settlement.remaining} tone="muted" />
+                                ) : (
+                                  <span>{t("activity.paymentSettled")}</span>
+                                )}
+                              </div>
+                              {settlement.note ? (
+                                <div className="flex justify-between">
+                                  <span>{t("activity.paymentNote")}</span>
+                                  <span>{settlement.note}</span>
+                                </div>
+                              ) : null}
+                            </div>
                           ) : (
                             <div className="flex justify-between">
                               <span>{group ? group.name : t("activity.title")}</span>
