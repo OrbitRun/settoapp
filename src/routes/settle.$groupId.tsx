@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
+
+import { PaymentSheet } from "@/components/pari/PaymentSheet";
 
 import { Divider, Panel, Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
