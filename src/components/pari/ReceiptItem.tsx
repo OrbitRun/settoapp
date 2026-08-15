@@ -13,6 +13,7 @@ export function ReceiptItemRow({
   flagged = false,
   flagLabel,
   detail,
+  currency,
   onClick,
   right,
 }: {
@@ -26,6 +27,8 @@ export function ReceiptItemRow({
   flagged?: boolean;
   flagLabel?: string | undefined;
   detail?: string | undefined;
+  /** Currency the amount is in; omitted renders a bare number. */
+  currency?: string | undefined;
   onClick?: (() => void) | undefined;
   right?: React.ReactNode;
 }) {
@@ -83,7 +86,7 @@ export function ReceiptItemRow({
       </span>
 
       <span className="tnum shrink-0 text-[15px] font-medium">
-        {right ?? formatMinor(amountMinor * quantity, { currency: "" }).trim()}
+        {right ?? formatMinor(amountMinor * quantity, { currency: currency ?? "" }).trim()}
       </span>
     </Tag>
   );

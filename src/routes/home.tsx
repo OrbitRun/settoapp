@@ -105,6 +105,10 @@ function HomeScreen() {
                     })}
                     dateIso={expense.expense_date}
                     amountMinor={expense.total_minor}
+                    currency={expense.currency}
+                    originalAmountMinor={expense.original_total_minor ?? undefined}
+                    originalCurrency={expense.original_currency ?? undefined}
+                    expenseId={expense.id}
                   />
                 </div>
               ))}
