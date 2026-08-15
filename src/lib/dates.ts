@@ -45,3 +45,8 @@ export function timeOfDayGreeting(name: string) {
   const prefix = (language === "da" ? da : en)[key];
   return `${prefix}, ${name}`;
 }
+
+/** Clock time for history rows, e.g. "14:32". */
+export function timeOfDay(iso: string) {
+  return format(new Date(iso), "HH:mm", { locale: locale() });
+}
