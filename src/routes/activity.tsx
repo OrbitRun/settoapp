@@ -46,6 +46,16 @@ const KEYS: Record<ActivityEntry["activity_type"], string> = {
   group_created: "activity.groupCreated",
 };
 
+/** History lines describe what happened to the expense, never who is in the feed. */
+const HISTORY_KEYS: Record<ActivityEntry["activity_type"], string> = {
+  expense_added: "activity.historyCreated",
+  expense_updated: "activity.historyEdited",
+  expense_deleted: "activity.historyDeleted",
+  split_changed: "activity.historySplit",
+  settlement_marked: "activity.historyEdited",
+  group_created: "activity.historyCreated",
+};
+
 function ActivityScreen() {
   const pari = usePari();
   const t = useT();
