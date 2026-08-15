@@ -584,6 +584,7 @@ const da: Dict = {
   "currency.receiptCurrency": "Kvitteringens valuta",
   "currency.expenseCurrency": "Valuta",
   "currency.detected": "Fundet på kvitteringen",
+  "currency.inferred": "Valuta genkendt ud fra kvitteringen",
   "currency.change": "Skift",
   "currency.splitIn": "Deles i {currency}",
   "currency.bookedAs": "Bogføres som {amount}",
