@@ -36,6 +36,22 @@ function ItemSplitScreen() {
   const [bulkPeople, setBulkPeople] = useState<string[]>([]);
   const t = useT();
 
+  // Items and totals stay in the receipt's own currency.
+  const formatMinorIn2 = (
+    minor: number,
+    options: { currency?: string; compact?: boolean } = {},
+  ) =>
+    formatMinorIn(minor, options.currency ?? draft.currency, {
+      compact: options.compact ?? true,
+    });
+
+  const lock = useMoneyLock({
+    currency: draft.currency,
+    systemCurrency: pari.currency,
+    totalMinor: draft.amountMinor,
+    dateIso: draft.dateIso ?? null,
+  });
+
   const people = useMemo(() => {
     const names = draft.participants.map((id) => pari.personName(id));
     const labels = disambiguateInitials(names);
@@ -91,6 +107,7 @@ function ItemSplitScreen() {
       allocations,
       source: "receipt",
       items: draft.items,
+      ...(lock.money ? { money: lock.money } : {}),
     });
     if (!expense) return;
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
