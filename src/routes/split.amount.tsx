@@ -157,9 +157,10 @@ function ManualExpenseScreen() {
             className="shrink-0 font-medium text-muted-foreground"
             style={{ fontSize: `${suffixSize}px` }}
           >
-            {currencyLabel()}
+            {currencyLabel(draft.currency)}
           </span>
         </div>
+
 
         <input
           value={draft.title}
