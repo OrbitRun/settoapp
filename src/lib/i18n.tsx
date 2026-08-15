@@ -554,6 +554,13 @@ const da: Dict = {
   "receipt.total": "Kvitteringens total",
   "receipt.looksGood": "Det ser rigtigt ud",
   "receipt.checkLines": "Vi fandt kvitteringen, men nogle linjer skal tjekkes.",
+  "receipt.discount": "Rabat",
+  "receipt.discountLine": "{original} · −{amount} rabat",
+  "receipt.originalPrice": "Pris før rabat",
+  "receipt.paidPrice": "Betalt",
+  "receipt.unassignedDiscount":
+    "En rabat på {amount} gælder hele kvitteringen og fordeles på varerne.",
+
   "receipt.missing": "Der mangler {amount}",
   "receipt.tooMuch": "Der er {amount} for meget",
   "receipt.itemsSelected": "{count} valgt",
