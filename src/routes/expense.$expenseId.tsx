@@ -319,6 +319,8 @@ function ExpenseDetailScreen() {
             </Panel>
           </section>
 
+          <CurrencyPanel lock={lock} onCurrencyChange={setCurrency} />
+
           <section className="space-y-4 rounded-3xl bg-surface p-5 shadow-soft">
             <div className="flex items-center justify-between">
               <p className="text-[13px] text-muted-foreground">{t("split.distribution")}</p>
@@ -327,8 +329,6 @@ function ExpenseDetailScreen() {
                 onChange={(mode) => setRule((prev) => seedRule(prev, people, mode))}
               />
             </div>
-            <CurrencyPanel lock={lock} onCurrencyChange={setCurrency} />
-
             <SplitRuleEditor
               rule={rule}
               people={people}
