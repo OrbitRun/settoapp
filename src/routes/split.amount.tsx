@@ -14,13 +14,16 @@ import { PersonChip } from "@/components/pari/PersonChip";
 import { computeDraftAllocations } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
+import { CurrencyPanel } from "@/components/pari/CurrencyPanel";
+import { useMoneyLock } from "@/hooks/useMoneyLock";
 import {
   currencyLabel,
-  formatMinor,
+  formatMinorIn,
   formatMinorNumber,
   toMajor,
   toMinor,
 } from "@/lib/money";
+
 
 
 export const Route = createFileRoute("/split/amount")({
