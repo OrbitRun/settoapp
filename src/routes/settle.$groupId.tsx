@@ -97,10 +97,7 @@ function SettleScreen() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      pari.markSettled(groupId, step);
-                      toast.success(t("settle.markedPaid"));
-                    }}
+                    onClick={() => setPayingKey(`${step.fromPersonId}-${step.toPersonId}`)}
                     className="inline-flex h-11 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground"
                   >
                     {t("settle.markPaid")}
@@ -111,6 +108,21 @@ function SettleScreen() {
           ))}
         </Panel>
       )}
+
+      {paying ? (
+        <PaymentSheet
+          open
+          onClose={() => setPayingKey(null)}
+          fromName={pari.personName(paying.fromPersonId)}
+          toName={pari.personName(paying.toPersonId)}
+          outstandingMinor={paying.amountMinor}
+          onConfirm={async (amountMinor, note) => {
+            await pari.markSettled(groupId, paying, { amountMinor, ...(note ? { note } : {}) });
+            setPayingKey(null);
+            toast.success(t("settle.paymentRegistered"));
+          }}
+        />
+      ) : null}
     </Screen>
   );
 }
