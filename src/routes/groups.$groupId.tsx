@@ -137,6 +137,8 @@ function GroupDetailScreen() {
                     expense.original_currency != null &&
                     expense.original_total_minor != null &&
                     expense.original_currency !== expense.currency;
+                  const displayMinor = expense.original_total_minor ?? expense.total_minor;
+                  const displayCurrency = foreign ? expense.original_currency! : expense.currency;
                   return (
                     <div key={expense.id}>
                       {index > 0 ? <Divider /> : null}
@@ -157,10 +159,7 @@ function GroupDetailScreen() {
                           </p>
                         </div>
                         <div className="shrink-0 text-right">
-                          <MoneyAmount
-                            minor={expense.original_total_minor ?? expense.total_minor}
-                            currency={foreign ? expense.original_currency : expense.currency}
-                          />
+                          <MoneyAmount minor={displayMinor} currency={displayCurrency} />
                         </div>
                         <ChevronDown
                           className={cn(
@@ -174,16 +173,12 @@ function GroupDetailScreen() {
                       {open ? (
                         <div className="animate-rise space-y-2 px-4 pb-5 text-center">
                           <p className="tnum text-[22px] font-semibold tracking-[-0.03em]">
-                            {formatMinorIn(
-                              expense.original_total_minor ?? expense.total_minor,
-                              foreign ? expense.original_currency : expense.currency,
-                              { compact: false },
-                            )}
+                            {formatMinorIn(displayMinor, displayCurrency, { compact: false })}
                           </p>
                           {foreign ? (
                             <FxSummary
                               alignment="center"
-                              originalCurrency={expense.original_currency ?? ""}
+                              originalCurrency={displayCurrency}
                               convertedMinor={expense.total_minor}
                               systemCurrency={expense.currency}
                               rate={Number(expense.exchange_rate ?? 1)}
