@@ -23,6 +23,13 @@ export function shortDate(iso: string) {
   return format(date, isThisYear(date) ? "d MMM" : "d MMM yyyy", { locale: locale() });
 }
 
+/** FX metadata date: always includes the year and uses the Danish day-period form. */
+export function fxDate(iso: string) {
+  const date = new Date(iso);
+  if (language === "da") return format(date, "d. MMM yyyy", { locale: daLocale });
+  return format(date, "d MMM yyyy", { locale: enGB });
+}
+
 export function dayGroupLabel(iso: string) {
   const date = new Date(iso);
   if (isToday(date)) return LABELS[language].today;
