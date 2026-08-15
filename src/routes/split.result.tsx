@@ -9,7 +9,8 @@ import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { EmptyState } from "@/components/pari/EmptyState";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
-import { formatMinor } from "@/lib/money";
+import { formatMinorIn } from "@/lib/money";
+import { shortDate } from "@/lib/dates";
 
 const searchSchema = z.object({ expenseId: z.string().optional() });
 
@@ -50,16 +51,22 @@ function ResultScreen() {
     );
   }
 
-  const allocations = pari
-    .expenseAllocations(expense.id)
-    .sort((a, b) => b.amountMinor - a.amountMinor);
+  const foreign = Boolean(
+    expense.original_currency && expense.original_currency !== expense.currency,
+  );
+  const originalCurrency = expense.original_currency ?? expense.currency;
+  // The split itself lives in the original currency; balances use the converted one.
+  const allocations = (foreign
+    ? pari.expenseOriginalAllocations(expense.id)
+    : pari.expenseAllocations(expense.id)
+  ).sort((a, b) => b.amountMinor - a.amountMinor);
 
   const shareText = [
-    `${expense.title} — ${formatMinor(expense.total_minor, { compact: false })}`,
+    `${expense.title} — ${formatMinorIn(expense.original_total_minor ?? expense.total_minor, originalCurrency, { compact: false })}`,
     "",
     ...allocations.map(
       (allocation) =>
-        `${pari.personName(allocation.personId)}: ${formatMinor(allocation.amountMinor, { compact: false })}`,
+        `${pari.personName(allocation.personId)}: ${formatMinorIn(allocation.amountMinor, originalCurrency, { compact: false })}`,
     ),
     "",
     "PARI",
@@ -113,8 +120,29 @@ function ResultScreen() {
         <p className="text-sm text-muted-foreground">{t("split.done")}</p>
         <h1 className="mt-1.5 text-[26px] font-semibold tracking-[-0.03em]">{expense.title}</h1>
         <p className="tnum mt-1 text-[34px] font-semibold tracking-[-0.035em]">
-          {formatMinor(expense.total_minor, { compact: false })}
+          {formatMinorIn(expense.original_total_minor ?? expense.total_minor, originalCurrency, {
+            compact: false,
+          })}
         </p>
+        {foreign ? (
+          <>
+            <p className="tnum mt-1 text-[15px] text-muted-foreground">
+              {t("currency.bookedAs", {
+                amount: formatMinorIn(expense.total_minor, expense.currency, { compact: false }),
+              })}
+            </p>
+            <p className="tnum mt-0.5 text-xs text-muted-foreground">
+              {t("currency.rateLine", {
+                base: originalCurrency,
+                rate: Number(expense.exchange_rate ?? 1).toFixed(4).replace(".", ","),
+                quote: expense.currency,
+                date: expense.exchange_rate_date
+                  ? shortDate(`${expense.exchange_rate_date}T12:00:00.000Z`)
+                  : shortDate(expense.created_at),
+              })}
+            </p>
+          </>
+        ) : null}
       </div>
 
       <Panel>
@@ -126,7 +154,9 @@ function ResultScreen() {
               <span className="min-w-0 flex-1 truncate text-[15px]">
                 {pari.personName(allocation.personId)}
               </span>
-              <MoneyAmount minor={allocation.amountMinor} compact={false} />
+              <span className="tnum text-[15px] font-medium">
+                {formatMinorIn(allocation.amountMinor, originalCurrency, { compact: false })}
+              </span>
             </div>
           </div>
         ))}
