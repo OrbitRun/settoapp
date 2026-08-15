@@ -166,7 +166,10 @@
 @utility tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+  /* Amount and currency must never break onto separate lines. */
+  white-space: nowrap;
 }
+
 
 @utility no-scrollbar {
   scrollbar-width: none;

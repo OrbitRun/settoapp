@@ -10,7 +10,7 @@ export type MoneyLock = {
   systemCurrency: string;
   foreign: boolean;
   rate: number | null;
-  rateDate: string;
+  rateDate: string | null;
   loading: boolean;
   failed: boolean;
   manualRate: number | null;
@@ -25,21 +25,37 @@ export type MoneyLock = {
 
 /**
  * Resolves the exchange rate for a draft and keeps any manual overrides.
- * The rate is only "locked" when the expense is saved.
+ *
+ * For an existing expense, pass `stored`: the rate locked when it was saved is
+ * reused and no new rate is fetched. A rate is only looked up again when the
+ * original currency actually changes (the stored pair no longer applies).
  */
 export function useMoneyLock(input: {
   currency: string;
   systemCurrency: string;
   totalMinor: number;
   dateIso?: string | null;
+  stored?: {
+    currency: string;
+    rate: number;
+    rateDate: string | null;
+    source: string;
+    cardMinor: number | null;
+  } | null;
 }): MoneyLock {
   const [manualRate, setManualRate] = useState<number | null>(null);
-  const [cardMinor, setCardMinor] = useState<number | null>(null);
+  const [cardOverride, setCardOverride] = useState<number | null>(null);
 
   const foreign = input.currency !== input.systemCurrency;
-  const fetched = useExchangeRate(input.currency, input.systemCurrency, input.dateIso ?? null);
+  const stored = input.stored && input.stored.currency === input.currency ? input.stored : null;
+  const fetched = useExchangeRate(input.currency, input.systemCurrency, input.dateIso ?? null, {
+    enabled: !stored,
+  });
 
-  const rate = manualRate && manualRate > 0 ? manualRate : fetched.rate;
+  const rate =
+    manualRate && manualRate > 0 ? manualRate : stored ? stored.rate : fetched.rate;
+  const rateDate = stored?.rateDate ?? fetched.rateDate;
+  const cardMinor = cardOverride ?? stored?.cardMinor ?? null;
   const convertedMinor =
     cardMinor && cardMinor > 0
       ? cardMinor
@@ -47,12 +63,18 @@ export function useMoneyLock(input: {
         ? convertMinor(input.totalMinor, rate)
         : null;
 
+  const source = manualRate
+    ? "manual"
+    : cardOverride
+      ? "card"
+      : (stored?.source ?? "ecb");
+
   const money: MoneyContext | undefined = foreign
     ? {
         currency: input.currency,
         exchangeRate: rate ?? 1,
-        exchangeRateDate: fetched.rateDate,
-        exchangeRateSource: manualRate ? "manual" : "ecb",
+        exchangeRateDate: rateDate,
+        exchangeRateSource: source,
         cardChargedMinor: cardMinor,
       }
     : undefined;
@@ -62,14 +84,15 @@ export function useMoneyLock(input: {
     systemCurrency: input.systemCurrency,
     foreign,
     rate,
-    rateDate: fetched.rateDate,
-    loading: fetched.loading,
-    failed: fetched.failed && !manualRate,
+    rateDate,
+    loading: stored ? false : fetched.loading,
+    failed: !stored && fetched.failed && !manualRate,
     manualRate,
     setManualRate,
     cardMinor,
-    setCardMinor,
+    setCardMinor: setCardOverride,
     convertedMinor,
     money,
   };
 }
+
