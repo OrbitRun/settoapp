@@ -203,7 +203,7 @@ const en: Dict = {
   "currency.change": "Change",
   "currency.splitIn": "Split in {currency}",
   "currency.bookedAs": "Booked as {amount}",
-  "currency.rateLine": "1 {base} = {rate} {quote} · {date}",
+  "currency.rateLine": "1 {base} = {rate} {quote} • {date}",
   "currency.rateLoading": "Fetching today's rate…",
   "currency.rateFailed": "We couldn't fetch a rate. Enter it yourself.",
   "currency.manualRate": "Exchange rate",
