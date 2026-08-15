@@ -504,6 +504,13 @@ const da: Dict = {
   "activity.splitChanged": "{actor} ændrede fordelingen for {title}",
   "activity.settlementMarked": "{actor} markerede et opgør",
   "activity.groupCreated": "{actor} oprettede {title}",
+  "activity.edited": "Redigeret",
+  "activity.deletedTag": "Slettet",
+  "activity.history": "Historik",
+  "activity.historyCreated": "Oprettet af {actor}",
+  "activity.historyEdited": "Redigeret af {actor}",
+  "activity.historySplit": "Fordeling ændret af {actor}",
+  "activity.historyDeleted": "Slettet af {actor}",
 
   "expense.title": "Udgift",
   "expense.total": "Total",
