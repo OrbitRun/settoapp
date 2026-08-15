@@ -114,6 +114,13 @@ const en: Dict = {
   "activity.splitChanged": "{actor} changed the split for {title}",
   "activity.settlementMarked": "{actor} marked a settlement",
   "activity.groupCreated": "{actor} created {title}",
+  "activity.edited": "Edited",
+  "activity.deletedTag": "Deleted",
+  "activity.history": "History",
+  "activity.historyCreated": "Created by {actor}",
+  "activity.historyEdited": "Edited by {actor}",
+  "activity.historySplit": "Split changed by {actor}",
+  "activity.historyDeleted": "Deleted by {actor}",
 
   "expense.title": "Expense",
   "expense.total": "Total",
