@@ -351,6 +351,16 @@ const en: Dict = {
 
   "auth.error": "Something went wrong",
   "auth.googleFailed": "Google sign-in failed",
+  "settle.registerPayment": "Register payment",
+  "settle.amount": "Amount",
+  "settle.outstanding": "Remaining balance",
+  "settle.afterPayment": "After payment",
+  "settle.remainingAfter": "{amount} left",
+  "settle.tooMuch": "The amount cannot be greater than the remaining balance.",
+  "settle.mustBePositive": "The amount must be greater than 0.",
+  "settle.note": "Note",
+  "settle.notePlaceholder": "MobilePay, bank transfer …",
+  "settle.paymentRegistered": "Payment registered",
 
   "guest.badge": "Guest",
   "guest.yourSplits": "Your splits",
