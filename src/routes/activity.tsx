@@ -9,7 +9,7 @@ import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { ExpenseActivityCard } from "@/components/pari/ExpenseActivityCard";
 
 import { usePari } from "@/data/store";
-import { dayGroupLabel, shortDate, timeOfDay } from "@/lib/dates";
+import { dayGroupLabel, shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { ActivityEntry } from "@/data/types";
