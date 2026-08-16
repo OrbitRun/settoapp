@@ -10,7 +10,7 @@ import { ParticipantPicker } from "@/components/pari/ParticipantPicker";
 import { NumericField } from "@/components/pari/NumericField";
 import { SplitRuleEditor, isRuleComplete, seedRule } from "@/components/pari/SplitRuleEditor";
 import { SplitSelector } from "@/components/pari/SplitSelector";
-import { PersonChip } from "@/components/pari/PersonChip";
+import { PayerPicker } from "@/components/pari/PayerPicker";
 import { computeDraftAllocations } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
@@ -35,7 +35,7 @@ function ManualExpenseScreen() {
   const t = useT();
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
-  const [showPaidBy, setShowPaidBy] = useState(false);
+  
   const [busy, setBusy] = useState(false);
   const lock = useMoneyLock({
     currency: draft.currency,
@@ -50,6 +50,16 @@ function ManualExpenseScreen() {
   const heroStyle = { fontSize: `${heroSize}px`, lineHeight: 1.05 } as const;
 
   const participants = draft.participants.map((id) => ({ id, name: pari.personName(id) }));
+
+  // Payer options: everyone in the selected group, else the split's own people.
+  const payerCandidates = Array.from(
+    new Set(
+      draft.groupId
+        ? pari.groupPersonIds(draft.groupId)
+        : [pari.currentPersonId, ...draft.participants],
+    ),
+  );
+
 
   const allocations = computeDraftAllocations(draft);
 
@@ -77,7 +87,10 @@ function ManualExpenseScreen() {
       participants: ids,
       paidByPersonId: ids.includes(prev.paidByPersonId)
         ? prev.paidByPersonId
-        : (ids[0] ?? prev.paidByPersonId),
+        : ids.includes(pari.currentPersonId)
+          ? pari.currentPersonId
+          : (ids[0] ?? prev.paidByPersonId),
+
       mode: groupDefault?.mode ?? "equal",
       percentages: groupDefault?.percentages ?? {},
       shares: groupDefault?.shares ?? {},
@@ -170,36 +183,14 @@ function ManualExpenseScreen() {
           <div className="space-y-2">
             <GroupPicker groupId={draft.groupId} onChange={setGroup} />
 
-            <button
-              type="button"
-              onClick={() => setShowPaidBy((prev) => !prev)}
-              className="flex w-full items-center justify-between rounded-2xl bg-surface px-4 py-4 text-left shadow-soft"
-            >
-              <span className="text-[15px] text-muted-foreground">{t("split.paidBy")}</span>
-              <span className="text-[15px] font-medium tracking-tight">
-                {draft.paidByPersonId === pari.currentPersonId
-                  ? t("common.you")
-                  : pari.personName(draft.paidByPersonId)}
-              </span>
-            </button>
-
-            {showPaidBy ? (
-              <div className="flex flex-wrap gap-2 px-1 pt-1">
-                {participants.map((person) => (
-                  <PersonChip
-                    key={person.id}
-                    name={person.name}
-                    selected={draft.paidByPersonId === person.id}
-                    onClick={() => {
-                      setDraft((prev) => ({ ...prev, paidByPersonId: person.id }));
-                      setShowPaidBy(false);
-                    }}
-                  />
-                ))}
-              </div>
-            ) : null}
+            <PayerPicker
+              payerId={draft.paidByPersonId}
+              candidateIds={payerCandidates}
+              onChange={(personId) => setDraft((prev) => ({ ...prev, paidByPersonId: personId }))}
+            />
           </div>
         ) : null}
+
 
         <ParticipantPicker
           selected={draft.participants}

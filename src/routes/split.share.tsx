@@ -5,6 +5,8 @@ import { Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { GroupPicker } from "@/components/pari/GroupPicker";
+import { PayerPicker } from "@/components/pari/PayerPicker";
+
 import { ParticipantPicker } from "@/components/pari/ParticipantPicker";
 import { SplitRuleEditor, isRuleComplete, seedRule } from "@/components/pari/SplitRuleEditor";
 import { SplitSelector } from "@/components/pari/SplitSelector";
@@ -64,6 +66,15 @@ function ShareScreen() {
     exact: draft.exact,
   };
 
+  // Payer options: everyone in the selected group, else the split's own people.
+  const payerCandidates = Array.from(
+    new Set(
+      draft.groupId
+        ? pari.groupPersonIds(draft.groupId)
+        : [pari.currentPersonId, ...draft.participants],
+    ),
+  );
+
   const setGroup = (groupId: string | null) => {
     const groupDefault = groupId ? pari.groupRule(groupId) : null;
     const ids = groupId ? pari.groupPersonIds(groupId) : [pari.currentPersonId];
@@ -71,6 +82,12 @@ function ShareScreen() {
       ...prev,
       groupId,
       participants: ids,
+      // Keep the payer only when they belong to the new group.
+      paidByPersonId: ids.includes(prev.paidByPersonId)
+        ? prev.paidByPersonId
+        : ids.includes(pari.currentPersonId)
+          ? pari.currentPersonId
+          : (ids[0] ?? prev.paidByPersonId),
       mode: groupDefault?.mode ?? "equal",
       percentages: groupDefault?.percentages ?? {},
       shares: groupDefault?.shares ?? {},
@@ -78,6 +95,7 @@ function ShareScreen() {
       usingGroupDefault: Boolean(groupDefault) && groupDefault?.mode !== "equal",
     }));
   };
+
 
   const confirm = async () => {
     if (busy) return;
@@ -129,6 +147,13 @@ function ShareScreen() {
 
       <div className="space-y-7">
         {showGroups ? <GroupPicker groupId={draft.groupId} onChange={setGroup} /> : null}
+
+        <PayerPicker
+          payerId={draft.paidByPersonId}
+          candidateIds={payerCandidates}
+          onChange={(personId) => setDraft((prev) => ({ ...prev, paidByPersonId: personId }))}
+        />
+
 
         <ParticipantPicker
           selected={draft.participants}
