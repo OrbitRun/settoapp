@@ -35,7 +35,7 @@ function ManualExpenseScreen() {
   const t = useT();
   const navigate = useNavigate();
   const { draft, setDraft } = pari;
-  const [showPaidBy, setShowPaidBy] = useState(false);
+  
   const [busy, setBusy] = useState(false);
   const lock = useMoneyLock({
     currency: draft.currency,
