@@ -87,7 +87,10 @@ function ManualExpenseScreen() {
       participants: ids,
       paidByPersonId: ids.includes(prev.paidByPersonId)
         ? prev.paidByPersonId
-        : (ids[0] ?? prev.paidByPersonId),
+        : ids.includes(pari.currentPersonId)
+          ? pari.currentPersonId
+          : (ids[0] ?? prev.paidByPersonId),
+
       mode: groupDefault?.mode ?? "equal",
       percentages: groupDefault?.percentages ?? {},
       shares: groupDefault?.shares ?? {},

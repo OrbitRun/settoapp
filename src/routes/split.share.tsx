@@ -5,6 +5,8 @@ import { Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { GroupPicker } from "@/components/pari/GroupPicker";
+import { PayerPicker } from "@/components/pari/PayerPicker";
+
 import { ParticipantPicker } from "@/components/pari/ParticipantPicker";
 import { SplitRuleEditor, isRuleComplete, seedRule } from "@/components/pari/SplitRuleEditor";
 import { SplitSelector } from "@/components/pari/SplitSelector";
@@ -145,6 +147,13 @@ function ShareScreen() {
 
       <div className="space-y-7">
         {showGroups ? <GroupPicker groupId={draft.groupId} onChange={setGroup} /> : null}
+
+        <PayerPicker
+          payerId={draft.paidByPersonId}
+          candidateIds={payerCandidates}
+          onChange={(personId) => setDraft((prev) => ({ ...prev, paidByPersonId: personId }))}
+        />
+
 
         <ParticipantPicker
           selected={draft.participants}
