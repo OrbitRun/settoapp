@@ -10,7 +10,7 @@ import { ParticipantPicker } from "@/components/pari/ParticipantPicker";
 import { NumericField } from "@/components/pari/NumericField";
 import { SplitRuleEditor, isRuleComplete, seedRule } from "@/components/pari/SplitRuleEditor";
 import { SplitSelector } from "@/components/pari/SplitSelector";
-import { PersonChip } from "@/components/pari/PersonChip";
+import { PayerPicker } from "@/components/pari/PayerPicker";
 import { computeDraftAllocations } from "@/data/draft";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
@@ -50,6 +50,16 @@ function ManualExpenseScreen() {
   const heroStyle = { fontSize: `${heroSize}px`, lineHeight: 1.05 } as const;
 
   const participants = draft.participants.map((id) => ({ id, name: pari.personName(id) }));
+
+  // Payer options: everyone in the selected group, else the split's own people.
+  const payerCandidates = Array.from(
+    new Set(
+      draft.groupId
+        ? pari.groupPersonIds(draft.groupId)
+        : [pari.currentPersonId, ...draft.participants],
+    ),
+  );
+
 
   const allocations = computeDraftAllocations(draft);
 

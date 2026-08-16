@@ -64,6 +64,15 @@ function ShareScreen() {
     exact: draft.exact,
   };
 
+  // Payer options: everyone in the selected group, else the split's own people.
+  const payerCandidates = Array.from(
+    new Set(
+      draft.groupId
+        ? pari.groupPersonIds(draft.groupId)
+        : [pari.currentPersonId, ...draft.participants],
+    ),
+  );
+
   const setGroup = (groupId: string | null) => {
     const groupDefault = groupId ? pari.groupRule(groupId) : null;
     const ids = groupId ? pari.groupPersonIds(groupId) : [pari.currentPersonId];
@@ -71,6 +80,12 @@ function ShareScreen() {
       ...prev,
       groupId,
       participants: ids,
+      // Keep the payer only when they belong to the new group.
+      paidByPersonId: ids.includes(prev.paidByPersonId)
+        ? prev.paidByPersonId
+        : ids.includes(pari.currentPersonId)
+          ? pari.currentPersonId
+          : (ids[0] ?? prev.paidByPersonId),
       mode: groupDefault?.mode ?? "equal",
       percentages: groupDefault?.percentages ?? {},
       shares: groupDefault?.shares ?? {},
@@ -78,6 +93,7 @@ function ShareScreen() {
       usingGroupDefault: Boolean(groupDefault) && groupDefault?.mode !== "equal",
     }));
   };
+
 
   const confirm = async () => {
     if (busy) return;
