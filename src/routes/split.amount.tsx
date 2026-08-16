@@ -170,36 +170,14 @@ function ManualExpenseScreen() {
           <div className="space-y-2">
             <GroupPicker groupId={draft.groupId} onChange={setGroup} />
 
-            <button
-              type="button"
-              onClick={() => setShowPaidBy((prev) => !prev)}
-              className="flex w-full items-center justify-between rounded-2xl bg-surface px-4 py-4 text-left shadow-soft"
-            >
-              <span className="text-[15px] text-muted-foreground">{t("split.paidBy")}</span>
-              <span className="text-[15px] font-medium tracking-tight">
-                {draft.paidByPersonId === pari.currentPersonId
-                  ? t("common.you")
-                  : pari.personName(draft.paidByPersonId)}
-              </span>
-            </button>
-
-            {showPaidBy ? (
-              <div className="flex flex-wrap gap-2 px-1 pt-1">
-                {participants.map((person) => (
-                  <PersonChip
-                    key={person.id}
-                    name={person.name}
-                    selected={draft.paidByPersonId === person.id}
-                    onClick={() => {
-                      setDraft((prev) => ({ ...prev, paidByPersonId: person.id }));
-                      setShowPaidBy(false);
-                    }}
-                  />
-                ))}
-              </div>
-            ) : null}
+            <PayerPicker
+              payerId={draft.paidByPersonId}
+              candidateIds={payerCandidates}
+              onChange={(personId) => setDraft((prev) => ({ ...prev, paidByPersonId: personId }))}
+            />
           </div>
         ) : null}
+
 
         <ParticipantPicker
           selected={draft.participants}
