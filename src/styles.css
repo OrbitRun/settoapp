@@ -146,15 +146,22 @@
     border-color: var(--color-border);
   }
 
-  html {
-    -webkit-tap-highlight-color: transparent;
+  html,
+  body,
+  * {
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE / legacy Edge */
   }
 
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Scrolling itself is untouched — only the visible bar is hidden. */
+  *::-webkit-scrollbar {
     display: none; /* Safari, Chrome, Edge */
+    width: 0;
+    height: 0;
   }
 
   body {
