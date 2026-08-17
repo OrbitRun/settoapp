@@ -164,8 +164,17 @@ function ReviewScreen() {
           })}
         </div>
       ) : unsureLines > 0 ? (
-        <div className="mb-4 rounded-2xl bg-warning-soft px-4 py-3 text-sm">
-          {t("receipt.lowConfidence")}
+        // Money reconciling matters more than legibility: only warn hard when it doesn't.
+        <div
+          className={`mb-4 rounded-2xl px-4 py-3 text-sm ${
+            difference === 0 ? "bg-surface-strong text-muted-foreground" : "bg-warning-soft"
+          }`}
+        >
+          {difference === 0
+            ? unsureLines === 1
+              ? t("receipt.uncertainName")
+              : t("receipt.uncertainNames", { count: unsureLines })
+            : t("receipt.lowConfidence")}
         </div>
       ) : draft.receiptWarnings && draft.receiptWarnings.length > 0 ? (
         <div className="mb-4 rounded-2xl bg-surface-strong px-4 py-3 text-sm text-muted-foreground">
