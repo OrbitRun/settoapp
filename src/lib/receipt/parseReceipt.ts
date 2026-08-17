@@ -1,9 +1,15 @@
 import type { DraftItem } from "@/data/draft";
 import type { Confidence } from "@/lib/fx";
+import { normaliseMerchant } from "@/lib/merchant";
 import { parseReceiptImage, receiptErrorCode } from "./parseReceipt.functions";
 
 export type ParsedReceipt = {
+  /** Short store name used everywhere in the UI. */
   merchant: string;
+  /** Full OCR merchant header, kept for reference. */
+  merchantRaw: string | null;
+  /** Address lines detected after the store name. */
+  merchantAddress: string[];
   totalMinor: number;
   receiptDiscountMinor: number;
   dateIso: string;
@@ -69,10 +75,36 @@ function readAsDataUrl(image: File | Blob): Promise<string> {
   });
 }
 
+/**
+ * Compact receipt dates: "130613" (DDMMYY) and "13062013" (DDMMYYYY).
+ * Only used when the parser could not give a proper ISO date, so an explicit,
+ * higher-confidence date is never overwritten. Anything that is not a valid
+ * calendar date (product numbers, terminal ids) is rejected.
+ */
+function fromCompactDate(value: string): Date | null {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length !== 6 && digits.length !== 8) return null;
+  const day = Number(digits.slice(0, 2));
+  const month = Number(digits.slice(2, 4));
+  const yearPart = digits.slice(4);
+  const year = yearPart.length === 2 ? 2000 + Number(yearPart) : Number(yearPart);
+  if (day < 1 || day > 31 || month < 1 || month > 12) return null;
+  if (year < 1990 || year > new Date().getFullYear() + 1) return null;
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+  if (date.getUTCDate() !== day || date.getUTCMonth() !== month - 1) return null;
+  return date;
+}
+
 function toIsoDate(value: string | null): string {
   if (!value) return new Date().toISOString();
-  const day = value.slice(0, 10);
-  const parsed = new Date(`${day}T12:00:00`);
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+    const parsed = new Date(`${trimmed.slice(0, 10)}T12:00:00`);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString();
+  }
+  const compact = fromCompactDate(trimmed);
+  if (compact) return compact.toISOString();
+  const parsed = new Date(`${trimmed.slice(0, 10)}T12:00:00`);
   return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
 }
 
@@ -109,8 +141,12 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
     });
   }
 
+  const merchant = normaliseMerchant(parsed.merchant);
+
   return {
-    merchant: parsed.merchant ?? "Receipt",
+    merchant: merchant.name || "Receipt",
+    merchantRaw: merchant.raw || null,
+    merchantAddress: merchant.addressLines,
     totalMinor: parsed.totalMinor,
     receiptDiscountMinor: parsed.receiptDiscountMinor,
     dateIso: toIsoDate(parsed.dateIso),

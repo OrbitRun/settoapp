@@ -113,6 +113,18 @@ CURRENCY — always answer, never guess silently:
   to TOTAL", "€ symbol", "MOMS 25%").
 - Never assume DKK just because you often see Danish receipts.
 
+DATE:
+- Return "date" as ISO "YYYY-MM-DD" whenever you can read the purchase date.
+- Danish receipts often print compact dates next to a label: "Dato 130613" means
+  13 June 2013 (DDMMYY); "Dato 13062013" is DDMMYYYY. Only read digits as a date when
+  a date label or clear transaction metadata context says so.
+- Never read product numbers, receipt ids, terminal ids, card numbers or transaction
+  ids as dates. If unsure, return null.
+
+MERCHANT:
+- Return the store name in "merchant". If the header also contains the address, return
+  the whole header text as printed; the app extracts the short store name itself.
+
 PER-FIELD CONFIDENCE:
 - Each item gets "confidence": "high" when name and amount are both clearly legible,
   "medium" when one is partially unclear, "low" when you had to infer it.

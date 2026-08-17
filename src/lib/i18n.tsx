@@ -231,6 +231,9 @@ const en: Dict = {
   "receipt.checkLine": "Check this line",
   "receipt.lowConfidence": "Some lines were hard to read — tap to check them.",
   "receipt.confidenceLegend": "Lines we were unsure about are marked.",
+  "receipt.amountMatches": "The amount adds up",
+  "receipt.uncertainName": "1 item name may be hard to read",
+  "receipt.uncertainNames": "{count} item names may be hard to read",
 
   "currency.pick": "Currency",
   "currency.receiptCurrency": "Receipt currency",
@@ -661,6 +664,9 @@ const da: Dict = {
   "receipt.checkLine": "Tjek denne linje",
   "receipt.lowConfidence": "Nogle linjer var svære at læse — tryk for at tjekke dem.",
   "receipt.confidenceLegend": "Linjer vi var i tvivl om er markeret.",
+  "receipt.amountMatches": "Beløbet stemmer",
+  "receipt.uncertainName": "1 varenavn kan være svært at læse",
+  "receipt.uncertainNames": "{count} varenavne kan være svære at læse",
 
   "currency.pick": "Valuta",
   "currency.receiptCurrency": "Kvitteringens valuta",
