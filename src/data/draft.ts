@@ -42,6 +42,10 @@ export type SplitDraft = {
   items: DraftItem[];
   splitByItem: boolean;
   usingGroupDefault: boolean;
+  /** Full OCR merchant header, kept internally for reference. */
+  merchantRaw?: string | null;
+  /** Address lines detected below the store name. Display only. */
+  merchantAddress?: string[];
   /** Soft warnings from the receipt reader, shown on the review screen. */
   receiptWarnings?: string[];
   /** Discount that applies to the whole receipt rather than a single line. */
