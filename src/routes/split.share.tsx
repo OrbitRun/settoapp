@@ -127,7 +127,7 @@ function ShareScreen() {
   };
 
   return (
-    <Screen className="pb-44">
+    <Screen className="pb-[calc(13rem+env(safe-area-inset-bottom))]">
       <FlowHeader title={draft.merchant ?? t("split.receipt")} />
 
       <div className="px-1 pb-8">
@@ -217,7 +217,7 @@ function ShareScreen() {
         </section>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center bg-gradient-to-t from-background via-background to-transparent pb-8 pt-10">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center bg-gradient-to-t from-background via-background to-transparent pb-[calc(2rem+env(safe-area-inset-bottom))] pt-10">
         <div className="pointer-events-auto w-full max-w-[430px] space-y-2 px-5">
           <PrimaryButton
             onClick={() => void confirm()}
