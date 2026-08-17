@@ -116,16 +116,21 @@ function ReviewScreen() {
   };
 
   return (
-    <Screen className="pb-44">
+    <Screen className="pb-[calc(15rem+env(safe-area-inset-bottom))]">
       <FlowHeader title={t("receipt.found")} />
 
       <div className="px-1 pb-8">
         <p className="text-sm text-muted-foreground">
-          {shortDate(draft.items.length ? new Date().toISOString() : new Date().toISOString())}
+          {shortDate(draft.dateIso ?? new Date().toISOString())}
         </p>
         <h1 className="mt-1 text-[26px] font-semibold tracking-[-0.03em]">
           {draft.merchant ?? t("split.receipt")}
         </h1>
+        {(draft.merchantAddress ?? []).length > 0 ? (
+          <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
+            {(draft.merchantAddress ?? []).join(" · ")}
+          </p>
+        ) : null}
         <p className="tnum mt-2 text-[17px] text-muted-foreground">
           {money(draft.amountMinor, { compact: false })}
         </p>
