@@ -111,7 +111,7 @@ function ItemSplitScreen() {
   };
 
   return (
-    <Screen className="pb-48">
+    <Screen className="pb-[calc(14rem+env(safe-area-inset-bottom))]">
       <FlowHeader title={t("receipt.splitByItem")} subtitle={draft.merchant ?? undefined} />
 
       <div className="mb-3 flex items-center justify-between px-4">
