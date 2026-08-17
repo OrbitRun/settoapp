@@ -664,6 +664,9 @@ const da: Dict = {
   "receipt.checkLine": "Tjek denne linje",
   "receipt.lowConfidence": "Nogle linjer var svære at læse — tryk for at tjekke dem.",
   "receipt.confidenceLegend": "Linjer vi var i tvivl om er markeret.",
+  "receipt.amountMatches": "Beløbet stemmer",
+  "receipt.uncertainName": "1 varenavn kan være svært at læse",
+  "receipt.uncertainNames": "{count} varenavne kan være svære at læse",
 
   "currency.pick": "Valuta",
   "currency.receiptCurrency": "Kvitteringens valuta",
