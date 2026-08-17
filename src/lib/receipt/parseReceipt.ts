@@ -1,5 +1,6 @@
 import type { DraftItem } from "@/data/draft";
 import type { Confidence } from "@/lib/fx";
+import { normaliseMerchant } from "@/lib/merchant";
 import { parseReceiptImage, receiptErrorCode } from "./parseReceipt.functions";
 
 export type ParsedReceipt = {
