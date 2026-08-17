@@ -293,13 +293,10 @@ function ReviewScreen() {
         </p>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center bg-gradient-to-t from-background via-background to-transparent pb-8 pt-10">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center bg-gradient-to-t from-background via-background to-transparent pb-[calc(2rem+env(safe-area-inset-bottom))] pt-10">
         <div className="pointer-events-auto w-full max-w-[430px] space-y-2 px-5">
           {selected.length > 0 ? (
             <>
-              <p className="pb-1 text-center text-sm text-muted-foreground">
-                {t("receipt.itemsSelected", { count: selected.length })}
-              </p>
               <PrimaryButton onClick={shareSelected}>{t("receipt.shareSelected")}</PrimaryButton>
               <SecondaryButton onClick={markPrivate}>{t("receipt.keepPrivate")}</SecondaryButton>
             </>
