@@ -140,8 +140,12 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
     });
   }
 
+  const merchant = normaliseMerchant(parsed.merchant);
+
   return {
-    merchant: parsed.merchant ?? "Receipt",
+    merchant: merchant.name || "Receipt",
+    merchantRaw: merchant.raw || null,
+    merchantAddress: merchant.addressLines,
     totalMinor: parsed.totalMinor,
     receiptDiscountMinor: parsed.receiptDiscountMinor,
     dateIso: toIsoDate(parsed.dateIso),
