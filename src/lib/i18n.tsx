@@ -231,6 +231,9 @@ const en: Dict = {
   "receipt.checkLine": "Check this line",
   "receipt.lowConfidence": "Some lines were hard to read — tap to check them.",
   "receipt.confidenceLegend": "Lines we were unsure about are marked.",
+  "receipt.amountMatches": "The amount adds up",
+  "receipt.uncertainName": "1 item name may be hard to read",
+  "receipt.uncertainNames": "{count} item names may be hard to read",
 
   "currency.pick": "Currency",
   "currency.receiptCurrency": "Receipt currency",
