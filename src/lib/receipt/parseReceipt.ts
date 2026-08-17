@@ -3,7 +3,12 @@ import type { Confidence } from "@/lib/fx";
 import { parseReceiptImage, receiptErrorCode } from "./parseReceipt.functions";
 
 export type ParsedReceipt = {
+  /** Short store name used everywhere in the UI. */
   merchant: string;
+  /** Full OCR merchant header, kept for reference. */
+  merchantRaw: string | null;
+  /** Address lines detected after the store name. */
+  merchantAddress: string[];
   totalMinor: number;
   receiptDiscountMinor: number;
   dateIso: string;
