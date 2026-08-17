@@ -269,8 +269,17 @@ function ReviewScreen() {
 
         <p className="pt-1 text-sm">
           {difference === 0 ? (
-            <span className="inline-flex items-center gap-1.5 text-positive">
-              <Check className="h-4 w-4" strokeWidth={2} /> {t("receipt.looksGood")}
+            <span className="flex flex-col gap-0.5">
+              <span className="inline-flex items-center gap-1.5 text-positive">
+                <Check className="h-4 w-4" strokeWidth={2} /> {t("receipt.amountMatches")}
+              </span>
+              {unsureLines > 0 ? (
+                <span className="text-muted-foreground">
+                  {unsureLines === 1
+                    ? t("receipt.uncertainName")
+                    : t("receipt.uncertainNames", { count: unsureLines })}
+                </span>
+              ) : null}
             </span>
           ) : (
             <span className="text-muted-foreground">
