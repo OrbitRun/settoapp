@@ -77,6 +77,8 @@ function ScanScreen() {
         ...prev,
         source: "receipt",
         merchant: parsed.merchant,
+        merchantRaw: parsed.merchantRaw,
+        merchantAddress: parsed.merchantAddress,
         title: parsed.merchant,
         amountMinor: parsed.totalMinor,
         items: parsed.items,
