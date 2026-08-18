@@ -22,6 +22,8 @@ export type GroupInvitation = {
   expires_at: string;
   revoked_at: string | null;
   status?: string;
+  /** Set only once the invitation was really shared/copied by the inviter. */
+  sent_at?: string | null;
 };
 
 export type InvitationPreview = {
