@@ -357,6 +357,15 @@ function GroupDetailScreen() {
         groupId={groupId}
         groupName={group.name}
       />
+      <InviteSheet
+        open={personInvite !== null}
+        onClose={() => setPersonInvite(null)}
+        groupId={groupId}
+        groupName={group.name}
+        personId={personInvite?.id ?? null}
+        personName={personInvite?.name ?? null}
+      />
+
     </>
   );
 }
