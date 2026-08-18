@@ -50,7 +50,7 @@ import {
   withSelfPerson,
   type GuestState,
 } from "./guest";
-import { acceptInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
+import { clearPendingInvite, readPendingInvite, redeemInvitation } from "./invitations";
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
