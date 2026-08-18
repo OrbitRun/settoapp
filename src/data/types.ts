@@ -47,6 +47,8 @@ export type GroupMember = {
   default_weight: number | null;
   default_percentage: number | null;
   joined_at: string;
+  /** Set when the person no longer takes part in the group; history is kept. */
+  removed_at?: string | null;
 };
 
 export type ExpenseSource = "manual" | "receipt";
