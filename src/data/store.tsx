@@ -132,7 +132,12 @@ type PariContextValue = {
   currentProfileName: string;
   personById: (id: string) => Person | undefined;
   personName: (id: string) => string;
+  /** Active members only. */
   groupPersonIds: (groupId: string) => string[];
+  /** People removed from the group but still present in its history. */
+  groupRemovedPersonIds: (groupId: string) => string[];
+  /** Whether the person has any financial trace in the group. */
+  personHasGroupHistory: (groupId: string, personId: string) => boolean;
   groupExpenses: (groupId: string) => Expense[];
   expenseById: (id: string) => Expense | undefined;
   expenseItems: (expenseId: string) => ExpenseItem[];
