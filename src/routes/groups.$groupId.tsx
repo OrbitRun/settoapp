@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, ChevronDown, Plus, UserPlus } from "lucide-react";
 
 import { BottomNav, Divider, Panel, Screen } from "@/components/pari/AppShell";
@@ -16,6 +16,7 @@ import { shortDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { AuthGate } from "@/components/pari/AuthGate";
 import { InviteSheet } from "@/components/pari/InviteSheet";
+import { fetchActiveInvitations } from "@/data/invitations";
 
 export const Route = createFileRoute("/groups/$groupId")({
   head: () => ({
