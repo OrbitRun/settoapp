@@ -236,41 +236,72 @@ function GroupDetailScreen() {
         ) : null}
 
         {tab === "People" ? (
-          <Panel>
-            {balances.map((balance, index) => (
-              <div key={balance.personId}>
-                {index > 0 ? <Divider /> : null}
-                <div className="flex items-center gap-3 px-4 py-3.5">
-                  <Avatar name={pari.personName(balance.personId)} size="sm" />
-                  <span className="min-w-0 flex-1 truncate text-[15px]">
-                    {pari.personName(balance.personId)}
-                    {balance.personId === pari.currentPersonId ? (
-                      <span className="ml-2 text-xs text-muted-foreground">{t("common.you")}</span>
-                    ) : null}
-                  </span>
-                  <MoneyAmount
-                    minor={balance.netMinor}
-                    tone={balanceTone(balance.netMinor)}
-                    showSign={balance.netMinor !== 0}
-                  />
-                </div>
-              </div>
-            ))}
-          </Panel>
+          <>
+            <Panel>
+              {balances.map((balance, index) => {
+                const person = pari.data.people.find((p) => p.id === balance.personId);
+                const linked = Boolean(person?.linked_profile_id);
+                const pending = pendingPersonIds.has(balance.personId);
+                return (
+                  <div key={balance.personId}>
+                    {index > 0 ? <Divider /> : null}
+                    <div className="flex items-center gap-3 px-4 py-3.5">
+                      <Avatar name={pari.personName(balance.personId)} size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[15px]">
+                          {pari.personName(balance.personId)}
+                          {balance.personId === pari.currentPersonId ? (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {t("common.you")}
+                            </span>
+                          ) : null}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {linked
+                            ? t("invite.person.linked")
+                            : pending
+                              ? t("invite.person.pending")
+                              : t("invite.person.unlinked")}
+                        </p>
+                      </div>
+                      <MoneyAmount
+                        minor={balance.netMinor}
+                        tone={balanceTone(balance.netMinor)}
+                        showSign={balance.netMinor !== 0}
+                      />
+                      {!linked ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPersonInvite({
+                              id: balance.personId,
+                              name: pari.personName(balance.personId),
+                            })
+                          }
+                          className="shrink-0 rounded-xl bg-surface-strong px-3 py-2 text-xs font-medium transition-transform active:scale-[0.98]"
+                        >
+                          {pending ? t("invite.person.resend") : t("invite.person.invite")}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </Panel>
+
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setInviteOpen(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
+              >
+                <UserPlus className="h-4 w-4" strokeWidth={2} />
+                {t("invite.inviteNewPerson")}
+              </button>
+            </div>
+          </>
         ) : null}
 
-        {tab === "People" ? (
-          <div className="mt-2">
-            <button
-              type="button"
-              onClick={() => setInviteOpen(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
-            >
-              <UserPlus className="h-4 w-4" strokeWidth={2} />
-              {t("invite.title")}
-            </button>
-          </div>
-        ) : null}
 
         {tab === "Rules" ? (
           <Panel>
