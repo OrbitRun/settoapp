@@ -343,6 +343,7 @@ export type Database = {
           joined_at: string
           owner_user_id: string
           person_id: string
+          removed_at: string | null
           role: string
         }
         Insert: {
@@ -353,6 +354,7 @@ export type Database = {
           joined_at?: string
           owner_user_id: string
           person_id: string
+          removed_at?: string | null
           role?: string
         }
         Update: {
@@ -363,6 +365,7 @@ export type Database = {
           joined_at?: string
           owner_user_id?: string
           person_id?: string
+          removed_at?: string | null
           role?: string
         }
         Relationships: [
