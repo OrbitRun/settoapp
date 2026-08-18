@@ -385,7 +385,37 @@ function GroupDetailScreen() {
           if (id) setPendingPersonIds((prev) => new Set(prev).add(id));
         }}
       />
-
+      <PersonSheet
+        person={personDetail}
+        onClose={() => setPersonDetail(null)}
+        onInvite={(person) => {
+          setPersonDetail(null);
+          setPersonInvite({ id: person.id, name: person.name });
+        }}
+        onRemove={(person) => {
+          setPersonDetail(null);
+          setPendingRemove({ id: person.id, name: person.name });
+        }}
+      />
+      <BottomSheet
+        open={pendingRemove !== null}
+        onClose={() => setPendingRemove(null)}
+        title={t("groups.removeMemberTitle", { name: pendingRemove?.name ?? "" })}
+        description={
+          pendingRemove && pari.personHasGroupHistory(groupId, pendingRemove.id)
+            ? `${t("groups.removeHistoryBody", { name: pendingRemove.name })} ${t("groups.removeOutstanding")}`
+            : t("groups.removeEmptyBody", { name: pendingRemove?.name ?? "" })
+        }
+      >
+        <div className="space-y-2 pb-2">
+          <PrimaryButton onClick={() => void confirmRemove()}>
+            {t("groups.removeMember")}
+          </PrimaryButton>
+          <SecondaryButton onClick={() => setPendingRemove(null)}>
+            {t("common.cancel")}
+          </SecondaryButton>
+        </div>
+      </BottomSheet>
     </>
   );
 }
