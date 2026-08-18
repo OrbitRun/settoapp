@@ -56,6 +56,8 @@ function GroupDetailScreen() {
   const [personInvite, setPersonInvite] = useState<{ id: string; name: string } | null>(null);
   const [pendingPersonIds, setPendingPersonIds] = useState<Set<string>>(new Set());
   const [openExpenseId, setOpenExpenseId] = useState<string | null>(null);
+  const [personDetail, setPersonDetail] = useState<PersonSheetState | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
 
   const t = useT();
 
