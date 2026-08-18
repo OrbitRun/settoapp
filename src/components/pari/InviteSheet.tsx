@@ -74,7 +74,13 @@ export function InviteSheet({
   };
 
   return (
-    <BottomSheet open={open} onClose={onClose} title={t("invite.title")} description={groupName}>
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={personName ? t("invite.personTitle", { name: personName }) : t("invite.title")}
+      description={personName ? t("invite.personDescription", { name: personName }) : groupName}
+    >
+
       {!invitation ? (
         <div className="h-40 animate-pulse rounded-3xl bg-surface-strong" />
       ) : (
