@@ -92,7 +92,7 @@ function AuthScreen() {
         navigate({ to: "/home" });
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("auth.error"));
+      toast.error(t(authMessageKey(error)));
     } finally {
       setBusy(false);
     }
@@ -118,7 +118,9 @@ function AuthScreen() {
         <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.03em]">
           {t("auth.title")}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("auth.subtitle")}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {hasPendingInvite ? t("auth.inviteContext") : t("auth.subtitle")}
+        </p>
 
         <form onSubmit={submit} className="mt-10 space-y-3">
           {mode === "signup" ? (
