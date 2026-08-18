@@ -292,7 +292,7 @@ function GroupDetailScreen() {
                         tone={balanceTone(balance.netMinor)}
                         showSign={balance.netMinor !== 0}
                       />
-                      {!linked ? (
+                      {!linked && !former ? (
                         <button
                           type="button"
                           onClick={() =>
