@@ -179,7 +179,9 @@ function EditGroupScreen() {
                       <button
                         type="button"
                         aria-label={`${t("common.remove")} ${pari.personName(personId)}`}
-                        onClick={() => void remove(personId)}
+                        onClick={() =>
+                          setPendingRemove({ id: personId, name: pari.personName(personId) })
+                        }
                         className="text-muted-foreground/70 transition-colors hover:text-negative"
                       >
                         <X className="h-4 w-4" strokeWidth={1.8} />
