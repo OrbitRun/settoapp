@@ -6,7 +6,12 @@ import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { QrCode } from "@/components/pari/QrCode";
 import { usePari } from "@/data/store";
-import { ensureGroupInvitation, invitationUrl, type GroupInvitation } from "@/data/invitations";
+import {
+  ensureGroupInvitation,
+  invitationUrl,
+  markInvitationSent,
+  type GroupInvitation,
+} from "@/data/invitations";
 import { useT } from "@/lib/i18n";
 
 /** One invitation, four ways to share it: link, QR, copy and join code. */
