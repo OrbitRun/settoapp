@@ -802,6 +802,18 @@ const da: Dict = {
   "invite.invalidTitle": "Invitationen findes ikke",
   "invite.invalidBody": "Linket er udløbet eller trukket tilbage. Bed om et nyt.",
   "invite.getApp": "Hent PARI",
+  "invite.personTitle": "Invitér {name}",
+  "invite.personDescription": "{name} beholder sine udgifter og sin saldo.",
+  "invite.inviteNewPerson": "+ Invitér ny person",
+  "invite.person.unlinked": "Ikke tilknyttet konto",
+  "invite.person.pending": "Invitation sendt",
+  "invite.person.linked": "Tilknyttet",
+  "invite.person.invite": "Invitér",
+  "invite.person.resend": "Send igen",
+  "invite.claimIntro": "Du bliver tilknyttet {name}",
+  "invite.claimed": "Du er nu tilknyttet din eksisterende historik.",
+  "invite.personTaken": "Denne person er allerede tilknyttet en konto.",
+
 
   "convert.title": "Gem dit split i PARI",
   "convert.body": "Opret en gratis konto og behold dit split, følg saldi og gør op senere.",
