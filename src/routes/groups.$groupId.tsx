@@ -95,6 +95,19 @@ function GroupDetailScreen() {
   // "Gør op" is a real action only when someone actually owes someone else.
   const canSettle = pari.settlementPlan(groupId).length > 0;
 
+  // Same safe removal path as the group settings screen — no second system.
+  const confirmRemove = async () => {
+    if (!pendingRemove) return;
+    const { id, name: personName } = pendingRemove;
+    setPendingRemove(null);
+    const result = await pari.removeGroupMember(groupId, id);
+    if (result === "owner-self") toast.error(t("groups.cannotRemoveSelf"));
+    else if (result === "not-allowed") toast.error(t("groups.removeNotAllowed"));
+    else if (result === "deactivated")
+      toast.success(t("groups.memberDeactivated", { name: personName }));
+    else toast.success(t("groups.memberRemoved", { name: personName }));
+  };
+
   const addExpense = () => {
     pari.setDraft({
       ...emptyDraft(pari.currentPersonId),
