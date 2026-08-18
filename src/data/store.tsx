@@ -50,7 +50,7 @@ import {
   withSelfPerson,
   type GuestState,
 } from "./guest";
-import { acceptInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
+import { redeemInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
@@ -506,8 +506,14 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const code = readPendingInvite();
     if (!code) return;
     inviteRef.current = true;
-    void acceptInvitation(code)
-      .then(async (groupId) => {
+    void redeemInvitation(code)
+      .then(async ({ status, groupId }) => {
+        // Idempotent: an existing membership returns `already_member` and no
+        // new row is written. Legacy memberships are never touched.
+        if (status === "unauthenticated" || status === "error") {
+          inviteRef.current = false;
+          return;
+        }
         clearPendingInvite();
         if (!groupId) return;
         await queryClient.invalidateQueries({ queryKey: ["pari"] });
