@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, ChevronDown, Plus, UserPlus } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Plus, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 
 import { BottomNav, Divider, Panel, Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
@@ -17,6 +18,9 @@ import { cn } from "@/lib/utils";
 import { AuthGate } from "@/components/pari/AuthGate";
 import { InviteSheet } from "@/components/pari/InviteSheet";
 import { fetchActiveInvitations } from "@/data/invitations";
+import { BottomSheet } from "@/components/pari/BottomSheet";
+import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
+import { PersonSheet, type PersonSheetState } from "@/components/pari/PersonSheet";
 
 export const Route = createFileRoute("/groups/$groupId")({
   head: () => ({
@@ -52,6 +56,8 @@ function GroupDetailScreen() {
   const [personInvite, setPersonInvite] = useState<{ id: string; name: string } | null>(null);
   const [pendingPersonIds, setPendingPersonIds] = useState<Set<string>>(new Set());
   const [openExpenseId, setOpenExpenseId] = useState<string | null>(null);
+  const [personDetail, setPersonDetail] = useState<PersonSheetState | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
 
   const t = useT();
 
@@ -88,6 +94,19 @@ function GroupDetailScreen() {
   const defaults = pari.groupDefaultPercentages(groupId);
   // "Gør op" is a real action only when someone actually owes someone else.
   const canSettle = pari.settlementPlan(groupId).length > 0;
+
+  // Same safe removal path as the group settings screen — no second system.
+  const confirmRemove = async () => {
+    if (!pendingRemove) return;
+    const { id, name: personName } = pendingRemove;
+    setPendingRemove(null);
+    const result = await pari.removeGroupMember(groupId, id);
+    if (result === "owner-self") toast.error(t("groups.cannotRemoveSelf"));
+    else if (result === "not-allowed") toast.error(t("groups.removeNotAllowed"));
+    else if (result === "deactivated")
+      toast.success(t("groups.memberDeactivated", { name: personName }));
+    else toast.success(t("groups.memberRemoved", { name: personName }));
+  };
 
   const addExpense = () => {
     pari.setDraft({
@@ -249,7 +268,7 @@ function GroupDetailScreen() {
                 params={{ groupId }}
                 className="pb-2 pt-1 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                {t("groups.edit")}
+                {t("groups.settings")}
               </Link>
             </div>
           </div>
@@ -263,15 +282,31 @@ function GroupDetailScreen() {
                 const linked = Boolean(person?.linked_profile_id);
                 const pending = pendingPersonIds.has(balance.personId);
                 const former = removedIds.includes(balance.personId);
+                const name = pari.personName(balance.personId);
+                const isSelf = balance.personId === pari.currentPersonId;
                 return (
                   <div key={balance.personId}>
                     {index > 0 ? <Divider /> : null}
-                    <div className="flex items-center gap-3 px-4 py-3.5">
-                      <Avatar name={pari.personName(balance.personId)} size="sm" />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPersonDetail({
+                          id: balance.personId,
+                          name,
+                          balanceMinor: balance.netMinor,
+                          linked,
+                          pending,
+                          former,
+                          isSelf,
+                        })
+                      }
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-surface-strong/60"
+                    >
+                      <Avatar name={name} size="sm" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[15px]">
-                          {pari.personName(balance.personId)}
-                          {balance.personId === pari.currentPersonId ? (
+                          {name}
+                          {isSelf ? (
                             <span className="ml-2 text-xs text-muted-foreground">
                               {t("common.you")}
                             </span>
@@ -292,21 +327,11 @@ function GroupDetailScreen() {
                         tone={balanceTone(balance.netMinor)}
                         showSign={balance.netMinor !== 0}
                       />
-                      {!linked && !former ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setPersonInvite({
-                              id: balance.personId,
-                              name: pari.personName(balance.personId),
-                            })
-                          }
-                          className="shrink-0 rounded-xl bg-surface-strong px-3 py-2 text-xs font-medium transition-transform active:scale-[0.98]"
-                        >
-                          {pending ? t("invite.person.resend") : t("invite.person.invite")}
-                        </button>
-                      ) : null}
-                    </div>
+                      <ChevronRight
+                        className="h-4 w-4 shrink-0 text-muted-foreground/60"
+                        strokeWidth={1.6}
+                      />
+                    </button>
                   </div>
                 );
               })}
@@ -319,7 +344,7 @@ function GroupDetailScreen() {
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
               >
                 <UserPlus className="h-4 w-4" strokeWidth={2} />
-                {t("invite.inviteNewPerson")}
+                {t("groups.addPerson")}
               </button>
             </div>
           </>
@@ -349,7 +374,7 @@ function GroupDetailScreen() {
               params={{ groupId }}
               className="block px-4 py-4 text-[15px]"
             >
-              {t("groups.edit")}
+              {t("groups.settings")}
             </Link>
           </Panel>
         ) : null}
@@ -373,7 +398,37 @@ function GroupDetailScreen() {
           if (id) setPendingPersonIds((prev) => new Set(prev).add(id));
         }}
       />
-
+      <PersonSheet
+        person={personDetail}
+        onClose={() => setPersonDetail(null)}
+        onInvite={(person) => {
+          setPersonDetail(null);
+          setPersonInvite({ id: person.id, name: person.name });
+        }}
+        onRemove={(person) => {
+          setPersonDetail(null);
+          setPendingRemove({ id: person.id, name: person.name });
+        }}
+      />
+      <BottomSheet
+        open={pendingRemove !== null}
+        onClose={() => setPendingRemove(null)}
+        title={t("groups.removeMemberTitle", { name: pendingRemove?.name ?? "" })}
+        description={
+          pendingRemove && pari.personHasGroupHistory(groupId, pendingRemove.id)
+            ? `${t("groups.removeHistoryBody", { name: pendingRemove.name })} ${t("groups.removeOutstanding")}`
+            : t("groups.removeEmptyBody", { name: pendingRemove?.name ?? "" })
+        }
+      >
+        <div className="space-y-2 pb-2">
+          <PrimaryButton onClick={() => void confirmRemove()}>
+            {t("groups.removeMember")}
+          </PrimaryButton>
+          <SecondaryButton onClick={() => setPendingRemove(null)}>
+            {t("common.cancel")}
+          </SecondaryButton>
+        </div>
+      </BottomSheet>
     </>
   );
 }
