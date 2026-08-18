@@ -623,7 +623,11 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const groupBalances = (groupId: string) => {
       const balances = balancesFor(groupExpenses(groupId), groupId);
-      return groupPersonIds(groupId).map(
+      // Removed members stay in the ledger until their balance is settled.
+      const removedWithBalance = groupRemovedPersonIds(groupId).filter(
+        (personId) => (balances.find((b) => b.personId === personId)?.netMinor ?? 0) !== 0,
+      );
+      return [...groupPersonIds(groupId), ...removedWithBalance].map(
         (personId) => balances.find((b) => b.personId === personId) ?? { personId, netMinor: 0 },
       );
     };
