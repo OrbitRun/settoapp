@@ -15,11 +15,16 @@ export function InviteSheet({
   onClose,
   groupId,
   groupName,
+  personId = null,
+  personName = null,
 }: {
   open: boolean;
   onClose: () => void;
   groupId: string;
   groupName: string;
+  /** When set, the invitation lets the recipient claim this existing person. */
+  personId?: string | null;
+  personName?: string | null;
 }) {
   const pari = usePari();
   const t = useT();
@@ -29,17 +34,22 @@ export function InviteSheet({
   const userId = pari.session?.user?.id ?? null;
 
   useEffect(() => {
-    if (!open || !userId) return;
+    if (!open) {
+      setInvitation(null);
+      return;
+    }
+    if (!userId) return;
     let active = true;
-    void ensureGroupInvitation(groupId, userId).then((result) => {
+    void ensureGroupInvitation(groupId, userId, personId).then((result) => {
       if (active) setInvitation(result);
     });
     return () => {
       active = false;
     };
-  }, [open, groupId, userId]);
+  }, [open, groupId, userId, personId]);
 
   const url = invitation ? invitationUrl(invitation.token) : "";
+
 
   const copy = async () => {
     if (!url) return;
@@ -64,7 +74,13 @@ export function InviteSheet({
   };
 
   return (
-    <BottomSheet open={open} onClose={onClose} title={t("invite.title")} description={groupName}>
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={personName ? t("invite.personTitle", { name: personName }) : t("invite.title")}
+      description={personName ? t("invite.personDescription", { name: personName }) : groupName}
+    >
+
       {!invitation ? (
         <div className="h-40 animate-pulse rounded-3xl bg-surface-strong" />
       ) : (

@@ -1,7 +1,14 @@
 /**
- * Group invitations — one invitation object per group that can be shared as a
- * link, a QR code or a short join code. An invitation opened by a signed-out
- * person is remembered locally and applied right after they authenticate.
+ * Group invitations — a shareable link, QR code or short join code.
+ *
+ * Two kinds exist:
+ * - person invitations (`person_id` set): the recipient claims an existing
+ *   group person, keeping that person's id, history and balances. The member
+ *   count never changes.
+ * - group invitations (`person_id` null): the recipient becomes a new member.
+ *
+ * An invitation opened by a signed-out person is remembered locally and
+ * applied right after they authenticate.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type GroupInvitation = {
   id: string;
   group_id: string;
+  person_id: string | null;
   token: string;
   join_code: string;
   expires_at: string;
@@ -20,6 +28,9 @@ export type InvitationPreview = {
   groupName: string;
   inviterName: string;
   memberCount: number;
+  personId: string | null;
+  personName: string | null;
+  personClaimed: boolean;
 };
 
 const PENDING_KEY = "pari.pendingInvite";
@@ -45,20 +56,26 @@ export function invitationUrl(token: string) {
   return `${origin}/invite/${token}`;
 }
 
-/** Reuses the group's live invitation, or mints a new one. */
+/**
+ * Reuses the live invitation of that exact scope (group-wide, or one specific
+ * person), or mints a new one. Person invitations never touch the person row.
+ */
 export async function ensureGroupInvitation(
   groupId: string,
   userId: string,
+  personId?: string | null,
 ): Promise<GroupInvitation | null> {
-  const { data: existing } = await supabase
+  let query = supabase
     .from("group_invitations")
     .select("*")
     .eq("group_id", groupId)
     .eq("status", "active")
     .is("revoked_at", null)
-    .gt("expires_at", new Date().toISOString())
-    .order("created_at", { ascending: false })
-    .limit(1);
+    .gt("expires_at", new Date().toISOString());
+
+  query = personId ? query.eq("person_id", personId) : query.is("person_id", null);
+
+  const { data: existing } = await query.order("created_at", { ascending: false }).limit(1);
 
   const live = (existing ?? [])[0] as GroupInvitation | undefined;
   if (live) return live;
@@ -68,6 +85,7 @@ export async function ensureGroupInvitation(
     .insert({
       group_id: groupId,
       owner_user_id: userId,
+      person_id: personId ?? null,
       token: randomToken(24, "abcdefghijklmnopqrstuvwxyz0123456789"),
       join_code: randomToken(6, CODE_ALPHABET),
     })
@@ -79,6 +97,18 @@ export async function ensureGroupInvitation(
     return null;
   }
   return data as unknown as GroupInvitation;
+}
+
+/** Active invitations for a group — used to show "Invitation sendt". */
+export async function fetchActiveInvitations(groupId: string): Promise<GroupInvitation[]> {
+  const { data } = await supabase
+    .from("group_invitations")
+    .select("*")
+    .eq("group_id", groupId)
+    .eq("status", "active")
+    .is("revoked_at", null)
+    .gt("expires_at", new Date().toISOString());
+  return (data ?? []) as unknown as GroupInvitation[];
 }
 
 export async function revokeInvitation(id: string) {
@@ -95,18 +125,31 @@ export async function fetchInvitationPreview(code: string): Promise<InvitationPr
     return null;
   }
   const row = (data ?? [])[0] as
-    { group_name: string; inviter_name: string; member_count: number } | undefined;
+    | {
+        group_name: string;
+        inviter_name: string;
+        member_count: number;
+        person_id: string | null;
+        person_name: string | null;
+        person_claimed: boolean | null;
+      }
+    | undefined;
   if (!row) return null;
   return {
     groupName: row.group_name,
     inviterName: row.inviter_name,
     memberCount: row.member_count,
+    personId: row.person_id ?? null,
+    personName: row.person_name ?? null,
+    personClaimed: Boolean(row.person_claimed),
   };
 }
 
 export type RedeemStatus =
   | "joined"
+  | "claimed"
   | "already_member"
+  | "person_taken"
   | "expired"
   | "revoked"
   | "invalid"
@@ -116,12 +159,13 @@ export type RedeemStatus =
 export type RedeemResult = { status: RedeemStatus; groupId: string | null };
 
 /**
- * Idempotent invitation redemption. An existing membership is authoritative:
- * the backend returns `already_member` instead of creating a second row, so
- * repeated taps can never duplicate memberships, activity or ownership.
+ * Idempotent redemption. The claimed person is read from the invitation row
+ * server-side — never from the client — so no one can point a claim at a
+ * different group person. Person invitations link the existing person to the
+ * caller's account; group invitations create a membership as before.
  */
 export async function redeemInvitation(code: string): Promise<RedeemResult> {
-  const { data, error } = await supabase.rpc("redeem_group_invitation", { _code: code });
+  const { data, error } = await supabase.rpc("claim_group_invitation", { _code: code });
   if (error) {
     console.error("[pari] redeem invitation", error);
     return { status: "error", groupId: null };
