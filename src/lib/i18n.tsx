@@ -361,8 +361,8 @@ const en: Dict = {
   "convert.body": "Create a free account to keep the split, follow balances and settle up later.",
   "convert.cta": "Save my split",
 
-  "welcome.title": "Share anything.\nSettle easily.",
-  "welcome.subtitle": "Split a bill in seconds — no account needed.",
+  "welcome.title": "Share anything.\nWe keep track of the rest.",
+  "welcome.subtitle": "From receipt to settlement – without the spreadsheet.",
   "welcome.primary": "Split an expense",
   "welcome.secondary": "Sign in",
   "welcome.createAccount": "Create account",
@@ -849,8 +849,8 @@ const da: Dict = {
   "convert.body": "Opret en gratis konto og behold dit split, følg saldi og gør op senere.",
   "convert.cta": "Gem mit split",
 
-  "welcome.title": "Del alt.\nGør op med et tryk.",
-  "welcome.subtitle": "Split en regning på sekunder — helt uden konto.",
+  "welcome.title": "Del alt.\nVi holder styr på resten.",
+  "welcome.subtitle": "Fra kvittering til afregning – uden regnearbejdet.",
   "welcome.primary": "Split en udgift",
   "welcome.secondary": "Log ind",
   "welcome.createAccount": "Opret konto",

@@ -22,6 +22,8 @@ export type GroupInvitation = {
   expires_at: string;
   revoked_at: string | null;
   status?: string;
+  /** Set only once the invitation was really shared/copied by the inviter. */
+  sent_at?: string | null;
 };
 
 export type InvitationPreview = {
@@ -99,7 +101,10 @@ export async function ensureGroupInvitation(
   return data as unknown as GroupInvitation;
 }
 
-/** Active invitations for a group — used to show "Invitation sendt". */
+/**
+ * Invitations that were actually shared — used to show "Invitation sendt".
+ * Merely opening the invite sheet mints a token but never marks it sent.
+ */
 export async function fetchActiveInvitations(groupId: string): Promise<GroupInvitation[]> {
   const { data } = await supabase
     .from("group_invitations")
@@ -107,8 +112,19 @@ export async function fetchActiveInvitations(groupId: string): Promise<GroupInvi
     .eq("group_id", groupId)
     .eq("status", "active")
     .is("revoked_at", null)
+    .not("sent_at", "is", null)
     .gt("expires_at", new Date().toISOString());
   return (data ?? []) as unknown as GroupInvitation[];
+}
+
+/** Records a completed share/copy. Called only after the action succeeded. */
+export async function markInvitationSent(id: string) {
+  const { error } = await supabase
+    .from("group_invitations")
+    .update({ sent_at: new Date().toISOString() })
+    .eq("id", id)
+    .is("sent_at", null);
+  if (error) console.error("[pari] markInvitationSent", error);
 }
 
 export async function revokeInvitation(id: string) {

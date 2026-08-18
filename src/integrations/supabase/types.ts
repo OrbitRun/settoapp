@@ -287,6 +287,7 @@ export type Database = {
           owner_user_id: string
           person_id: string | null
           revoked_at: string | null
+          sent_at: string | null
           status: string
           token: string
           updated_at: string
@@ -300,6 +301,7 @@ export type Database = {
           owner_user_id: string
           person_id?: string | null
           revoked_at?: string | null
+          sent_at?: string | null
           status?: string
           token: string
           updated_at?: string
@@ -313,6 +315,7 @@ export type Database = {
           owner_user_id?: string
           person_id?: string | null
           revoked_at?: string | null
+          sent_at?: string | null
           status?: string
           token?: string
           updated_at?: string

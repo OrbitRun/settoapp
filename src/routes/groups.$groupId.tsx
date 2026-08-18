@@ -368,6 +368,10 @@ function GroupDetailScreen() {
         groupName={group.name}
         personId={personInvite?.id ?? null}
         personName={personInvite?.name ?? null}
+        onSent={() => {
+          const id = personInvite?.id;
+          if (id) setPendingPersonIds((prev) => new Set(prev).add(id));
+        }}
       />
 
     </>

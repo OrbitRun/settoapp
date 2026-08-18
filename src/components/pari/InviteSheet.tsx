@@ -6,7 +6,12 @@ import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { QrCode } from "@/components/pari/QrCode";
 import { usePari } from "@/data/store";
-import { ensureGroupInvitation, invitationUrl, type GroupInvitation } from "@/data/invitations";
+import {
+  ensureGroupInvitation,
+  invitationUrl,
+  markInvitationSent,
+  type GroupInvitation,
+} from "@/data/invitations";
 import { useT } from "@/lib/i18n";
 
 /** One invitation, four ways to share it: link, QR, copy and join code. */
@@ -17,6 +22,7 @@ export function InviteSheet({
   groupName,
   personId = null,
   personName = null,
+  onSent,
 }: {
   open: boolean;
   onClose: () => void;
@@ -25,6 +31,8 @@ export function InviteSheet({
   /** When set, the invitation lets the recipient claim this existing person. */
   personId?: string | null;
   personName?: string | null;
+  /** Fires only when an invitation was really shared or copied. */
+  onSent?: () => void;
 }) {
   const pari = usePari();
   const t = useT();
@@ -51,12 +59,20 @@ export function InviteSheet({
   const url = invitation ? invitationUrl(invitation.token) : "";
 
 
+  /** Marks the invitation as sent — only ever after a completed action. */
+  const confirmSent = async () => {
+    if (!invitation) return;
+    await markInvitationSent(invitation.id);
+    onSent?.();
+  };
+
   const copy = async () => {
     if (!url) return;
     await navigator.clipboard?.writeText(url);
     setCopied(true);
     toast.success(t("invite.copied"));
     setTimeout(() => setCopied(false), 2000);
+    await confirmSent();
   };
 
   const share = async () => {
@@ -65,10 +81,12 @@ export function InviteSheet({
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({ title: groupName, text, url });
-        return;
       } catch {
-        /* dismissed — fall through to copy */
+        /* dismissed or failed — the invitation stays "not sent" */
+        return;
       }
+      await confirmSent();
+      return;
     }
     await copy();
   };
