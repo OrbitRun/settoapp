@@ -48,7 +48,10 @@ function GroupDetailScreen() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<(typeof TABS)[number]["value"]>("Expenses");
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [personInvite, setPersonInvite] = useState<{ id: string; name: string } | null>(null);
+  const [pendingPersonIds, setPendingPersonIds] = useState<Set<string>>(new Set());
   const [openExpenseId, setOpenExpenseId] = useState<string | null>(null);
+
   const t = useT();
 
   const group = pari.data.groups.find((g) => g.id === groupId);
