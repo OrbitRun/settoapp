@@ -162,14 +162,49 @@ function AuthScreen() {
           </SecondaryButton>
         </div>
 
+        {mode === "signin" ? (
+          <button
+            type="button"
+            onClick={() => {
+              setResetEmail(email);
+              setResetOpen(true);
+            }}
+            className="mx-auto mt-6 block text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("auth.forgot")}
+          </button>
+        ) : null}
+
         <button
           type="button"
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="mx-auto mt-8 block text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="mx-auto mt-6 block text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           {mode === "signin" ? t("auth.toSignUp") : t("auth.toSignIn")}
         </button>
       </div>
+
+      <BottomSheet
+        open={resetOpen}
+        onClose={() => setResetOpen(false)}
+        title={t("auth.resetTitle")}
+        description={t("auth.resetBody")}
+      >
+        <form onSubmit={sendReset} className="space-y-3 pb-2">
+          <input
+            type="email"
+            required
+            value={resetEmail}
+            onChange={(event) => setResetEmail(event.target.value)}
+            placeholder={t("auth.email")}
+            autoComplete="email"
+            className="h-14 w-full rounded-2xl bg-surface-strong px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
+          />
+          <PrimaryButton type="submit" disabled={resetBusy}>
+            {t("auth.resetSend")}
+          </PrimaryButton>
+        </form>
+      </BottomSheet>
     </div>
   );
 }
