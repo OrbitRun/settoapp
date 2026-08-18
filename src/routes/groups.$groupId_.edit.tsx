@@ -109,9 +109,21 @@ function EditGroupScreen() {
     if (person) await pari.addGroupMembers(groupId, [person.id]);
   };
 
-  const remove = async (personId: string) => {
-    const result = await pari.removeGroupMember(groupId, personId);
-    if (result === "has-expenses") toast.error(t("groups.memberHasExpenses"));
+  const confirmRemove = async () => {
+    if (!pendingRemove) return;
+    const { id, name: personName } = pendingRemove;
+    setPendingRemove(null);
+    const result = await pari.removeGroupMember(groupId, id);
+    if (result === "owner-self") toast.error(t("groups.cannotRemoveSelf"));
+    else if (result === "not-allowed") toast.error(t("groups.removeNotAllowed"));
+    else if (result === "deactivated")
+      toast.success(t("groups.memberDeactivated", { name: personName }));
+    else toast.success(t("groups.memberRemoved", { name: personName }));
+  };
+
+  const restore = async (personId: string) => {
+    await pari.addGroupMembers(groupId, [personId]);
+    toast.success(t("groups.memberRestored", { name: pari.personName(personId) }));
   };
 
   const toggleArchive = async () => {
