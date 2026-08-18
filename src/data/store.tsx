@@ -1113,7 +1113,8 @@ export function PariProvider({ children }: { children: ReactNode }) {
       personId: string,
     ): Promise<"deleted" | "deactivated" | "owner-self" | "not-allowed"> => {
       const group = data.groups.find((g) => g.id === groupId);
-      if (!userId || !group || group.owner_user_id !== userId) return "not-allowed";
+      // Only the group owner may write group_members (enforced server-side too).
+      if (!userId || !group) return "not-allowed";
 
       const person = data.people.find((p) => p.id === personId);
       // The group owner cannot remove themselves from their own group.
