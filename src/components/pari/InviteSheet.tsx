@@ -51,12 +51,20 @@ export function InviteSheet({
   const url = invitation ? invitationUrl(invitation.token) : "";
 
 
+  /** Marks the invitation as sent — only ever after a completed action. */
+  const confirmSent = async () => {
+    if (!invitation) return;
+    await markInvitationSent(invitation.id);
+    onSent?.();
+  };
+
   const copy = async () => {
     if (!url) return;
     await navigator.clipboard?.writeText(url);
     setCopied(true);
     toast.success(t("invite.copied"));
     setTimeout(() => setCopied(false), 2000);
+    await confirmSent();
   };
 
   const share = async () => {
@@ -65,10 +73,12 @@ export function InviteSheet({
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({ title: groupName, text, url });
-        return;
       } catch {
-        /* dismissed — fall through to copy */
+        /* dismissed or failed — the invitation stays "not sent" */
+        return;
       }
+      await confirmSent();
+      return;
     }
     await copy();
   };
