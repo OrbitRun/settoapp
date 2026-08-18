@@ -1359,6 +1359,8 @@ export function PariProvider({ children }: { children: ReactNode }) {
       personById,
       personName,
       groupPersonIds,
+      groupRemovedPersonIds,
+      personHasGroupHistory,
       groupExpenses,
       expenseById,
       expenseItems,
