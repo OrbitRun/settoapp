@@ -285,6 +285,7 @@ export type Database = {
           id: string
           join_code: string
           owner_user_id: string
+          person_id: string | null
           revoked_at: string | null
           status: string
           token: string
@@ -297,6 +298,7 @@ export type Database = {
           id?: string
           join_code: string
           owner_user_id: string
+          person_id?: string | null
           revoked_at?: string | null
           status?: string
           token: string
@@ -309,6 +311,7 @@ export type Database = {
           id?: string
           join_code?: string
           owner_user_id?: string
+          person_id?: string | null
           revoked_at?: string | null
           status?: string
           token?: string
@@ -320,6 +323,13 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_invitations_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
             referencedColumns: ["id"]
           },
         ]
@@ -585,12 +595,22 @@ export type Database = {
     }
     Functions: {
       accept_group_invitation: { Args: { _code: string }; Returns: string }
+      claim_group_invitation: {
+        Args: { _code: string }
+        Returns: {
+          group_id: string
+          status: string
+        }[]
+      }
       get_invitation_preview: {
         Args: { _code: string }
         Returns: {
           group_name: string
           inviter_name: string
           member_count: number
+          person_claimed: boolean
+          person_id: string
+          person_name: string
         }[]
       }
       is_group_participant: {
