@@ -210,6 +210,34 @@ function EditGroupScreen() {
               </div>
             </Panel>
 
+            {removedIds.length > 0 ? (
+              <div className="space-y-2">
+                <p className="px-1 text-[13px] text-muted-foreground">
+                  {t("groups.formerMembers")}
+                </p>
+                <Panel>
+                  {removedIds.map((personId, index) => (
+                    <div key={personId}>
+                      {index > 0 ? <Divider /> : null}
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <Avatar name={pari.personName(personId)} size="sm" />
+                        <span className="min-w-0 flex-1 truncate text-[15px] text-muted-foreground">
+                          {pari.personName(personId)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void restore(personId)}
+                          className="shrink-0 rounded-xl bg-surface-strong px-3 py-2 text-xs font-medium"
+                        >
+                          {t("groups.restoreMember")}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </Panel>
+              </div>
+            ) : null}
+
             {candidates.length > 0 ? (
               <div className="flex flex-wrap gap-2 px-1">
                 {candidates.map((person) => (
