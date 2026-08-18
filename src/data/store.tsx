@@ -159,8 +159,14 @@ type PariContextValue = {
   createGroup: (input: CreateGroupInput) => Promise<string | null>;
   updateGroup: (groupId: string, patch: UpdateGroupInput) => Promise<void>;
   addGroupMembers: (groupId: string, personIds: string[]) => Promise<void>;
-  /** Refuses when the person is still tied to expenses in the group. */
-  removeGroupMember: (groupId: string, personId: string) => Promise<"ok" | "has-expenses">;
+  /**
+   * Removes active membership. People without any financial trace are deleted,
+   * everyone else keeps their record and history and is only deactivated.
+   */
+  removeGroupMember: (
+    groupId: string,
+    personId: string,
+  ) => Promise<"deleted" | "deactivated" | "owner-self" | "not-allowed">;
   setGroupArchived: (groupId: string, archived: boolean) => Promise<void>;
   deleteGroup: (groupId: string) => Promise<void>;
   markSettled: (
