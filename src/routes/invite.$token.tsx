@@ -131,7 +131,13 @@ function InviteScreen() {
         <p className="mt-1 text-sm text-muted-foreground">
           {t("common.memberCount", { count: preview.memberCount })}
         </p>
+        {preview.personName ? (
+          <p className="mt-3 text-sm text-foreground">
+            {t("invite.claimIntro", { name: preview.personName })}
+          </p>
+        ) : null}
       </div>
+
 
       <div className="mt-10 space-y-2">
         <PrimaryButton onClick={() => void join()} disabled={joining}>
