@@ -361,7 +361,7 @@ function GroupDetailScreen() {
               params={{ groupId }}
               className="block px-4 py-4 text-[15px]"
             >
-              {t("groups.edit")}
+              {t("groups.settings")}
             </Link>
           </Panel>
         ) : null}
