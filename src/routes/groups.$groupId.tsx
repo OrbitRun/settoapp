@@ -81,6 +81,7 @@ function GroupDetailScreen() {
   }
 
   const memberIds = pari.groupPersonIds(groupId);
+  const removedIds = pari.groupRemovedPersonIds(groupId);
   const expenses = pari.groupExpenses(groupId);
   const balances = pari.groupBalances(groupId);
   const myBalance = pari.myGroupBalance(groupId);
