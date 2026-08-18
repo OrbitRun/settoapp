@@ -66,6 +66,7 @@ function EditGroupScreen() {
   const split = rule.mode;
   const [newMember, setNewMember] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   if (!group) {
