@@ -5,12 +5,22 @@ import { toast } from "sonner";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { useT } from "@/lib/i18n";
+import { authErrorKey, safeRedirectPath } from "@/lib/auth-errors";
+import { useI18n, useT } from "@/lib/i18n";
+
+type Search = { mode?: "signup"; redirect?: string };
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>): { mode?: "signup" } =>
-    search["mode"] === "signup" ? { mode: "signup" } : {},
+  validateSearch: (search: Record<string, unknown>): Search => {
+    const next: Search = {};
+    if (search["mode"] === "signup") next.mode = "signup";
+    const redirect = safeRedirectPath(
+      typeof search["redirect"] === "string" ? search["redirect"] : null,
+    );
+    if (redirect) next.redirect = redirect;
+    return next;
+  },
 
   head: () => ({
     meta: [
@@ -28,43 +38,67 @@ export const Route = createFileRoute("/auth")({
 
 function AuthScreen() {
   const t = useT();
+  const { language } = useI18n();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const search = Route.useSearch();
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(
+    search.mode === "signup" ? "signup" : "signin",
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  // Where to land after authentication — always a validated same-origin path.
+  const destination = safeRedirectPath(search.redirect ?? null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/home" });
+      if (!data.session) return;
+      if (destination) window.location.replace(destination);
+      else navigate({ to: "/home" });
     });
-  }, [navigate]);
+  }, [navigate, destination]);
+
+  const done = () => {
+    if (destination) window.location.replace(destination);
+    else navigate({ to: "/home" });
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);
     try {
-      if (mode === "signup") {
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset`,
+        });
+        if (error) throw error;
+        setSent(true);
+        toast.success(t("auth.resetSent"));
+      } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
-            data: { display_name: name.trim() || email.split("@")[0] },
+            // Verification returns the user to exactly where they started —
+            // an invitation link survives sign-up this way.
+            emailRedirectTo: `${window.location.origin}${destination ?? "/home"}`,
+            data: { display_name: name.trim() || email.split("@")[0], locale: language },
           },
         });
         if (error) throw error;
         const { data: session } = await supabase.auth.getSession();
-        if (session.session) navigate({ to: "/home" });
+        if (session.session) done();
         else toast.success(t("auth.checkEmail"));
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/home" });
+        done();
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("auth.error"));
+      toast.error(t(authErrorKey(error)));
     } finally {
       setBusy(false);
     }
@@ -81,16 +115,21 @@ function AuthScreen() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/home" });
+    done();
   };
 
   return (
     <div className="flex min-h-svh items-center bg-background px-6">
       <div className="mx-auto w-full max-w-[400px] py-14">
         <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.03em]">
-          {t("auth.title")}
+          {mode === "forgot" ? t("auth.resetTitle") : t("auth.title")}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("auth.subtitle")}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {mode === "forgot" ? t("auth.resetSubtitle") : t("auth.subtitle")}
+        </p>
+        {destination ? (
+          <p className="mt-2 text-sm text-muted-foreground">{t("invite.kept")}</p>
+        ) : null}
 
         <form onSubmit={submit} className="mt-10 space-y-3">
           {mode === "signup" ? (
@@ -111,33 +150,65 @@ function AuthScreen() {
             autoComplete="email"
             className="h-14 w-full rounded-2xl bg-surface px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
           />
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder={t("auth.password")}
-            autoComplete={mode === "signup" ? "new-password" : "current-password"}
-            className="h-14 w-full rounded-2xl bg-surface px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
-          />
+          {mode === "forgot" ? null : (
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder={t("auth.password")}
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              className="h-14 w-full rounded-2xl bg-surface px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
+            />
+          )}
           <PrimaryButton type="submit" disabled={busy}>
-            {mode === "signup" ? t("auth.signUp") : t("auth.signIn")}
+            {mode === "forgot"
+              ? t("auth.resetSend")
+              : mode === "signup"
+                ? t("auth.signUp")
+                : t("auth.signIn")}
           </PrimaryButton>
         </form>
 
-        <div className="mt-3">
-          <SecondaryButton onClick={google} disabled={busy}>
-            {t("auth.google")}
-          </SecondaryButton>
-        </div>
+        {mode === "forgot" && sent ? (
+          <p className="mt-4 text-center text-sm text-muted-foreground">{t("auth.resetSent")}</p>
+        ) : null}
+
+        {mode === "forgot" ? null : (
+          <div className="mt-3">
+            <SecondaryButton onClick={google} disabled={busy}>
+              {t("auth.google")}
+            </SecondaryButton>
+          </div>
+        )}
+
+        {mode === "signin" ? (
+          <button
+            type="button"
+            onClick={() => {
+              setSent(false);
+              setMode("forgot");
+            }}
+            className="mx-auto mt-6 block text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("auth.forgot")}
+          </button>
+        ) : null}
 
         <button
           type="button"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="mx-auto mt-8 block text-sm text-muted-foreground transition-colors hover:text-foreground"
+          onClick={() => {
+            setSent(false);
+            setMode(mode === "signin" ? "signup" : "signin");
+          }}
+          className="mx-auto mt-6 block text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
-          {mode === "signin" ? t("auth.toSignUp") : t("auth.toSignIn")}
+          {mode === "forgot"
+            ? t("auth.backToSignIn")
+            : mode === "signin"
+              ? t("auth.toSignUp")
+              : t("auth.toSignIn")}
         </button>
       </div>
     </div>
