@@ -22,6 +22,7 @@ export function InviteSheet({
   groupName,
   personId = null,
   personName = null,
+  onSent,
 }: {
   open: boolean;
   onClose: () => void;
@@ -30,6 +31,8 @@ export function InviteSheet({
   /** When set, the invitation lets the recipient claim this existing person. */
   personId?: string | null;
   personName?: string | null;
+  /** Fires only when an invitation was really shared or copied. */
+  onSent?: () => void;
 }) {
   const pari = usePari();
   const t = useT();
