@@ -278,11 +278,13 @@ function GroupDetailScreen() {
                           ) : null}
                         </p>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {linked
-                            ? t("invite.person.linked")
-                            : pending
-                              ? t("invite.person.pending")
-                              : t("invite.person.unlinked")}
+                          {former
+                            ? t("groups.formerMember")
+                            : linked
+                              ? t("invite.person.linked")
+                              : pending
+                                ? t("invite.person.pending")
+                                : t("invite.person.unlinked")}
                         </p>
                       </div>
                       <MoneyAmount
