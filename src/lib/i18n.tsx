@@ -376,6 +376,15 @@ const en: Dict = {
   "auth.linkInvalidTitle": "This link no longer works",
   "auth.linkInvalidBody": "Password links can only be used once and expire after a while. Request a new one.",
   "auth.checking": "Checking your link…",
+  "invite.expiredTitle": "This invitation has expired",
+  "invite.expiredBody": "Ask the group for a fresh invitation link.",
+  "invite.revokedTitle": "This invitation was withdrawn",
+  "invite.revokedBody": "The link no longer works. Ask for a new one.",
+  "invite.alreadyMember": "You're already in this group.",
+  "invite.openGroup": "Open group",
+  "invite.signInToJoin": "Sign in to join",
+  "invite.kept": "We'll remember this invitation while you sign in.",
+
 
   "settle.registerPayment": "Register payment",
   "settle.amount": "Amount",
@@ -841,6 +850,15 @@ const da: Dict = {
   "auth.linkInvalidTitle": "Linket virker ikke længere",
   "auth.linkInvalidBody": "Links til adgangskoder kan kun bruges én gang og udløber efter et stykke tid. Bed om et nyt.",
   "auth.checking": "Tjekker dit link…",
+  "invite.expiredTitle": "Invitationen er udløbet",
+  "invite.expiredBody": "Bed om et nyt invitationslink fra gruppen.",
+  "invite.revokedTitle": "Invitationen er trukket tilbage",
+  "invite.revokedBody": "Linket virker ikke længere. Bed om et nyt.",
+  "invite.alreadyMember": "Du er allerede med i gruppen.",
+  "invite.openGroup": "Åbn gruppen",
+  "invite.signInToJoin": "Log ind for at være med",
+  "invite.kept": "Vi husker invitationen, mens du logger ind.",
+
 
 
   "guest.badge": "Gæst",
