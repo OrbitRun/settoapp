@@ -18,6 +18,9 @@ import { cn } from "@/lib/utils";
 import { AuthGate } from "@/components/pari/AuthGate";
 import { InviteSheet } from "@/components/pari/InviteSheet";
 import { fetchActiveInvitations } from "@/data/invitations";
+import { BottomSheet } from "@/components/pari/BottomSheet";
+import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
+import { PersonSheet, type PersonSheetState } from "@/components/pari/PersonSheet";
 
 export const Route = createFileRoute("/groups/$groupId")({
   head: () => ({
