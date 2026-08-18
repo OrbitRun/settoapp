@@ -597,6 +597,13 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      redeem_group_invitation: {
+        Args: { _code: string }
+        Returns: {
+          group_id: string
+          status: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
