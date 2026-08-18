@@ -66,6 +66,7 @@ function EditGroupScreen() {
   const split = rule.mode;
   const [newMember, setNewMember] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   if (!group) {
@@ -78,7 +79,10 @@ function EditGroupScreen() {
   }
 
   const memberIds = pari.groupPersonIds(groupId);
-  const candidates = pari.data.people.filter((person) => !memberIds.includes(person.id));
+  const removedIds = pari.groupRemovedPersonIds(groupId);
+  const candidates = pari.data.people.filter(
+    (person) => !memberIds.includes(person.id) && !removedIds.includes(person.id),
+  );
   const ruleMembers = memberIds.map((id) => ({ id, name: pari.personName(id) }));
   const ruleReady = rule.mode === "equal" || isRuleComplete(rule, ruleMembers, 0);
 
@@ -109,9 +113,21 @@ function EditGroupScreen() {
     if (person) await pari.addGroupMembers(groupId, [person.id]);
   };
 
-  const remove = async (personId: string) => {
-    const result = await pari.removeGroupMember(groupId, personId);
-    if (result === "has-expenses") toast.error(t("groups.memberHasExpenses"));
+  const confirmRemove = async () => {
+    if (!pendingRemove) return;
+    const { id, name: personName } = pendingRemove;
+    setPendingRemove(null);
+    const result = await pari.removeGroupMember(groupId, id);
+    if (result === "owner-self") toast.error(t("groups.cannotRemoveSelf"));
+    else if (result === "not-allowed") toast.error(t("groups.removeNotAllowed"));
+    else if (result === "deactivated")
+      toast.success(t("groups.memberDeactivated", { name: personName }));
+    else toast.success(t("groups.memberRemoved", { name: personName }));
+  };
+
+  const restore = async (personId: string) => {
+    await pari.addGroupMembers(groupId, [personId]);
+    toast.success(t("groups.memberRestored", { name: pari.personName(personId) }));
   };
 
   const toggleArchive = async () => {
@@ -166,7 +182,9 @@ function EditGroupScreen() {
                       <button
                         type="button"
                         aria-label={`${t("common.remove")} ${pari.personName(personId)}`}
-                        onClick={() => void remove(personId)}
+                        onClick={() =>
+                          setPendingRemove({ id: personId, name: pari.personName(personId) })
+                        }
                         className="text-muted-foreground/70 transition-colors hover:text-negative"
                       >
                         <X className="h-4 w-4" strokeWidth={1.8} />
@@ -194,6 +212,34 @@ function EditGroupScreen() {
                 />
               </div>
             </Panel>
+
+            {removedIds.length > 0 ? (
+              <div className="space-y-2">
+                <p className="px-1 text-[13px] text-muted-foreground">
+                  {t("groups.formerMembers")}
+                </p>
+                <Panel>
+                  {removedIds.map((personId, index) => (
+                    <div key={personId}>
+                      {index > 0 ? <Divider /> : null}
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <Avatar name={pari.personName(personId)} size="sm" />
+                        <span className="min-w-0 flex-1 truncate text-[15px] text-muted-foreground">
+                          {pari.personName(personId)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void restore(personId)}
+                          className="shrink-0 rounded-xl bg-surface-strong px-3 py-2 text-xs font-medium"
+                        >
+                          {t("groups.restoreMember")}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </Panel>
+              </div>
+            ) : null}
 
             {candidates.length > 0 ? (
               <div className="flex flex-wrap gap-2 px-1">
@@ -285,6 +331,26 @@ function EditGroupScreen() {
             {t("groups.deleteConfirm")}
           </PrimaryButton>
           <SecondaryButton onClick={() => setConfirmDelete(false)}>
+            {t("common.cancel")}
+          </SecondaryButton>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={pendingRemove !== null}
+        onClose={() => setPendingRemove(null)}
+        title={t("groups.removeMemberTitle", { name: pendingRemove?.name ?? "" })}
+        description={
+          pendingRemove && pari.personHasGroupHistory(groupId, pendingRemove.id)
+            ? `${t("groups.removeHistoryBody", { name: pendingRemove.name })} ${t("groups.removeOutstanding")}`
+            : t("groups.removeEmptyBody", { name: pendingRemove?.name ?? "" })
+        }
+      >
+        <div className="space-y-2 pb-2">
+          <PrimaryButton onClick={() => void confirmRemove()}>
+            {t("groups.removeMember")}
+          </PrimaryButton>
+          <SecondaryButton onClick={() => setPendingRemove(null)}>
             {t("common.cancel")}
           </SecondaryButton>
         </div>

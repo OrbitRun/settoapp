@@ -132,7 +132,12 @@ type PariContextValue = {
   currentProfileName: string;
   personById: (id: string) => Person | undefined;
   personName: (id: string) => string;
+  /** Active members only. */
   groupPersonIds: (groupId: string) => string[];
+  /** People removed from the group but still present in its history. */
+  groupRemovedPersonIds: (groupId: string) => string[];
+  /** Whether the person has any financial trace in the group. */
+  personHasGroupHistory: (groupId: string, personId: string) => boolean;
   groupExpenses: (groupId: string) => Expense[];
   expenseById: (id: string) => Expense | undefined;
   expenseItems: (expenseId: string) => ExpenseItem[];
@@ -154,8 +159,14 @@ type PariContextValue = {
   createGroup: (input: CreateGroupInput) => Promise<string | null>;
   updateGroup: (groupId: string, patch: UpdateGroupInput) => Promise<void>;
   addGroupMembers: (groupId: string, personIds: string[]) => Promise<void>;
-  /** Refuses when the person is still tied to expenses in the group. */
-  removeGroupMember: (groupId: string, personId: string) => Promise<"ok" | "has-expenses">;
+  /**
+   * Removes active membership. People without any financial trace are deleted,
+   * everyone else keeps their record and history and is only deactivated.
+   */
+  removeGroupMember: (
+    groupId: string,
+    personId: string,
+  ) => Promise<"deleted" | "deactivated" | "owner-self" | "not-allowed">;
   setGroupArchived: (groupId: string, archived: boolean) => Promise<void>;
   deleteGroup: (groupId: string) => Promise<void>;
   markSettled: (
@@ -529,7 +540,39 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const personName = (id: string) => personById(id)?.name ?? "—";
 
     const groupPersonIds = (groupId: string) =>
-      data.groupMembers.filter((m) => m.group_id === groupId).map((m) => m.person_id);
+      data.groupMembers
+        .filter((m) => m.group_id === groupId && !m.removed_at)
+        .map((m) => m.person_id);
+
+    const groupRemovedPersonIds = (groupId: string) =>
+      data.groupMembers
+        .filter((m) => m.group_id === groupId && Boolean(m.removed_at))
+        .map((m) => m.person_id);
+
+    /** Any expense, split, settlement or activity trace inside this group. */
+    const personHasGroupHistory = (groupId: string, personId: string) => {
+      const expenseIds = data.expenses
+        .filter((expense) => expense.group_id === groupId)
+        .map((expense) => expense.id);
+      return (
+        data.expenses.some(
+          (expense) => expense.group_id === groupId && expense.paid_by_person_id === personId,
+        ) ||
+        data.expenseSplits.some(
+          (split) => expenseIds.includes(split.expense_id) && split.person_id === personId,
+        ) ||
+        data.itemSplits.some((split) => {
+          if (split.person_id !== personId) return false;
+          const item = data.expenseItems.find((i) => i.id === split.expense_item_id);
+          return item ? expenseIds.includes(item.expense_id) : false;
+        }) ||
+        data.settlements.some(
+          (settlement) =>
+            settlement.group_id === groupId &&
+            (settlement.from_person_id === personId || settlement.to_person_id === personId),
+        )
+      );
+    };
 
     const groupExpenses = (groupId: string) =>
       data.expenses
@@ -580,7 +623,11 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const groupBalances = (groupId: string) => {
       const balances = balancesFor(groupExpenses(groupId), groupId);
-      return groupPersonIds(groupId).map(
+      // Removed members stay in the ledger until their balance is settled.
+      const removedWithBalance = groupRemovedPersonIds(groupId).filter(
+        (personId) => (balances.find((b) => b.personId === personId)?.netMinor ?? 0) !== 0,
+      );
+      return [...groupPersonIds(groupId), ...removedWithBalance].map(
         (personId) => balances.find((b) => b.personId === personId) ?? { personId, netMinor: 0 },
       );
     };
@@ -1035,41 +1082,76 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const addGroupMembers = async (groupId: string, personIds: string[]) => {
       if (!userId) return;
-      const existing = groupPersonIds(groupId);
+      const active = groupPersonIds(groupId);
+      const removed = groupRemovedPersonIds(groupId);
+
+      // Someone who was removed earlier gets their original record back.
+      const toRestore = personIds.filter((personId) => removed.includes(personId));
+      for (const personId of toRestore) {
+        await supabase
+          .from("group_members")
+          .update({ removed_at: null })
+          .eq("group_id", groupId)
+          .eq("person_id", personId);
+      }
+
       const rows = personIds
-        .filter((personId) => !existing.includes(personId))
+        .filter((personId) => !active.includes(personId) && !removed.includes(personId))
         .map((personId) => ({
           owner_user_id: userId,
           group_id: groupId,
           person_id: personId,
           role: "member",
         }));
-      if (rows.length === 0) return;
-      await supabase.from("group_members").insert(rows);
+      if (rows.length > 0) await supabase.from("group_members").insert(rows);
+      if (rows.length === 0 && toRestore.length === 0) return;
       await refresh();
     };
 
     const removeGroupMember = async (
       groupId: string,
       personId: string,
-    ): Promise<"ok" | "has-expenses"> => {
-      const expenseIds = groupExpenses(groupId).map((expense) => expense.id);
-      const involved =
-        data.expenses.some(
-          (expense) => expense.group_id === groupId && expense.paid_by_person_id === personId,
-        ) ||
-        data.expenseSplits.some(
-          (split) => expenseIds.includes(split.expense_id) && split.person_id === personId,
-        );
-      if (involved) return "has-expenses";
+    ): Promise<"deleted" | "deactivated" | "owner-self" | "not-allowed"> => {
+      const group = data.groups.find((g) => g.id === groupId);
+      // Only the group owner may write group_members (enforced server-side too).
+      if (!userId || !group) return "not-allowed";
+
+      const person = data.people.find((p) => p.id === personId);
+      // The group owner cannot remove themselves from their own group.
+      if (person?.linked_profile_id === userId || personId === currentPersonId) {
+        return "owner-self";
+      }
+
+      if (personHasGroupHistory(groupId, personId)) {
+        await supabase
+          .from("group_members")
+          .update({ removed_at: nowIso() })
+          .eq("group_id", groupId)
+          .eq("person_id", personId);
+        await refresh();
+        return "deactivated";
+      }
 
       await supabase
         .from("group_members")
         .delete()
         .eq("group_id", groupId)
         .eq("person_id", personId);
+
+      // A person record created only for this group and never used anywhere
+      // else is a duplicate — clean it up so it stops showing in pickers.
+      const usedElsewhere =
+        data.groupMembers.some((m) => m.person_id === personId && m.group_id !== groupId) ||
+        data.expenses.some((e) => e.paid_by_person_id === personId) ||
+        data.expenseSplits.some((s) => s.person_id === personId) ||
+        data.settlements.some(
+          (s) => s.from_person_id === personId || s.to_person_id === personId,
+        );
+      if (!usedElsewhere && person && !person.is_self && !person.linked_profile_id) {
+        await supabase.from("people").delete().eq("id", personId);
+      }
       await refresh();
-      return "ok";
+      return "deleted";
     };
 
     const setGroupArchived = async (groupId: string, archived: boolean) => {
@@ -1277,6 +1359,8 @@ export function PariProvider({ children }: { children: ReactNode }) {
       personById,
       personName,
       groupPersonIds,
+      groupRemovedPersonIds,
+      personHasGroupHistory,
       groupExpenses,
       expenseById,
       expenseItems,

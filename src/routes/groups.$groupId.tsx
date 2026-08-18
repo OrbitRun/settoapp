@@ -81,6 +81,7 @@ function GroupDetailScreen() {
   }
 
   const memberIds = pari.groupPersonIds(groupId);
+  const removedIds = pari.groupRemovedPersonIds(groupId);
   const expenses = pari.groupExpenses(groupId);
   const balances = pari.groupBalances(groupId);
   const myBalance = pari.myGroupBalance(groupId);
@@ -261,6 +262,7 @@ function GroupDetailScreen() {
                 const person = pari.data.people.find((p) => p.id === balance.personId);
                 const linked = Boolean(person?.linked_profile_id);
                 const pending = pendingPersonIds.has(balance.personId);
+                const former = removedIds.includes(balance.personId);
                 return (
                   <div key={balance.personId}>
                     {index > 0 ? <Divider /> : null}
@@ -276,11 +278,13 @@ function GroupDetailScreen() {
                           ) : null}
                         </p>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {linked
-                            ? t("invite.person.linked")
-                            : pending
-                              ? t("invite.person.pending")
-                              : t("invite.person.unlinked")}
+                          {former
+                            ? t("groups.formerMember")
+                            : linked
+                              ? t("invite.person.linked")
+                              : pending
+                                ? t("invite.person.pending")
+                                : t("invite.person.unlinked")}
                         </p>
                       </div>
                       <MoneyAmount
@@ -288,7 +292,7 @@ function GroupDetailScreen() {
                         tone={balanceTone(balance.netMinor)}
                         showSign={balance.netMinor !== 0}
                       />
-                      {!linked ? (
+                      {!linked && !former ? (
                         <button
                           type="button"
                           onClick={() =>
