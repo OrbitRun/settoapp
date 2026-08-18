@@ -1082,41 +1082,75 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const addGroupMembers = async (groupId: string, personIds: string[]) => {
       if (!userId) return;
-      const existing = groupPersonIds(groupId);
+      const active = groupPersonIds(groupId);
+      const removed = groupRemovedPersonIds(groupId);
+
+      // Someone who was removed earlier gets their original record back.
+      const toRestore = personIds.filter((personId) => removed.includes(personId));
+      for (const personId of toRestore) {
+        await supabase
+          .from("group_members")
+          .update({ removed_at: null })
+          .eq("group_id", groupId)
+          .eq("person_id", personId);
+      }
+
       const rows = personIds
-        .filter((personId) => !existing.includes(personId))
+        .filter((personId) => !active.includes(personId) && !removed.includes(personId))
         .map((personId) => ({
           owner_user_id: userId,
           group_id: groupId,
           person_id: personId,
           role: "member",
         }));
-      if (rows.length === 0) return;
-      await supabase.from("group_members").insert(rows);
+      if (rows.length > 0) await supabase.from("group_members").insert(rows);
+      if (rows.length === 0 && toRestore.length === 0) return;
       await refresh();
     };
 
     const removeGroupMember = async (
       groupId: string,
       personId: string,
-    ): Promise<"ok" | "has-expenses"> => {
-      const expenseIds = groupExpenses(groupId).map((expense) => expense.id);
-      const involved =
-        data.expenses.some(
-          (expense) => expense.group_id === groupId && expense.paid_by_person_id === personId,
-        ) ||
-        data.expenseSplits.some(
-          (split) => expenseIds.includes(split.expense_id) && split.person_id === personId,
-        );
-      if (involved) return "has-expenses";
+    ): Promise<"deleted" | "deactivated" | "owner-self" | "not-allowed"> => {
+      const group = data.groups.find((g) => g.id === groupId);
+      if (!userId || !group || group.owner_user_id !== userId) return "not-allowed";
+
+      const person = data.people.find((p) => p.id === personId);
+      // The group owner cannot remove themselves from their own group.
+      if (person?.linked_profile_id === userId || personId === currentPersonId) {
+        return "owner-self";
+      }
+
+      if (personHasGroupHistory(groupId, personId)) {
+        await supabase
+          .from("group_members")
+          .update({ removed_at: nowIso() })
+          .eq("group_id", groupId)
+          .eq("person_id", personId);
+        await refresh();
+        return "deactivated";
+      }
 
       await supabase
         .from("group_members")
         .delete()
         .eq("group_id", groupId)
         .eq("person_id", personId);
+
+      // A person record created only for this group and never used anywhere
+      // else is a duplicate — clean it up so it stops showing in pickers.
+      const usedElsewhere =
+        data.groupMembers.some((m) => m.person_id === personId && m.group_id !== groupId) ||
+        data.expenses.some((e) => e.paid_by_person_id === personId) ||
+        data.expenseSplits.some((s) => s.person_id === personId) ||
+        data.settlements.some(
+          (s) => s.from_person_id === personId || s.to_person_id === personId,
+        );
+      if (!usedElsewhere && person && !person.is_self && !person.linked_profile_id) {
+        await supabase.from("people").delete().eq("id", personId);
+      }
       await refresh();
-      return "ok";
+      return "deleted";
     };
 
     const setGroupArchived = async (groupId: string, archived: boolean) => {
