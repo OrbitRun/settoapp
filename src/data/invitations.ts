@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type GroupInvitation = {
   id: string;
   group_id: string;
+  person_id: string | null;
   token: string;
   join_code: string;
   expires_at: string;
@@ -20,7 +21,11 @@ export type InvitationPreview = {
   groupName: string;
   inviterName: string;
   memberCount: number;
+  personId: string | null;
+  personName: string | null;
+  personClaimed: boolean;
 };
+
 
 const PENDING_KEY = "pari.pendingInvite";
 
