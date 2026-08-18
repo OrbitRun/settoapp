@@ -506,17 +506,19 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const code = readPendingInvite();
     if (!code) return;
     inviteRef.current = true;
-    void acceptInvitation(code)
-      .then(async (groupId) => {
-        clearPendingInvite();
-        if (!groupId) return;
+    void redeemInvitation(code)
+      .then(async (result) => {
+        // Idempotent on the backend: already-member and repeats are safe.
+        if (result.status !== "error") clearPendingInvite();
+        if (!result.groupId) return;
         await queryClient.invalidateQueries({ queryKey: ["pari"] });
         if (loadGuestState().expenses.length === 0) {
-          navigate({ to: "/groups/$groupId", params: { groupId } });
+          navigate({ to: "/groups/$groupId", params: { groupId: result.groupId } });
         }
       })
       .catch((error) => console.error("[pari] pending invite", error));
   }, [userId, queryClient, navigate]);
+
 
   const value = useMemo<PariContextValue>(() => {
     const personById = (id: string) => data.people.find((p) => p.id === id);
