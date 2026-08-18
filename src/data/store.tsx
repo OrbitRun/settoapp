@@ -50,7 +50,7 @@ import {
   withSelfPerson,
   type GuestState,
 } from "./guest";
-import { clearPendingInvite, readPendingInvite, redeemInvitation } from "./invitations";
+import { acceptInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
@@ -506,19 +506,17 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const code = readPendingInvite();
     if (!code) return;
     inviteRef.current = true;
-    void redeemInvitation(code)
-      .then(async (result) => {
-        // Idempotent on the backend: already-member and repeats are safe.
-        if (result.status !== "error") clearPendingInvite();
-        if (!result.groupId) return;
+    void acceptInvitation(code)
+      .then(async (groupId) => {
+        clearPendingInvite();
+        if (!groupId) return;
         await queryClient.invalidateQueries({ queryKey: ["pari"] });
         if (loadGuestState().expenses.length === 0) {
-          navigate({ to: "/groups/$groupId", params: { groupId: result.groupId } });
+          navigate({ to: "/groups/$groupId", params: { groupId } });
         }
       })
       .catch((error) => console.error("[pari] pending invite", error));
   }, [userId, queryClient, navigate]);
-
 
   const value = useMemo<PariContextValue>(() => {
     const personById = (id: string) => data.people.find((p) => p.id === id);

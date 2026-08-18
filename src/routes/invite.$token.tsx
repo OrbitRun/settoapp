@@ -7,12 +7,11 @@ import { Screen } from "@/components/pari/AppShell";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { EmptyState } from "@/components/pari/EmptyState";
 import {
+  acceptInvitation,
   fetchInvitationPreview,
-  redeemInvitation,
   savePendingInvite,
   clearPendingInvite,
   type InvitationPreview,
-  type RedeemStatus,
 } from "@/data/invitations";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
@@ -51,7 +50,6 @@ function InviteScreen() {
   const [preview, setPreview] = useState<InvitationPreview | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
-  const [failure, setFailure] = useState<RedeemStatus | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -65,35 +63,23 @@ function InviteScreen() {
     };
   }, [token]);
 
-  const goToAuth = (mode?: "signup") => {
-    savePendingInvite(token);
-    navigate({
-      to: "/auth",
-      search: mode ? { mode, redirect: `/invite/${token}` } : { redirect: `/invite/${token}` },
-    });
-  };
-
   const join = async () => {
     if (pari.isGuest) {
-      goToAuth("signup");
+      savePendingInvite(token);
+      navigate({ to: "/auth", search: { mode: "signup" } });
       return;
     }
-    if (joining) return;
     setJoining(true);
-    const result = await redeemInvitation(token);
+    const groupId = await acceptInvitation(token);
     setJoining(false);
-
-    if (result.groupId) {
-      clearPendingInvite();
-      await pari.refresh();
-      toast.success(
-        result.status === "already_member" ? t("invite.alreadyMember") : t("invite.joined"),
-      );
-      navigate({ to: "/groups/$groupId", params: { groupId: result.groupId } });
+    if (!groupId) {
+      toast.error(t("invite.joinFailed"));
       return;
     }
-    setFailure(result.status);
-    if (result.status === "error") toast.error(t("invite.joinFailed"));
+    clearPendingInvite();
+    await pari.refresh();
+    toast.success(t("invite.joined"));
+    navigate({ to: "/groups/$groupId", params: { groupId } });
   };
 
   if (loading) {
@@ -104,24 +90,11 @@ function InviteScreen() {
     );
   }
 
-  const invalidTitle =
-    failure === "expired"
-      ? t("invite.expiredTitle")
-      : failure === "revoked"
-        ? t("invite.revokedTitle")
-        : t("invite.invalidTitle");
-  const invalidBody =
-    failure === "expired"
-      ? t("invite.expiredBody")
-      : failure === "revoked"
-        ? t("invite.revokedBody")
-        : t("invite.invalidBody");
-
-  if (!preview || (failure && failure !== "error")) {
+  if (!preview) {
     return (
       <Screen>
         <div className="mt-24">
-          <EmptyState title={invalidTitle} description={invalidBody} />
+          <EmptyState title={t("invite.invalidTitle")} description={t("invite.invalidBody")} />
           <div className="mt-6">
             <SecondaryButton onClick={() => navigate({ to: "/" })}>
               {t("split.goHome")}
@@ -153,8 +126,13 @@ function InviteScreen() {
         </PrimaryButton>
         {pari.isGuest ? (
           <>
-            <SecondaryButton onClick={() => goToAuth()}>
-              {t("invite.signInToJoin")}
+            <SecondaryButton
+              onClick={() => {
+                savePendingInvite(token);
+                navigate({ to: "/auth" });
+              }}
+            >
+              {t("welcome.secondary")}
             </SecondaryButton>
             <p className="pt-2 text-center text-xs text-muted-foreground">
               {t("invite.needAccount")}
@@ -173,4 +151,3 @@ function InviteScreen() {
     </Screen>
   );
 }
-

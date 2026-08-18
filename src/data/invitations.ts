@@ -104,38 +104,15 @@ export async function fetchInvitationPreview(code: string): Promise<InvitationPr
   };
 }
 
-/**
- * Redeeming is idempotent and never throws a backend error at the UI: the
- * database returns a status the app can translate.
- */
-export type RedeemStatus =
-  | "joined"
-  | "already_member"
-  | "expired"
-  | "revoked"
-  | "invalid"
-  | "unauthenticated"
-  | "error";
-
-export type RedeemResult = { status: RedeemStatus; groupId: string | null };
-
-export async function redeemInvitation(code: string): Promise<RedeemResult> {
-  const { data, error } = await supabase.rpc("redeem_group_invitation", { _code: code });
-  if (error) {
-    console.error("[pari] redeem invitation", error);
-    return { status: "error", groupId: null };
-  }
-  const row = (data ?? [])[0] as { status: RedeemStatus; group_id: string | null } | undefined;
-  if (!row) return { status: "error", groupId: null };
-  return { status: row.status, groupId: row.group_id };
-}
-
-/** Returns the joined group id, or null. Kept for existing call sites. */
+/** Returns the joined group id. */
 export async function acceptInvitation(code: string): Promise<string | null> {
-  const result = await redeemInvitation(code);
-  return result.groupId;
+  const { data, error } = await supabase.rpc("accept_group_invitation", { _code: code });
+  if (error) {
+    console.error("[pari] accept invitation", error);
+    return null;
+  }
+  return (data as string | null) ?? null;
 }
-
 
 export function savePendingInvite(code: string) {
   if (typeof window === "undefined") return;
