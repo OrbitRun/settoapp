@@ -79,7 +79,10 @@ function EditGroupScreen() {
   }
 
   const memberIds = pari.groupPersonIds(groupId);
-  const candidates = pari.data.people.filter((person) => !memberIds.includes(person.id));
+  const removedIds = pari.groupRemovedPersonIds(groupId);
+  const candidates = pari.data.people.filter(
+    (person) => !memberIds.includes(person.id) && !removedIds.includes(person.id),
+  );
   const ruleMembers = memberIds.map((id) => ({ id, name: pari.personName(id) }));
   const ruleReady = rule.mode === "equal" || isRuleComplete(rule, ruleMembers, 0);
 
