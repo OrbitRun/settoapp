@@ -32,17 +32,42 @@ export const Route = createFileRoute("/auth")({
 function AuthScreen() {
   const t = useT();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const search = Route.useSearch();
+  const [mode, setMode] = useState<"signin" | "signup">(
+    search.mode === "signup" ? "signup" : "signin",
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [hasPendingInvite, setHasPendingInvite] = useState(false);
 
   useEffect(() => {
+    setHasPendingInvite(Boolean(readPendingInvite()));
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/home" });
     });
   }, [navigate]);
+
+  const sendReset = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setResetBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setResetOpen(false);
+      toast.success(t("auth.resetSent"));
+    } catch (error) {
+      toast.error(t(authMessageKey(error)));
+    } finally {
+      setResetBusy(false);
+    }
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
