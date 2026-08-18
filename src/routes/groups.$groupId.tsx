@@ -255,7 +255,7 @@ function GroupDetailScreen() {
                 params={{ groupId }}
                 className="pb-2 pt-1 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                {t("groups.edit")}
+                {t("groups.settings")}
               </Link>
             </div>
           </div>
