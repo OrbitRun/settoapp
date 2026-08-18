@@ -104,14 +104,37 @@ export async function fetchInvitationPreview(code: string): Promise<InvitationPr
   };
 }
 
-/** Returns the joined group id. */
-export async function acceptInvitation(code: string): Promise<string | null> {
-  const { data, error } = await supabase.rpc("accept_group_invitation", { _code: code });
+export type RedeemStatus =
+  | "joined"
+  | "already_member"
+  | "expired"
+  | "revoked"
+  | "invalid"
+  | "unauthenticated"
+  | "error";
+
+export type RedeemResult = { status: RedeemStatus; groupId: string | null };
+
+/**
+ * Idempotent invitation redemption. An existing membership is authoritative:
+ * the backend returns `already_member` instead of creating a second row, so
+ * repeated taps can never duplicate memberships, activity or ownership.
+ */
+export async function redeemInvitation(code: string): Promise<RedeemResult> {
+  const { data, error } = await supabase.rpc("redeem_group_invitation", { _code: code });
   if (error) {
-    console.error("[pari] accept invitation", error);
-    return null;
+    console.error("[pari] redeem invitation", error);
+    return { status: "error", groupId: null };
   }
-  return (data as string | null) ?? null;
+  const row = (data ?? [])[0] as { status: string; group_id: string | null } | undefined;
+  if (!row) return { status: "error", groupId: null };
+  return { status: row.status as RedeemStatus, groupId: row.group_id ?? null };
+}
+
+/** Returns the joined group id, or null when the invitation could not be used. */
+export async function acceptInvitation(code: string): Promise<string | null> {
+  const result = await redeemInvitation(code);
+  return result.groupId;
 }
 
 export function savePendingInvite(code: string) {
