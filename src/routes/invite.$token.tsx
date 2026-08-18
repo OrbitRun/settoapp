@@ -74,10 +74,10 @@ function InviteScreen() {
     const { status, groupId } = await redeemInvitation(token);
     setJoining(false);
 
-    if (status === "joined" && groupId) {
+    if ((status === "joined" || status === "claimed") && groupId) {
       clearPendingInvite();
       await pari.refresh();
-      toast.success(t("invite.joined"));
+      toast.success(status === "claimed" ? t("invite.claimed") : t("invite.joined"));
       navigate({ to: "/groups/$groupId", params: { groupId } });
       return;
     }
@@ -90,8 +90,10 @@ function InviteScreen() {
     clearPendingInvite();
     if (status === "expired") toast.error(t("invite.expiredTitle"));
     else if (status === "revoked") toast.error(t("invite.revokedTitle"));
+    else if (status === "person_taken") toast.error(t("invite.personTaken"));
     else toast.error(t("invite.joinFailed"));
   };
+
 
   if (loading) {
     return (
