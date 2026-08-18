@@ -540,7 +540,39 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const personName = (id: string) => personById(id)?.name ?? "—";
 
     const groupPersonIds = (groupId: string) =>
-      data.groupMembers.filter((m) => m.group_id === groupId).map((m) => m.person_id);
+      data.groupMembers
+        .filter((m) => m.group_id === groupId && !m.removed_at)
+        .map((m) => m.person_id);
+
+    const groupRemovedPersonIds = (groupId: string) =>
+      data.groupMembers
+        .filter((m) => m.group_id === groupId && Boolean(m.removed_at))
+        .map((m) => m.person_id);
+
+    /** Any expense, split, settlement or activity trace inside this group. */
+    const personHasGroupHistory = (groupId: string, personId: string) => {
+      const expenseIds = data.expenses
+        .filter((expense) => expense.group_id === groupId)
+        .map((expense) => expense.id);
+      return (
+        data.expenses.some(
+          (expense) => expense.group_id === groupId && expense.paid_by_person_id === personId,
+        ) ||
+        data.expenseSplits.some(
+          (split) => expenseIds.includes(split.expense_id) && split.person_id === personId,
+        ) ||
+        data.itemSplits.some((split) => {
+          if (split.person_id !== personId) return false;
+          const item = data.expenseItems.find((i) => i.id === split.expense_item_id);
+          return item ? expenseIds.includes(item.expense_id) : false;
+        }) ||
+        data.settlements.some(
+          (settlement) =>
+            settlement.group_id === groupId &&
+            (settlement.from_person_id === personId || settlement.to_person_id === personId),
+        )
+      );
+    };
 
     const groupExpenses = (groupId: string) =>
       data.expenses
