@@ -263,15 +263,31 @@ function GroupDetailScreen() {
                 const linked = Boolean(person?.linked_profile_id);
                 const pending = pendingPersonIds.has(balance.personId);
                 const former = removedIds.includes(balance.personId);
+                const name = pari.personName(balance.personId);
+                const isSelf = balance.personId === pari.currentPersonId;
                 return (
                   <div key={balance.personId}>
                     {index > 0 ? <Divider /> : null}
-                    <div className="flex items-center gap-3 px-4 py-3.5">
-                      <Avatar name={pari.personName(balance.personId)} size="sm" />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPersonDetail({
+                          id: balance.personId,
+                          name,
+                          balanceMinor: balance.netMinor,
+                          linked,
+                          pending,
+                          former,
+                          isSelf,
+                        })
+                      }
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-surface-strong/60"
+                    >
+                      <Avatar name={name} size="sm" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[15px]">
-                          {pari.personName(balance.personId)}
-                          {balance.personId === pari.currentPersonId ? (
+                          {name}
+                          {isSelf ? (
                             <span className="ml-2 text-xs text-muted-foreground">
                               {t("common.you")}
                             </span>
@@ -292,21 +308,11 @@ function GroupDetailScreen() {
                         tone={balanceTone(balance.netMinor)}
                         showSign={balance.netMinor !== 0}
                       />
-                      {!linked && !former ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setPersonInvite({
-                              id: balance.personId,
-                              name: pari.personName(balance.personId),
-                            })
-                          }
-                          className="shrink-0 rounded-xl bg-surface-strong px-3 py-2 text-xs font-medium transition-transform active:scale-[0.98]"
-                        >
-                          {pending ? t("invite.person.resend") : t("invite.person.invite")}
-                        </button>
-                      ) : null}
-                    </div>
+                      <ChevronRight
+                        className="h-4 w-4 shrink-0 text-muted-foreground/60"
+                        strokeWidth={1.6}
+                      />
+                    </button>
                   </div>
                 );
               })}
@@ -319,7 +325,7 @@ function GroupDetailScreen() {
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
               >
                 <UserPlus className="h-4 w-4" strokeWidth={2} />
-                {t("invite.inviteNewPerson")}
+                {t("groups.addPerson")}
               </button>
             </div>
           </>
