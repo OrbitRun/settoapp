@@ -329,6 +329,18 @@ const en: Dict = {
   "invite.invalidTitle": "Invitation not found",
   "invite.invalidBody": "The link is expired or has been revoked. Ask for a new one.",
   "invite.getApp": "Get PARI",
+  "invite.personTitle": "Invite {name}",
+  "invite.personDescription": "{name} keeps their existing expenses and balance.",
+  "invite.inviteNewPerson": "+ Invite a new person",
+  "invite.person.unlinked": "No account yet",
+  "invite.person.pending": "Invitation sent",
+  "invite.person.linked": "Connected",
+  "invite.person.invite": "Invite",
+  "invite.person.resend": "Send again",
+  "invite.claimIntro": "You'll be connected to {name}",
+  "invite.claimed": "You're connected to your existing history.",
+  "invite.personTaken": "This person is already connected to an account.",
+
 
   "convert.title": "Save this split in PARI",
   "convert.body": "Create a free account to keep the split, follow balances and settle up later.",
