@@ -2,9 +2,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
+import { readPendingInvite } from "@/data/invitations";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { authMessageKey } from "@/lib/auth-errors";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
@@ -29,17 +32,42 @@ export const Route = createFileRoute("/auth")({
 function AuthScreen() {
   const t = useT();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const search = Route.useSearch();
+  const [mode, setMode] = useState<"signin" | "signup">(
+    search.mode === "signup" ? "signup" : "signin",
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [hasPendingInvite, setHasPendingInvite] = useState(false);
 
   useEffect(() => {
+    setHasPendingInvite(Boolean(readPendingInvite()));
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/home" });
     });
   }, [navigate]);
+
+  const sendReset = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setResetBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setResetOpen(false);
+      toast.success(t("auth.resetSent"));
+    } catch (error) {
+      toast.error(t(authMessageKey(error)));
+    } finally {
+      setResetBusy(false);
+    }
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -64,7 +92,7 @@ function AuthScreen() {
         navigate({ to: "/home" });
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("auth.error"));
+      toast.error(t(authMessageKey(error)));
     } finally {
       setBusy(false);
     }
@@ -90,7 +118,9 @@ function AuthScreen() {
         <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.03em]">
           {t("auth.title")}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("auth.subtitle")}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {hasPendingInvite ? t("auth.inviteContext") : t("auth.subtitle")}
+        </p>
 
         <form onSubmit={submit} className="mt-10 space-y-3">
           {mode === "signup" ? (
@@ -132,14 +162,49 @@ function AuthScreen() {
           </SecondaryButton>
         </div>
 
+        {mode === "signin" ? (
+          <button
+            type="button"
+            onClick={() => {
+              setResetEmail(email);
+              setResetOpen(true);
+            }}
+            className="mx-auto mt-6 block text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("auth.forgot")}
+          </button>
+        ) : null}
+
         <button
           type="button"
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="mx-auto mt-8 block text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="mx-auto mt-6 block text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           {mode === "signin" ? t("auth.toSignUp") : t("auth.toSignIn")}
         </button>
       </div>
+
+      <BottomSheet
+        open={resetOpen}
+        onClose={() => setResetOpen(false)}
+        title={t("auth.resetTitle")}
+        description={t("auth.resetBody")}
+      >
+        <form onSubmit={sendReset} className="space-y-3 pb-2">
+          <input
+            type="email"
+            required
+            value={resetEmail}
+            onChange={(event) => setResetEmail(event.target.value)}
+            placeholder={t("auth.email")}
+            autoComplete="email"
+            className="h-14 w-full rounded-2xl bg-surface-strong px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
+          />
+          <PrimaryButton type="submit" disabled={resetBusy}>
+            {t("auth.resetSend")}
+          </PrimaryButton>
+        </form>
+      </BottomSheet>
     </div>
   );
 }

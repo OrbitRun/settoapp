@@ -7,7 +7,7 @@ import { Screen } from "@/components/pari/AppShell";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { EmptyState } from "@/components/pari/EmptyState";
 import {
-  acceptInvitation,
+  redeemInvitation,
   fetchInvitationPreview,
   savePendingInvite,
   clearPendingInvite,
@@ -64,22 +64,33 @@ function InviteScreen() {
   }, [token]);
 
   const join = async () => {
+    if (joining) return;
     if (pari.isGuest) {
       savePendingInvite(token);
       navigate({ to: "/auth", search: { mode: "signup" } });
       return;
     }
     setJoining(true);
-    const groupId = await acceptInvitation(token);
+    const { status, groupId } = await redeemInvitation(token);
     setJoining(false);
-    if (!groupId) {
-      toast.error(t("invite.joinFailed"));
+
+    if (status === "joined" && groupId) {
+      clearPendingInvite();
+      await pari.refresh();
+      toast.success(t("invite.joined"));
+      navigate({ to: "/groups/$groupId", params: { groupId } });
+      return;
+    }
+    if (status === "already_member" && groupId) {
+      clearPendingInvite();
+      toast.success(t("invite.alreadyMember"));
+      navigate({ to: "/groups/$groupId", params: { groupId } });
       return;
     }
     clearPendingInvite();
-    await pari.refresh();
-    toast.success(t("invite.joined"));
-    navigate({ to: "/groups/$groupId", params: { groupId } });
+    if (status === "expired") toast.error(t("invite.expiredTitle"));
+    else if (status === "revoked") toast.error(t("invite.revokedTitle"));
+    else toast.error(t("invite.joinFailed"));
   };
 
   if (loading) {

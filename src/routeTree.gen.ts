@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ExpenseExpenseIdRouteImport } from './routes/expense.$expenseId'
 import { Route as GroupsIndexRouteImport } from './routes/groups.index'
 import { Route as GroupsGroupIdRouteImport } from './routes/groups.$groupId'
@@ -59,6 +60,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExpenseExpenseIdRoute = ExpenseExpenseIdRouteImport.update({
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/onboarding'
     | '/profile'
+    | '/reset-password'
     | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/onboarding'
     | '/profile'
+    | '/reset-password'
     | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/onboarding'
     | '/profile'
+    | '/reset-password'
     | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
@@ -286,6 +298,7 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ExpenseExpenseIdRoute: typeof ExpenseExpenseIdRoute
   GroupsGroupIdRoute: typeof GroupsGroupIdRoute
   GroupsNewRoute: typeof GroupsNewRoute
@@ -345,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/expense/$expenseId': {
@@ -462,6 +482,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ExpenseExpenseIdRoute: ExpenseExpenseIdRoute,
   GroupsGroupIdRoute: GroupsGroupIdRoute,
   GroupsNewRoute: GroupsNewRoute,
