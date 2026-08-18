@@ -54,6 +54,21 @@ function GroupDetailScreen() {
 
   const t = useT();
 
+  // Which people already have a live invitation waiting to be accepted.
+  useEffect(() => {
+    let active = true;
+    void fetchActiveInvitations(groupId).then((rows) => {
+      if (!active) return;
+      setPendingPersonIds(
+        new Set(rows.map((row) => row.person_id).filter((id): id is string => Boolean(id))),
+      );
+    });
+    return () => {
+      active = false;
+    };
+  }, [groupId, personInvite]);
+
+
   const group = pari.data.groups.find((g) => g.id === groupId);
   if (!group) {
     return (
