@@ -261,6 +261,7 @@ function GroupDetailScreen() {
                 const person = pari.data.people.find((p) => p.id === balance.personId);
                 const linked = Boolean(person?.linked_profile_id);
                 const pending = pendingPersonIds.has(balance.personId);
+                const former = removedIds.includes(balance.personId);
                 return (
                   <div key={balance.personId}>
                     {index > 0 ? <Divider /> : null}
