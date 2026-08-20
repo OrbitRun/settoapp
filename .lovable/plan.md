@@ -1,50 +1,22 @@
-# Fix item_splits RLS recursion — isolated security fix
+# Harden can_read_expense_item — drop the caller-supplied user id
 
-## Diagnosis (verified read-only)
+One migration. Same visibility predicate, identity taken from `auth.uid()` inside the function instead of from the caller.
 
-Current SELECT policies:
+## Why
 
-- `expense_items` → "participants can read shared group expense items": checks the parent expense is a group the user participates in, AND (`is_shared` OR **a subquery on `item_splits`** linking the user's person).
-- `item_splits` → "participants can read group item splits": subquery on **`expense_items`** joined to `expenses`, AND (`ei.is_shared` OR **a subquery on `item_splits` itself** (`s2`)).
+`public.can_read_expense_item(_item_id uuid, _user_id uuid)` is SECURITY DEFINER and executable by `authenticated`. The policy passes `auth.uid()`, but any signed-in client can call the function directly with someone else's UUID and probe whether that person can see a given item. Removing the parameter closes that entirely.
 
-Exact cycle:
+## Baseline to re-verify after (already recorded)
 
-```text
-item_splits SELECT policy
-  -> reads expense_items
-     -> expense_items SELECT policy
-        -> reads item_splits
-           -> item_splits SELECT policy   <-- recursion
-```
+groups 2 · people 10 · expenses 20 · expense_items 105 · expense_splits 48 · item_splits 0 · settlements 1 · activity 69
 
-Plus a second, independent cycle: the `item_splits` policy's own `s2` subquery reads `item_splits`, re-triggering the same policy.
+Balances (minor units): 440675a4… 0b6bbff7 +188765 / e7f8f0de −188765 · b29d9051… 2f2bdc79 −174632 / c75816d4 −164785 / e7f8f0de +339417
 
-Both `expenses` policies use only `is_group_participant(...)` (SECURITY DEFINER) and are not part of the cycle.
-
-## Pre-fix baseline (recorded)
-
-| Table | Rows |
-| --- | --- |
-| groups | 2 |
-| people | 10 |
-| expenses | 20 |
-| expense_items | 105 |
-| expense_splits | 48 |
-| item_splits | 0 |
-| settlements | 1 |
-| activity | 69 |
-
-Balance snapshot (minor units, per group/person):
-
-- 440675a4… : 0b6bbff7 +188765, e7f8f0de −188765
-- b29d9051… : 2f2bdc79 −174632, c75816d4 −164785, e7f8f0de +339417
-
-## The fix (smallest safe change)
-
-One new narrow SECURITY DEFINER boolean helper that evaluates item visibility without re-entering RLS, then replace exactly one policy on `item_splits`. Nothing else is dropped or altered.
+## The migration
 
 ```sql
-CREATE OR REPLACE FUNCTION public.can_read_expense_item(_item_id uuid, _user_id uuid)
+-- 1. New single-argument helper; identity derived internally.
+CREATE OR REPLACE FUNCTION public.can_read_expense_item(_item_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT EXISTS (
     SELECT 1
@@ -52,46 +24,48 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS
     JOIN public.expenses e ON e.id = ei.expense_id
     WHERE ei.id = _item_id
       AND e.group_id IS NOT NULL
-      AND public.is_group_participant(e.group_id, _user_id)
+      AND public.is_group_participant(e.group_id, auth.uid())
       AND (
         ei.is_shared
         OR EXISTS (
           SELECT 1 FROM public.item_splits s
           JOIN public.people p ON p.id = s.person_id
-          WHERE s.expense_item_id = ei.id AND p.linked_profile_id = _user_id
+          WHERE s.expense_item_id = ei.id AND p.linked_profile_id = auth.uid()
         )
       )
   );
 $$;
-REVOKE ALL ON FUNCTION public.can_read_expense_item(uuid, uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.can_read_expense_item(uuid, uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.can_read_expense_item(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.can_read_expense_item(uuid) TO authenticated;
 
+-- 2. Point the one policy at the new signature.
 DROP POLICY "participants can read group item splits" ON public.item_splits;
 CREATE POLICY "participants can read group item splits"
 ON public.item_splits FOR SELECT TO authenticated
-USING (public.can_read_expense_item(expense_item_id, auth.uid()));
+USING (public.can_read_expense_item(expense_item_id));
+
+-- 3. Remove the two-argument version so no caller-supplied identity remains.
+DROP FUNCTION public.can_read_expense_item(uuid, uuid);
 ```
 
-Why this preserves privacy: the helper body is the *same* predicate the policy used — group participation AND (shared item OR the user is personally assigned to that item). Nothing is widened; private item assignments stay hidden from participants who are not on the item. Because the helper is SECURITY DEFINER, its internal reads of `expense_items`/`item_splits` do not evaluate RLS, so the cycle is broken at both places.
-
-The `expense_items` policy keeps its `item_splits` subquery, which now resolves through the non-recursive item_splits policy — cycle gone with a single policy replacement.
+The predicate body is byte-for-byte the previous one with `_user_id` replaced by `auth.uid()`. No visibility rule changes.
 
 ## Explicitly untouched
 
-`is_group_participant` and its grants, `groups`, `group_members`, `settlements`, `activity`, `expenses` policies, the `expense_items` policy, invitation functions, auth, `people.status` / `unlinked_at`, foreign keys, ownership, UI, and all Stage S2 work.
+`is_group_participant` and its grants, the `expense_items` policy, `expenses` policies, every other RLS policy, all data, and Stage S2.
 
-## Post-fix verification
+## Verification after the migration
 
-1. Reproduce-then-confirm: the previously failing `expense_items` / `item_splits` load returns 200, no recursion error in console or network.
-2. Owner loads expenses, expense_items and item_splits successfully.
-3. Participant reads only permitted item_splits.
-4. Private-item isolation: a participant not assigned to a private item sees no splits for it.
-5. Non-participant identity returns zero rows.
-6. Re-run every baseline count and the balance snapshot — must be bit-identical.
-7. Invitation preview and claim still work.
+1. Load `expense_items` / `item_splits` in the app — no recursion, no 500.
+2. Owner reads expenses, items and item splits normally.
+3. A permitted participant reads the item splits they should see.
+4. A private item stays hidden from a participant who is not assigned to it.
+5. A non-participant identity returns zero rows.
+6. Re-run the baseline counts and balance snapshot — must be identical.
+7. Confirm the two-argument function no longer exists (a direct call with another user's UUID fails to resolve) and the one-argument version is granted only to `authenticated`.
 
-If any count or balance differs, the migration is reverted and reported — no second attempt.
+If anything differs, the migration is reverted and reported.
 
 ## Change type
 
-One database migration: one new helper function, one policy replaced on `item_splits`. No frontend, no schema, no data changes.
+Database migration only: one function signature replaced, one policy repointed. No frontend, no schema, no data.
