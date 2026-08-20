@@ -470,10 +470,17 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
         name,
         quantity,
         unitPriceMinor: Math.max(0, Math.round(effectiveTotal! / quantity)),
-        originalUnitPriceMinor: discount > 0 ? Math.round(originalTotal! / quantity) : null,
+        // Keep the detected pre-discount unit price whenever one was read, so the
+        // review screen can show "2 × 7,50" instead of re-deriving it from the total.
+        originalUnitPriceMinor:
+          unitPrice !== null
+            ? unitPrice
+            : discount > 0
+              ? Math.round(originalTotal! / quantity)
+              : null,
         discountMinor: Math.max(0, discount),
         discountPercent,
-        uncertain: uncertain || (unit === null && originalTotal === 0),
+        uncertain: uncertain || (unitPrice === null && originalTotal === 0),
         confidence: uncertain ? "low" : lineConfidence,
       });
     }
