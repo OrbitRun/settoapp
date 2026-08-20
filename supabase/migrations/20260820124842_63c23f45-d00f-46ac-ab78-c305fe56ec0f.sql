@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.update_my_people_name(text) FROM anon;
