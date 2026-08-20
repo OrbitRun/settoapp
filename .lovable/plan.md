@@ -1,148 +1,123 @@
-# Stage S3C — People and personal-data ownership readiness (audit report + proposed minimal migration)
+# Stage S3C-2 — People write-surface audit (read-only)
 
-Read-only audit complete. Nothing was changed. S3D/S3E/S3F/S4 not started.
+Nothing was changed. No policy, function, grant, constraint, column, row or app file was touched, and no test rows were created. S3D/S3E/S3F/S4 are not started.
 
-## 1. Current people ownership model
+## 1. Complete `public.people` schema
 
-`people.owner_user_id` today means all three at once: creator, owner, and tenant/security boundary. The only write path is the permissive `own people` policy (`FOR ALL`, `auth.uid() = owner_user_id`). Reads have a second permissive path: `participants can read group people` (person is in a group the caller participates in). FK is `owner_user_id -> auth.users ON DELETE CASCADE`, and `linked_profile_id -> profiles ON DELETE SET NULL`.
+| Column | Type | Null | Default | Constraints | Written by app | Written by DB fn/trigger | In authorization | In financial/history relations |
+|---|---|---|---|---|---|---|---|---|
+| `id` | uuid | NO | `gen_random_uuid()` | PK | never | never | indirectly (target of policies) | yes — referenced by group_members, expenses.paid_by_person_id, expense_splits, item_splits, settlements(from/to), activity.actor_person_id, group_invitations.person_id, groups.owner_person_id |
+| `owner_user_id` | uuid | NO | none | FK → auth.users ON DELETE CASCADE | yes (insert only) | yes (`handle_new_user`, `redeem_group_invitation`, `accept_group_invitation`) | **yes — sole write key** (`own people`) | no |
+| `linked_profile_id` | uuid | YES | none | FK → profiles ON DELETE SET NULL | insert only (self person) | yes (`claim_group_invitation` UPDATE; redeem/accept on insert) | yes — read side, via `is_group_participant` | no |
+| `name` | text | NO | none | — | yes (insert, rename, profile-name sync) | yes (insert paths) | no | display only |
+| `avatar_url` | text | YES | none | — | not written anywhere today | no | no | display only |
+| `is_self` | boolean | NO | `false` | — | insert only | insert only | no (but drives client "me" resolution) | no |
+| `status` | text | NO | `'active'` | CHECK in ('active','former') | never | never | no (not yet in any policy) | future lifecycle |
+| `unlinked_at` | timestamptz | YES | none | — | never | never | no | future lifecycle |
+| `created_at` | timestamptz | NO | `now()` | — | never | never | no | ordering only |
 
-Live rows (10 total, all `status = 'active'`):
+There is **no `updated_at` column** on `people` and no trigger on the table (`pg_trigger`: none non-internal).
 
-| Class | Count | Examples |
+## 2. Every write path to `people`
+
+| Workflow | Caller | Op | Columns written | Authorization today | Expected user | SECURITY DEFINER |
+|---|---|---|---|---|---|---|
+| Signup | `handle_new_user()` trigger on auth.users | INSERT | owner_user_id, linked_profile_id, name, is_self=true | trigger, bypasses RLS | new account | yes |
+| Self-person repair on load (`store.tsx` fetch) | browser | INSERT | owner_user_id, linked_profile_id, name, is_self=true | `own people` (uid = owner) | signed-in user | no |
+| Guest migration (`migrateGuestData`) | browser | INSERT | owner_user_id, name, is_self, linked_profile_id | `own people` | converting guest | no |
+| `addPerson` (placeholder) | browser | INSERT | owner_user_id, name | `own people` | creator | no |
+| Group creation (`createGroup`) | browser | INSERT | owner_user_id, name | `own people` | group creator | no |
+| `renamePerson` | browser | UPDATE | name | `own people` (creator only, **not** the linked user) | creator/group owner | no |
+| `deletePerson` | browser | DELETE | — | `own people` | creator | no |
+| Member removal cleanup (`groups` flow) | browser | DELETE | — | `own people`, only when unused, not self, not linked | group owner | no |
+| Profile rename sync | browser (`updateProfile`) | UPDATE | name (on self person) | `own people` | the user | no |
+| Invitation redeem (`redeem_group_invitation`, `accept_group_invitation`) | RPC | INSERT | owner_user_id (= group owner!), linked_profile_id (= joiner), name, is_self=false | function logic | joining user | yes |
+| Invitation claim (`claim_group_invitation`) | RPC | UPDATE | linked_profile_id only | function logic, guarded | joining user | yes |
+
+Note the asymmetry that matters for S3D: a person created by redeem is owned by the **group owner's** uid, while the linked account is the joiner's. That joiner today has **no write path at all** to their own person row.
+
+## 3. Column write-classification matrix
+
+| Column | Class | Mark | Why |
+|---|---|---|---|
+| `id` | D immutable | RED | Identity key of all financial history |
+| `owner_user_id` | B owner/manager, system in practice | RED | The entire write-authorization key; self-editable = full takeover of any row |
+| `linked_profile_id` | C system/lifecycle | RED | Account binding. Self-editable = claim any placeholder without an invitation, bypassing `claim_group_invitation` |
+| `name` | A user-editable | GREEN for one's own linked person; YELLOW for placeholders (creator/group authority) | Display only, no authorization or money impact |
+| `avatar_url` | A user-editable | GREEN | Display only, unused today |
+| `is_self` | D immutable | RED | Determines "me" resolution in the client; flipping it corrupts split defaults |
+| `status` | C lifecycle | RED | Will gate claimability and former-person behaviour; self-edit would let a former person re-activate |
+| `unlinked_at` | C lifecycle | RED | Same as status; must be set only by controlled deletion/unlink logic |
+| `created_at` | D immutable | RED | Audit ordering |
+
+## 4. Self-person lifecycle
+
+Signup → `handle_new_user` writes `profiles` + a self `people` row with the same name. Profile editing (`updateProfile`) writes `profiles` **and** mirrors `display_name` into the self person's `name`. Editing a person's name (`renamePerson`) does **not** write back to `profiles`. So the two can diverge: rename the self person from a group screen and `profiles.display_name` stays stale. Canonical today is `profiles` for the account, while `people.name` is what every group screen and balance list actually displays. `people` is currently used as a live mirror, not a historical snapshot — but only in the one direction profile → person.
+
+## 5. Placeholder lifecycle
+
+| Transition | Columns touched | Who should be allowed |
 |---|---|---|
-| 1. Claimed self linked to profile | 4 | Jonas, Zia, t178…, each `is_self`, `linked_profile_id` set |
-| 2. Claimed group person (linked, not self) | 0 | — none yet; the invite claim path produces them |
-| 3. Unclaimed placeholder | 6 | Zia, Scott, Kasper (in groups, carry splits/payments), Person 2/3/4 (orphan placeholders, 0 memberships, 0 splits) |
-| 4. Former person | 0 | `status`/`unlinked_at` exist from S1 but unused |
+| Create placeholder | owner_user_id, name | creator |
+| Rename | name | creator or group owner |
+| Add to group | none on `people` (writes `group_members`) | group owner |
+| Used in expense/split | none on `people` | any participant |
+| Invite | none on `people` (writes `group_invitations.person_id`) | group owner |
+| Claim | linked_profile_id | controlled RPC only |
+| Future unlink/former | status, unlinked_at, linked_profile_id | controlled RPC only |
 
-All 6 placeholders are owned by one user (`c2415b89`). Four financially-active people (Jonas self, Zia, Scott, Kasper) carry 15/3/1/1 payments and 20/12/8/8 splits — these are the rows that must survive account deletion.
+## 6. Invitation claim path
 
-**What breaks if `people.owner_user_id` went NULL:** every write on people (rename, avatar, claim-related updates) fails — `own people` is the only write path. Group participants would still read group people, but placeholders with no membership (Person 2/3/4, and every self row, which has 0 memberships) would become invisible and unwritable to everyone. RED.
+`claim_group_invitation(_code)` is `SECURITY DEFINER`, `search_path=public`. On the person-scoped branch it writes exactly one column: `people.linked_profile_id = auth.uid()`, guarded by `AND linked_profile_id IS NULL`, plus `group_invitations.status='used', revoked_at=now()`. It never touches owner_user_id, is_self, status or unlinked_at, and never writes `group_members` on that branch (the person is already a member). The group-wide branch delegates to `redeem_group_invitation`, which INSERTs a new person owned by the group owner and INSERTs `group_members`.
 
-## 2. Current personal-expense ownership model
+Guards preventing the wrong person being claimed: the person is read from the invitation row, never from the client; the person must belong to the invitation's group; the person must be unlinked (else `person_taken`); the caller must not already be another person in the group; invitation must be active, unrevoked and unexpired. Client code cannot reach these columns at all today because `own people` requires `auth.uid() = owner_user_id`, which the joiner is not.
 
-`expenses.group_id IS NULL` = personal. Current data: **0 personal expenses, 0 personal items/splits/item_splits.** So there is no legacy personal data to protect — only future rows.
+## 7. Current privileges
 
-Path analysis for personal rows:
+RLS policies on `people` (2, both PERMISSIVE, role `authenticated`):
+- `own people` — FOR ALL, USING and WITH CHECK `auth.uid() = owner_user_id`
+- `participants can read group people` — FOR SELECT, USING: exists a `group_members` row for the person in a group where `is_group_participant(gm.group_id, auth.uid())`
 
-| Table | SELECT | INSERT | UPDATE | DELETE | owner_user_id reliance |
-|---|---|---|---|---|---|
-| expenses (group_id NULL) | `own expenses` only (the participant SELECT requires `group_id IS NOT NULL`) | `own expenses` + restrictive `group_id IS NULL OR participant` | same | `own expenses` | total — RED |
-| expense_items (personal parent) | `own expense items` only (participant SELECT requires group parent) | `own …` + restrictive parent-authority (S3B-FIX) | same | same | total — RED |
-| expense_splits (personal parent) | same shape | same | same | same | total — RED |
-| item_splits (personal parent) | `own item splits`; `can_read_expense_item` only covers group parents | `own …` + restrictive parent-authority | same | same | total — RED |
-| activity (group_id NULL, 16 rows) | `own activity` only | `own …` + restrictive `group_id IS NULL OR participant` | same | same | total — RED |
-| settlements | always group-scoped (`group_id NOT NULL`) | — | — | — | YELLOW (group path exists) |
+Table ACL: `anon`, `authenticated`, `service_role` all hold full `arwdDxtm` (including UPDATE). There are **no column-level grants** on any column (`pg_attribute.attacl` is null for all nine). Therefore RLS alone decides which rows may change, and **nothing** restricts which columns change.
 
-`person_id` / `linked_profile_id` play no role in any personal-data authorization path today.
+**Risk of the proposed broad policy.** A policy `FOR UPDATE USING (linked_profile_id = auth.uid()) WITH CHECK (linked_profile_id = auth.uid())` would, under these grants, let the linked user rewrite **every column of that row in one statement**: set `owner_user_id = auth.uid()` (stealing the row and all `own people` authority over it, including delete), flip `is_self`, set `status='active'` on a former person, clear `unlinked_at`, or rewrite `name`. The WITH CHECK only pins `linked_profile_id`; every other column is unconstrained. That is why S3C-1 correctly deferred it.
 
-## 3. Remaining owner_user_id dependencies in personal/non-group data
+## 8. Recommended smallest safe self-management mechanism
 
-1. `expenses` personal rows: sole SELECT/INSERT/UPDATE/DELETE key.
-2. `expense_items`, `expense_splits`, `item_splits` under a personal parent: sole key (the S3B group policies deliberately require `group_id IS NOT NULL`).
-3. `activity` with `group_id IS NULL`: sole key.
-4. `people`: sole write key for all classes, sole read key for non-group people.
-5. `group_invitations`: owner-only, unchanged by this stage.
+- **A. broad self UPDATE policy** — rejected, see above.
+- **B. row policy + column-level UPDATE grants** (`GRANT UPDATE (name, avatar_url) ON public.people TO authenticated`) — sound, but column grants apply to *all* update paths for that role, so they would also silently narrow the existing `own people` creator path (rename of placeholders). Requires revoking the table-wide UPDATE grant, which is a wider blast radius than it looks.
+- **C. narrow SECURITY DEFINER RPC** e.g. `update_self_person_display(_name text, _avatar_url text)` that updates only `name`/`avatar_url` where `linked_profile_id = auth.uid() AND status='active'` — smallest writable surface, no new row-level UPDATE authority, matches the existing invitation-claim pattern already in the codebase.
+- **D. keep self-editable data in `profiles`** — attractive long term, but the group UI reads `people.name`, so the mirror still has to be written by something.
 
-## 4. Recommended durable identity model for people (option C, smallest)
+**Recommendation: C, plus keeping the existing profile → person name mirror.** It grants zero new direct UPDATE rights and cannot touch a security or lifecycle column by construction.
 
-Keep `people` as the durable historical identity, and split its two meanings without renaming anything now:
+## 9. Before `people.owner_user_id` may become NULL
 
-- `owner_user_id` stays NOT NULL for now and keeps meaning **creator / personal-address-book tenant**.
-- Durable group visibility already comes from `group_members` + `is_group_participant`, which does not touch `owner_user_id`. That is the survival path.
-- Future account deletion must **not** cascade people. Required change before S4: replace `people_owner_user_id_fkey ON DELETE CASCADE` with `ON DELETE SET NULL` (paired with allowing NULL) — proposed for S3D, not now.
-- Claimability rule to encode later: claimable iff `linked_profile_id IS NULL AND status = 'active'`. `former` people are readable via group membership but never claimable.
-- Self-identity management: an active user should manage their own person row via `linked_profile_id = auth.uid()`, not via `owner_user_id`. This is the one write path that must be added before `owner_user_id` can ever be NULL.
+1. A non-owner write path must exist for every workflow in section 2 that currently relies on `own people`: rename (group-authority anchored, e.g. `is_group_owner` over a group the person belongs to), delete/cleanup, and self display edits (mechanism C).
+2. Read access for a person's own row must not depend on `owner_user_id` — add a self-read path via `linked_profile_id = auth.uid()`; group reads already work through `participants can read group people`.
+3. Placeholder creation needs an anchor other than the creator's uid (group-scoped insert, or `owner_person_id`).
+4. Personal (non-group) people rows must keep an owner — they have no group anchor at all, so either keep `owner_user_id NOT NULL` for them or add a CHECK equivalent to the S3C-1 expense invariant.
+5. The FK must move from `ON DELETE CASCADE` to `ON DELETE SET NULL`, otherwise deleting the account still destroys shared history regardless of nullability.
+6. `status='former'` semantics must be defined and enforced before claim/read policies can depend on them.
 
-## 5. Recommended private ownership model for personal expenses — option A
+## 10. Table readiness marks
 
-Keep `owner_user_id` NOT NULL permanently for personal rows, and make that explicit in the schema rather than implicit:
+- `people` — **RED**: `owner_user_id` is still the only write key and the FK still cascades.
+- `profiles` — GREEN.
+- `group_members`, `groups`, `group_invitations` — YELLOW (owner-keyed writes, group anchor available).
 
-```
-CHECK (group_id IS NOT NULL OR owner_user_id IS NOT NULL)
-```
+## 11. Proposed S3C-2 implementation
 
-on `expenses`, with child rows deriving privacy from the parent (already enforced by the S3B-FIX restrictive parent-authority policies). Option B (a second durable private ownership relation) adds a table and a second security boundary for data that is defined by being non-durable — rejected. Personal data is private, must die with the account, and `owner_user_id` + `ON DELETE CASCADE` is exactly the right primitive for it.
+None in this stage — this is the audit. The follow-on stage (S3C-3, only on approval) would be a single additive migration: a `people` SELECT policy for `linked_profile_id = auth.uid()`, plus the `update_self_person_display` SECURITY DEFINER function with `EXECUTE` granted to `authenticated` only. No existing policy, grant, FK or column changes.
 
-## 6. Personal expenses on future account deletion
+## 12. Regression tests for that future implementation
 
-Deleted, deterministically, via the existing `ON DELETE CASCADE` on `expenses.owner_user_id`, which already cascades items/splits/item_splits through parent FKs. Personal `activity` rows likewise. Receipts (future private storage objects) deleted alongside. No change needed — the deterministic marker is `group_id IS NULL`.
+Self read of own linked person; group participant reads unchanged; creator rename still works; RPC changes only name/avatar and returns the row; RPC refuses a person the caller is not linked to; RPC cannot change owner_user_id/linked_profile_id/is_self/status/unlinked_at (verified by column-level before/after diff); outsider blocked from all of the above; invitation preview/claim unchanged; counts and per-group balances bit-identical.
 
-## 7. Shared group history on future account deletion
+## 13. Rollback plan
 
-Survives through `groups` + `group_members` + `people`. Required before S4 (S3D/S3E scope):
-- shared rows must stop cascading on `owner_user_id`: `expenses` (group-scoped), `expense_items`, `expense_splits`, `item_splits`, `settlements`, `activity` (group-scoped), `group_members`, `groups`, `people` move to nullable creator + `ON DELETE SET NULL`.
-- write policies must have a working group-anchored permissive path that does not require `e.owner_user_id = auth.uid()` — today's S3B policies still require it, so they are a read-only-safe half-step.
+Drop the new policy and drop the new function; nothing else would have changed, so rollback is two statements and restores the exact current state.
 
-## 8. Exact schema/RLS changes required before S4
+## Regression baseline recorded (unmodified)
 
-1. Rename semantics (not the column) of `owner_user_id` to "creator_user_id" in documentation; optional physical rename deferred.
-2. `people`: add a self-management write path keyed on `linked_profile_id = auth.uid()`.
-3. `people`: FK to `ON DELETE SET NULL` + nullable (S3D).
-4. Group-scoped tables: permissive write policies keyed on participation alone, without `owner_user_id` equality (S3E).
-5. Personal tables: keep the `owner_user_id` key and add the group/owner CHECK invariant.
-6. Deletion routine that deletes personal rows and nulls creator on shared rows (S4).
-
-## 9. Tables that KEEP owner_user_id NOT NULL
-
-`profiles` (its `id` is the user), and every row where `group_id IS NULL`: personal `expenses`, their `expense_items` / `expense_splits` / `item_splits`, personal `activity`. Enforced by conditional CHECK, not by a blanket NOT NULL.
-
-## 10. Tables that may eventually allow NULL creator_user_id
-
-`people`, `groups`, `group_members`, `settlements`, group-scoped `expenses`, `expense_items`, `expense_splits`, `item_splits`, group-scoped `activity`, `group_invitations`.
-
-## 11. Proposed smallest S3C implementation migration (not applied)
-
-Two additive, behaviour-preserving pieces:
-
-```sql
--- (a) Self-identity write path: a user may always read/update their own linked person row.
-CREATE POLICY "self person read" ON public.people
-  FOR SELECT TO authenticated
-  USING (linked_profile_id = auth.uid());
-
-CREATE POLICY "self person update" ON public.people
-  FOR UPDATE TO authenticated
-  USING (linked_profile_id = auth.uid())
-  WITH CHECK (linked_profile_id = auth.uid());
-
--- (b) Make the personal/private invariant explicit and enforced.
-ALTER TABLE public.expenses
-  ADD CONSTRAINT expenses_personal_requires_owner
-  CHECK (group_id IS NOT NULL OR owner_user_id IS NOT NULL) NOT VALID;
-ALTER TABLE public.expenses VALIDATE CONSTRAINT expenses_personal_requires_owner;
-```
-
-Nothing dropped, no function, grant, FK, nullability, `owner_person_id`, `people.status`, `unlinked_at`, `linked_profile_id` value, invitation, auth, storage, FX or UI change. Both additions are strictly permissive-or-invariant and cannot reduce current access.
-
-Marks after this migration: `people` YELLOW (write still needs `owner_user_id` for non-self placeholders), personal `expenses`/children/`activity` RED by design (intentional, private), `groups`/`group_members`/`settlements` YELLOW, `profiles` GREEN.
-
-## 12. Regression tests
-
-- Before/after row counts for all 12 tables (baseline: people 10, expenses 20, expense_items 105, expense_splits 48, item_splits 0, activity 69, group_members 5, groups 2, settlements 1).
-- Before/after balance snapshot per group (440675a4 +88765/-88765; b29d9051 +339417/-174632/-164785) must be bit-identical.
-- Jonas: rename own self person still works; rename placeholder Zia/Scott/Kasper still works.
-- Zia: can read Jonas-owned group people via membership; can now read/update her own linked self row; still cannot update Jonas's placeholders.
-- Outsider: still blocked on all people writes.
-- Insert a group expense (owner path) and a personal expense; verify the new CHECK does not block either.
-- Confirm no `item_splits` recursion.
-- Linter count unchanged (10 pre-existing SECURITY DEFINER notices).
-
-## 13. Rollback strategy
-
-Single reverse migration: `DROP POLICY "self person read"`, `DROP POLICY "self person update"`, `ALTER TABLE public.expenses DROP CONSTRAINT expenses_personal_requires_owner`. No data is written or moved, so rollback is instantaneous and lossless.
-
-## Table status summary
-
-| Table | Mark | Reason |
-|---|---|---|
-| profiles | GREEN | keyed on `id = auth.uid()`, no creator column |
-| settlements | YELLOW | participant read/write guards exist; permissive write still owner-keyed |
-| expenses (group) | YELLOW | participant SELECT exists; write still owner-keyed |
-| activity (group) | YELLOW | same |
-| expense_items / expense_splits / item_splits (group) | YELLOW | S3B participant policies still require `e.owner_user_id = auth.uid()` |
-| groups | YELLOW | participant SELECT + `owner_person_id` backfilled; write owner-keyed |
-| group_members | YELLOW | `is_group_owner` guards; permissive write owner-keyed |
-| people | RED | sole write key; sole read key for non-group people |
-| expenses + children + activity where `group_id IS NULL` | RED by design | private data, must stay owner-keyed |
-| group_invitations | RED | owner-only, out of S3C scope |
+people 10 — status active 10, former 0; is_self true 4 / false 6; linked 4 / unlinked 6. group_members 5. Public-schema policies 45, of which 2 on `people` (definitions in section 7). Functions relevant to `people`: `handle_new_user`, `claim_group_invitation`, `redeem_group_invitation`, `accept_group_invitation`, `get_invitation_preview`, `is_group_participant` — all unchanged.
