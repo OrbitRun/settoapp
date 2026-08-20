@@ -216,20 +216,7 @@ function ReviewScreen() {
             flagged={item.confidence === "low"}
             flagLabel={t("receipt.checkLine")}
 
-            detail={
-              (item.discountMinor ?? 0) > 0
-                ? t("receipt.discountLine", {
-                    original: money(itemOriginalTotalMinor(item), {
-                      currency: "",
-                      compact: false,
-                    }).trim(),
-                    amount: money(item.discountMinor ?? 0, {
-                      currency: "",
-                      compact: false,
-                    }).trim(),
-                  })
-                : undefined
-            }
+            detail={itemDetail(item)}
             onClick={() => toggle(item.id)}
             right={
               <span className="flex items-center gap-3">
