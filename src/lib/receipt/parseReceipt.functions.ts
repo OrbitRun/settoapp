@@ -64,6 +64,17 @@ Read the actual image carefully.
 - Prices are in MAJOR currency units (e.g. 24.95), never cents.
 - "unit_price" is the price of ONE unit before discount. "original_total" is unit_price ×
   quantity. "effective_total" is what was actually paid for the line after discount.
+
+QUANTITY × UNIT PRICE — important:
+- Many receipts print the line subtotal on the product line and the quantity breakdown
+  underneath: "2 x 7,50", "2 X 7,50", "2 × 7,50", "2 stk 7,50", "2 stk. à 7,50", "2 @ 7.50".
+  In that layout the number before x/×/stk/@ is the QUANTITY and the number after it is the
+  UNIT PRICE. The amount printed on the product line is the line subtotal (original_total),
+  NEVER the unit price.
+- Example: "KRYDDERBOLLER 15,00 / 2 x 7,50 / RABAT 1,00-" => one item: quantity 2,
+  unit_price 7.50, original_total 15.00, discount_amount 1.00, effective_total 14.00.
+- Never report the line subtotal as "unit_price" when an explicit quantity × unit price
+  line exists. quantity × unit_price must equal original_total.
 - Receipt text may be Danish, English, Swedish, Norwegian, German or another European
   language. Do not require English terminology. Danish receipts commonly use
   TOTAL, I ALT, AT BETALE, NETTO, MOMS (tax), RABAT (discount), PRIS, VARE, ANTAL, KORT, KR.
