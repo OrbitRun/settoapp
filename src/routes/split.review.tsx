@@ -67,6 +67,27 @@ function ReviewScreen() {
       compact: options.compact ?? true,
     });
 
+  const bare = (minor: number) => money(minor, { currency: "", compact: false }).trim();
+
+  /**
+   * Secondary line under an item. Quantity and unit price stay one unit, so a line
+   * subtotal is never shown where a unit price belongs.
+   */
+  const itemDetail = (item: DraftItem): string | undefined => {
+    const discount = item.discountMinor ?? 0;
+    const unit = item.originalUnitPriceMinor ?? item.unitPriceMinor;
+    const base =
+      item.quantity > 1
+        ? t("receipt.unitLine", { quantity: String(item.quantity), unit: bare(unit) })
+        : bare(itemOriginalTotalMinor(item));
+    if (discount > 0) {
+      return t("receipt.discountLine", { original: base, amount: bare(discount) });
+    }
+    return item.quantity > 1 ? base : undefined;
+  };
+
+
+
   const lock = useMoneyLock({
     currency: draft.currency,
     systemCurrency: pari.currency,
