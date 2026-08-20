@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.can_read_expense_item(uuid) FROM anon;
