@@ -472,6 +472,8 @@ export type Database = {
           linked_profile_id: string | null
           name: string
           owner_user_id: string
+          status: string
+          unlinked_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -481,6 +483,8 @@ export type Database = {
           linked_profile_id?: string | null
           name: string
           owner_user_id: string
+          status?: string
+          unlinked_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -490,6 +494,8 @@ export type Database = {
           linked_profile_id?: string | null
           name?: string
           owner_user_id?: string
+          status?: string
+          unlinked_at?: string | null
         }
         Relationships: [
           {
