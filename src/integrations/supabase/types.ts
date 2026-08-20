@@ -607,6 +607,7 @@ export type Database = {
     }
     Functions: {
       accept_group_invitation: { Args: { _code: string }; Returns: string }
+      can_read_expense_item: { Args: { _item_id: string }; Returns: boolean }
       claim_group_invitation: {
         Args: { _code: string }
         Returns: {
