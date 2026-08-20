@@ -383,13 +383,36 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
     for (const raw of rawItems) {
       const name = String(raw.name).trim();
       const quantity = Math.max(1, Math.round(Number(raw.quantity ?? 1)) || 1);
-      const unit = toMinor(raw.unit_price);
-      let originalTotal = toMinor(raw.original_total) ?? (unit === null ? null : unit * quantity);
+      const rawUnit = toMinor(raw.unit_price);
+      const rawOriginal = toMinor(raw.original_total);
       let discount = Math.abs(toMinor(raw.discount_amount) ?? 0);
       let effectiveTotal = toMinor(raw.effective_total);
       const percentValue = toMinor(raw.discount_percent);
       const discountPercent = percentValue === null ? null : percentValue / 100;
       let uncertain = Boolean(raw.uncertain);
+
+      // Quantity, unit price and line subtotal are kept apart. Receipts print
+      // "KRYDDERBOLLER 15,00 / 2 x 7,50": the amount on the product line is the line
+      // subtotal, never the unit price, and the model sometimes reports it as unit_price.
+      let unitPrice: number | null = null;
+      let originalTotal: number | null = null;
+      if (rawUnit !== null && rawOriginal !== null) {
+        if (quantity > 1 && Math.abs(rawUnit * quantity - rawOriginal) > 1) {
+          // unit_price actually held the line subtotal, or the two simply disagree.
+          originalTotal = rawOriginal;
+          unitPrice = Math.round(rawOriginal / quantity);
+          if (Math.abs(rawUnit - rawOriginal) > 1) uncertain = true;
+        } else {
+          unitPrice = rawUnit;
+          originalTotal = rawOriginal;
+        }
+      } else if (rawUnit !== null) {
+        unitPrice = rawUnit;
+        originalTotal = rawUnit * quantity;
+      } else if (rawOriginal !== null) {
+        originalTotal = rawOriginal;
+        unitPrice = Math.round(rawOriginal / quantity);
+      }
 
       // The model sometimes still emits a discount as its own "item" — fold it into
       // the line above rather than dropping it or treating it as a purchase.
