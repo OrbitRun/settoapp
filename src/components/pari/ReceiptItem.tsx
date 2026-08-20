@@ -78,9 +78,11 @@ export function ReceiptItemRow({
             <Lock className="h-3 w-3 shrink-0 text-muted-foreground" strokeWidth={1.8} />
           ) : null}
         </span>
-        {quantity > 1 || detail ? (
+        {detail ? (
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground">{detail}</span>
+        ) : quantity > 1 ? (
           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-            {quantity > 1 ? `${quantity} ×` : ""} {detail ?? ""}
+            {quantity} ×
           </span>
         ) : null}
       </span>

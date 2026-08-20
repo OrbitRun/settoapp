@@ -246,6 +246,7 @@ const en: Dict = {
   "receipt.checkLines": "We found the receipt, but some lines should be checked.",
   "receipt.discount": "Discount",
   "receipt.discountLine": "{original} · −{amount} discount",
+  "receipt.unitLine": "{quantity} × {unit}",
   "receipt.originalPrice": "Original price",
   "receipt.paidPrice": "Paid",
   "receipt.unassignedDiscount":
@@ -741,6 +742,7 @@ const da: Dict = {
   "receipt.checkLines": "Vi fandt kvitteringen, men nogle linjer skal tjekkes.",
   "receipt.discount": "Rabat",
   "receipt.discountLine": "{original} · −{amount} rabat",
+  "receipt.unitLine": "{quantity} × {unit}",
   "receipt.originalPrice": "Pris før rabat",
   "receipt.paidPrice": "Betalt",
   "receipt.unassignedDiscount":
