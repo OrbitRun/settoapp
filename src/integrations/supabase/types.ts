@@ -655,6 +655,13 @@ export type Database = {
           status: string
         }[]
       }
+      update_my_people_name: {
+        Args: { _name: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
