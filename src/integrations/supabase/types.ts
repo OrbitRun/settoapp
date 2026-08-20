@@ -396,6 +396,8 @@ export type Database = {
           default_split_type: string
           id: string
           name: string
+          orphaned_at: string | null
+          owner_person_id: string | null
           owner_user_id: string
         }
         Insert: {
@@ -405,6 +407,8 @@ export type Database = {
           default_split_type?: string
           id?: string
           name: string
+          orphaned_at?: string | null
+          owner_person_id?: string | null
           owner_user_id: string
         }
         Update: {
@@ -414,9 +418,19 @@ export type Database = {
           default_split_type?: string
           id?: string
           name?: string
+          orphaned_at?: string | null
+          owner_person_id?: string | null
           owner_user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "groups_owner_person_id_fkey"
+            columns: ["owner_person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       item_splits: {
         Row: {
