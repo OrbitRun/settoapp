@@ -619,6 +619,10 @@ export type Database = {
           person_name: string
         }[]
       }
+      is_group_owner: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_group_participant: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
