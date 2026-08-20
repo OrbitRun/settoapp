@@ -64,6 +64,17 @@ Read the actual image carefully.
 - Prices are in MAJOR currency units (e.g. 24.95), never cents.
 - "unit_price" is the price of ONE unit before discount. "original_total" is unit_price ×
   quantity. "effective_total" is what was actually paid for the line after discount.
+
+QUANTITY × UNIT PRICE — important:
+- Many receipts print the line subtotal on the product line and the quantity breakdown
+  underneath: "2 x 7,50", "2 X 7,50", "2 × 7,50", "2 stk 7,50", "2 stk. à 7,50", "2 @ 7.50".
+  In that layout the number before x/×/stk/@ is the QUANTITY and the number after it is the
+  UNIT PRICE. The amount printed on the product line is the line subtotal (original_total),
+  NEVER the unit price.
+- Example: "KRYDDERBOLLER 15,00 / 2 x 7,50 / RABAT 1,00-" => one item: quantity 2,
+  unit_price 7.50, original_total 15.00, discount_amount 1.00, effective_total 14.00.
+- Never report the line subtotal as "unit_price" when an explicit quantity × unit price
+  line exists. quantity × unit_price must equal original_total.
 - Receipt text may be Danish, English, Swedish, Norwegian, German or another European
   language. Do not require English terminology. Danish receipts commonly use
   TOTAL, I ALT, AT BETALE, NETTO, MOMS (tax), RABAT (discount), PRIS, VARE, ANTAL, KORT, KR.
@@ -383,13 +394,36 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
     for (const raw of rawItems) {
       const name = String(raw.name).trim();
       const quantity = Math.max(1, Math.round(Number(raw.quantity ?? 1)) || 1);
-      const unit = toMinor(raw.unit_price);
-      let originalTotal = toMinor(raw.original_total) ?? (unit === null ? null : unit * quantity);
+      const rawUnit = toMinor(raw.unit_price);
+      const rawOriginal = toMinor(raw.original_total);
       let discount = Math.abs(toMinor(raw.discount_amount) ?? 0);
       let effectiveTotal = toMinor(raw.effective_total);
       const percentValue = toMinor(raw.discount_percent);
       const discountPercent = percentValue === null ? null : percentValue / 100;
       let uncertain = Boolean(raw.uncertain);
+
+      // Quantity, unit price and line subtotal are kept apart. Receipts print
+      // "KRYDDERBOLLER 15,00 / 2 x 7,50": the amount on the product line is the line
+      // subtotal, never the unit price, and the model sometimes reports it as unit_price.
+      let unitPrice: number | null = null;
+      let originalTotal: number | null = null;
+      if (rawUnit !== null && rawOriginal !== null) {
+        if (quantity > 1 && Math.abs(rawUnit * quantity - rawOriginal) > 1) {
+          // unit_price actually held the line subtotal, or the two simply disagree.
+          originalTotal = rawOriginal;
+          unitPrice = Math.round(rawOriginal / quantity);
+          if (Math.abs(rawUnit - rawOriginal) > 1) uncertain = true;
+        } else {
+          unitPrice = rawUnit;
+          originalTotal = rawOriginal;
+        }
+      } else if (rawUnit !== null) {
+        unitPrice = rawUnit;
+        originalTotal = rawUnit * quantity;
+      } else if (rawOriginal !== null) {
+        originalTotal = rawOriginal;
+        unitPrice = Math.round(rawOriginal / quantity);
+      }
 
       // The model sometimes still emits a discount as its own "item" — fold it into
       // the line above rather than dropping it or treating it as a purchase.
@@ -447,10 +481,17 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
         name,
         quantity,
         unitPriceMinor: Math.max(0, Math.round(effectiveTotal! / quantity)),
-        originalUnitPriceMinor: discount > 0 ? Math.round(originalTotal! / quantity) : null,
+        // Keep the detected pre-discount unit price whenever one was read, so the
+        // review screen can show "2 × 7,50" instead of re-deriving it from the total.
+        originalUnitPriceMinor:
+          unitPrice !== null
+            ? unitPrice
+            : discount > 0
+              ? Math.round(originalTotal! / quantity)
+              : null,
         discountMinor: Math.max(0, discount),
         discountPercent,
-        uncertain: uncertain || (unit === null && originalTotal === 0),
+        uncertain: uncertain || (unitPrice === null && originalTotal === 0),
         confidence: uncertain ? "low" : lineConfidence,
       });
     }
