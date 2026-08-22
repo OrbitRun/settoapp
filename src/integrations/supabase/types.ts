@@ -673,6 +673,10 @@ export type Database = {
           status: string
         }[]
       }
+      transfer_group_ownership: {
+        Args: { _group_id: string; _new_owner_person_id: string }
+        Returns: string
+      }
       update_my_people_name: {
         Args: { _name: string }
         Returns: {
