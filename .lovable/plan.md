@@ -2,47 +2,81 @@
 
 ## Stage 1: Security cleanup (narrow)
 
-### 1.1 Add missing receipts UPDATE policy
-- Add `own receipt update` policy on `storage.objects` scoped to `bucket_id = 'receipts'` and `auth.uid()::text = (storage.foldername(name))[1]`.
-- Match existing SELECT/INSERT/DELETE semantics exactly; do not broaden access.
+### 1.1 Receipts UPDATE policy
+- Add only the missing `storage.objects` UPDATE policy for bucket `receipts`.
+- Match the existing owner-folder semantics exactly: `bucket_id = 'receipts' AND auth.uid()::text = (storage.foldername(name))[1]`, role `authenticated`, in both `USING` and `WITH CHECK`.
+- Do not broaden receipt access; leave SELECT/INSERT/DELETE untouched.
+- Run linter and the regression baseline (counts, ownership mappings, split-sum 1,892,653 øre) after this change.
 
-### 1.2 Document intentional SECDEF warnings
-- Update @security-memory to record:
-  - `claim_group_invitation`, `get_invitation_preview`, `is_group_owner` are intentionally callable by `anon` because unauthenticated users must preview/claim group invitations.
-  - `accept_group_invitation`, `can_read_expense_item`, `claim_group_invitation`, `create_group`, `get_invitation_preview`, `group_owner_fields_unchanged`, `is_group_owner`, `is_group_participant`, `redeem_group_invitation`, `update_my_people_name` are intentionally callable by `authenticated` because they are the app's authenticated RPC surface.
-  - No grants will be changed without an explicit vulnerability audit.
+### 1.2 SECURITY DEFINER anon audit (read-only, no ACL changes)
+Do not document the anon grants as intentional yet. Audit these three separately:
 
-### 1.3 Verify green
-- Run `supabase linter` and confirm the `MISSING_STORAGE_UPDATE_POLICY` warning is gone.
-- Run regression query: counts and balances bit-identical to baseline.
+- `get_invitation_preview`
+- `claim_group_invitation`
+- `is_group_owner`
+
+For each, report:
+- exact ACL
+- direct frontend/backend call sites
+- whether an unauthenticated client directly invokes it
+- whether other SECURITY DEFINER functions call it internally
+- what would actually break if `anon` EXECUTE were removed
+
+Expected direction only (to be proven, not assumed):
+- `get_invitation_preview` is likely intentionally anon
+- `claim_group_invitation` may or may not require anon — prove it
+- `is_group_owner` must NOT be classified as intentionally public merely because invitation flows exist
+
+No ACL is changed during this audit. Only after an unauthenticated call requirement is demonstrated for a given function is its anon warning documented as intentional in @security-memory. The authenticated-only SECDEF warnings are documented as the app's intended authenticated RPC surface.
 
 ## Stage 2: S3D-3B — transfer_group_ownership
 
-### 2.1 Audit current callers and surfaces
-- Find all frontend and backend code that currently changes group ownership or depends on `owner_user_id`/`owner_person_id`.
-- Map the UX flow for "transfer ownership" (e.g., group settings).
+Implement only after Stage 1 is GREEN.
 
-### 2.2 Design RPC
-- `public.transfer_group_ownership(_group_id uuid, _new_owner_person_id uuid)` SECURITY DEFINER, `search_path = public`.
-- Rules:
-  - Caller must be current owner (`is_group_owner`).
-  - New owner must be an active, linked, non-removed member of the group.
-  - Update `groups.owner_user_id` and `groups.owner_person_id` atomically.
-  - Update `group_members.role` for old and new owner (old becomes `member`, new becomes `owner`).
-  - Log activity `ownership_transferred`.
-  - Guard against seizure via `group_owner_fields_unchanged` policy.
+### 2.1 RPC definition
+`public.transfer_group_ownership(_group_id uuid, _new_owner_person_id uuid)`, SECURITY DEFINER, `search_path = public`, fully schema-qualified, no dynamic SQL, identity only from `auth.uid()`.
 
-### 2.3 Implement
-- Add migration for RPC + ACL (`authenticated` + `service_role` only; no `anon`, no `PUBLIC`).
-- Add frontend cutover only if the existing group-settings UI already has an ownership-transfer path.
+Authorization, before any write:
+- `SELECT` the target group `FOR UPDATE`
+- reject unauthenticated callers
+- require BOTH `locked_group.owner_user_id = auth.uid()` AND `public.is_group_owner(_group_id, auth.uid()) = TRUE` (preserves transitional authority until S3D-4)
 
-### 2.4 Verify
-- Transfer ownership between two real accounts.
-- Confirm old owner becomes member, new owner becomes owner.
-- Confirm non-owner seizure attempts blocked.
-- Confirm counts and balances bit-identical.
+Successor must:
+- exist
+- `status = 'active'`
+- `unlinked_at IS NULL`
+- `linked_profile_id IS NOT NULL`
+- already have a `group_members` row in the group with `removed_at IS NULL`
+
+If the successor is already owner: return success as a no-op, log no duplicate activity.
+
+### 2.2 Atomic effects
+- `groups.owner_person_id` = successor person
+- `groups.owner_user_id` = successor `linked_profile_id`
+- `groups.orphaned_at = NULL`
+- successor `group_members.role = 'owner'`
+- previous owner `group_members.role = 'member'`
+- exactly one `ownership_transferred` activity row
+
+Note: `group_owner_fields_unchanged` does NOT protect writes performed inside this RPC, because SECURITY DEFINER bypasses RLS. The RPC's own authorization and successor checks are the seizure protection.
+
+### 2.3 ACL
+- no PUBLIC
+- no anon
+- `authenticated` EXECUTE
+- `service_role` only if consistent with the current convention
+
+### 2.4 Frontend
+No transfer UI is added unless such a UI already exists.
+
+### 2.5 Testing
+- Prefer a temporary test group between linked test identities.
+- Do not leave a real production group transferred.
+- Verify: valid transfer, no-op when successor already owner, rejection for non-owner, unauthenticated, removed member, unlinked person, and non-member successor.
+- Return ownership and clean all temporary test activity/data so counts, ownership mappings and balances return to baseline.
 
 ## Out of scope
 - S3D-4, S3E, S3F, S4 are not started.
-- No broad changes to receipts access or existing SECDEF grants.
+- No broad changes to receipts access.
+- No grant changes on existing SECDEF functions without a confirmed vulnerability.
 - No changes to `is_group_owner`, `is_group_participant`, `can_read_expense_item`, `create_group`, or `update_my_people_name` without an explicit audit.
