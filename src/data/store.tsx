@@ -1107,33 +1107,32 @@ export function PariProvider({ children }: { children: ReactNode }) {
       await refresh();
     };
 
-    /** Removes the group and everything that only belongs to it. */
+    /**
+     * Removes the group and everything that only belongs to it.
+     *
+     * The group row MUST be deleted first: durable group-owner authorization
+     * reads the owner's active `role = 'owner'` membership, so removing
+     * group_members up front would destroy the evidence the DELETE policy
+     * needs. Every group-scoped child table (group_members, expenses ->
+     * expense_items/expense_splits -> item_splits, settlements, activity,
+     * group_invitations) has ON DELETE CASCADE on group_id, so the database
+     * cleans them up for us.
+     */
     const deleteGroup = async (groupId: string) => {
-      const expenseIds = data.expenses
-        .filter((expense) => expense.group_id === groupId)
-        .map((expense) => expense.id);
+      const { data: deleted, error } = await supabase
+        .from("groups")
+        .delete()
+        .eq("id", groupId)
+        .select("id");
 
-      if (expenseIds.length > 0) {
-        await supabase
-          .from("item_splits")
-          .delete()
-          .in(
-            "expense_item_id",
-            data.expenseItems
-              .filter((item) => expenseIds.includes(item.expense_id))
-              .map((item) => item.id),
-          );
-        await supabase.from("expense_splits").delete().in("expense_id", expenseIds);
-        await supabase.from("expense_items").delete().in("expense_id", expenseIds);
-        await supabase.from("expenses").delete().in("id", expenseIds);
+      if (error) throw error;
+      if (!deleted || deleted.length !== 1) {
+        throw new Error("Group deletion did not affect exactly one group.");
       }
-      await supabase.from("settlements").delete().eq("group_id", groupId);
-      await supabase.from("activity").delete().eq("group_id", groupId);
-      await supabase.from("group_invitations").delete().eq("group_id", groupId);
-      await supabase.from("group_members").delete().eq("group_id", groupId);
-      await supabase.from("groups").delete().eq("id", groupId);
+
       await refresh();
     };
+
 
     /**
      * Registers a payment as its own settlement transaction. Partial payments
