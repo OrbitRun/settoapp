@@ -639,6 +639,10 @@ export type Database = {
         }
         Returns: string
       }
+      delete_unused_group_placeholder: {
+        Args: { _group_id: string; _person_id: string }
+        Returns: boolean
+      }
       get_invitation_preview: {
         Args: { _code: string }
         Returns: {
@@ -649,6 +653,17 @@ export type Database = {
           person_id: string
           person_name: string
         }[]
+      }
+      group_invitation_fields_unchanged: {
+        Args: {
+          _group_id: string
+          _id: string
+          _join_code: string
+          _owner_user_id: string
+          _person_id: string
+          _token: string
+        }
+        Returns: boolean
       }
       group_member_fields_unchanged: {
         Args: {
@@ -685,6 +700,13 @@ export type Database = {
         Returns: {
           group_id: string
           status: string
+        }[]
+      }
+      rename_group_placeholder: {
+        Args: { _group_id: string; _name: string; _person_id: string }
+        Returns: {
+          id: string
+          name: string
         }[]
       }
       transfer_group_ownership: {
