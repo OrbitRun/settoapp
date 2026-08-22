@@ -961,17 +961,60 @@ export function PariProvider({ children }: { children: ReactNode }) {
       return created as unknown as Person;
     };
 
+    /** The group a placeholder belongs to and that the caller currently owns. */
+    const ownedGroupForPerson = (personId: string) => {
+      const memberships = data.groupMembers.filter((m) => m.person_id === personId);
+      const owned = memberships.find((m) =>
+        data.groups.some(
+          (g) => g.id === m.group_id && g.owner_person_id === currentPersonId,
+        ),
+      );
+      return owned?.group_id ?? null;
+    };
+
     const renamePerson = async (id: string, name: string) => {
       const trimmed = name.trim();
       if (!trimmed) return;
-      await supabase.from("people").update({ name: trimmed }).eq("id", id);
+      const { data: updated } = await supabase
+        .from("people")
+        .update({ name: trimmed })
+        .eq("id", id)
+        .select("id");
+
+      // A placeholder created by a previous group owner is no longer writable
+      // through the table; the current durable owner goes through the RPC.
+      if (!updated || updated.length === 0) {
+        const groupId = ownedGroupForPerson(id);
+        if (groupId) {
+          await supabase.rpc("rename_group_placeholder", {
+            _group_id: groupId,
+            _person_id: id,
+            _name: trimmed,
+          });
+        }
+      }
       await refresh();
     };
 
     const deletePerson = async (id: string) => {
-      await supabase.from("people").delete().eq("id", id);
+      const { data: removed } = await supabase
+        .from("people")
+        .delete()
+        .eq("id", id)
+        .select("id");
+
+      if (!removed || removed.length === 0) {
+        const groupId = ownedGroupForPerson(id);
+        if (groupId) {
+          await supabase.rpc("delete_unused_group_placeholder", {
+            _group_id: groupId,
+            _person_id: id,
+          });
+        }
+      }
       await refresh();
     };
+
 
     const createGroup = async (input: CreateGroupInput): Promise<string | null> => {
       if (!userId) return null;
