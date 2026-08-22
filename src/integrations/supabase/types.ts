@@ -650,6 +650,16 @@ export type Database = {
           person_name: string
         }[]
       }
+      group_member_fields_unchanged: {
+        Args: {
+          _group_id: string
+          _id: string
+          _owner_user_id: string
+          _person_id: string
+          _role: string
+        }
+        Returns: boolean
+      }
       group_owner_fields_unchanged: {
         Args: {
           _group_id: string
