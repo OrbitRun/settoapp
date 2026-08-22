@@ -965,8 +965,12 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const ownedGroupForPerson = (personId: string) => {
       const memberships = data.groupMembers.filter((m) => m.person_id === personId);
       const owned = memberships.find((m) =>
-        data.groups.some(
-          (g) => g.id === m.group_id && g.owner_person_id === currentPersonId,
+        data.groupMembers.some(
+          (o) =>
+            o.group_id === m.group_id &&
+            o.role === "owner" &&
+            o.removed_at === null &&
+            o.person_id === currentPersonId,
         ),
       );
       return owned?.group_id ?? null;
