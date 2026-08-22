@@ -31,7 +31,7 @@ No ACL is changed during this audit. Only after an unauthenticated call requirem
 
 ## Stage 2: S3D-3B — transfer_group_ownership
 
-Implement only after Stage 1 is GREEN.
+Implement only after Stage 1 is GREEN. If the receipt policy change or the SECDEF audit reveals anything unexpected, STOP before creating `transfer_group_ownership`.
 
 ### 2.1 RPC definition
 `public.transfer_group_ownership(_group_id uuid, _new_owner_person_id uuid)`, SECURITY DEFINER, `search_path = public`, fully schema-qualified, no dynamic SQL, identity only from `auth.uid()`.
