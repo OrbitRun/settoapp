@@ -1,0 +1,2 @@
+ALTER TABLE public.group_invitations DROP CONSTRAINT group_invitations_status_check;
+ALTER TABLE public.group_invitations ADD CONSTRAINT group_invitations_status_check CHECK (status = ANY (ARRAY['active'::text, 'revoked'::text, 'used'::text]));
