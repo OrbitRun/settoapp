@@ -629,6 +629,16 @@ export type Database = {
           status: string
         }[]
       }
+      create_group: {
+        Args: {
+          _default_split_type: string
+          _name: string
+          _percentages?: Json
+          _person_names?: string[]
+          _shares?: Json
+        }
+        Returns: string
+      }
       get_invitation_preview: {
         Args: { _code: string }
         Returns: {
