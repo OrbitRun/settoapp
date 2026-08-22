@@ -975,76 +975,21 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const createGroup = async (input: CreateGroupInput): Promise<string | null> => {
       if (!userId) return null;
-      const { data: group, error } = await supabase
-        .from("groups")
-        .insert({
-          owner_user_id: userId,
-          name: input.name.trim() || "Ny gruppe",
-          default_split_type: input.defaultSplitType,
-          currency: profile?.currency ?? "DKK",
-        })
-        .select()
-        .single();
-      if (error || !group) {
+      // One atomic backend operation: group, owner person, memberships and the
+      // group_created activity are written together or not at all.
+      const { data: groupId, error } = await supabase.rpc("create_group", {
+        _name: input.name,
+        _default_split_type: input.defaultSplitType,
+        _person_names: input.personNames,
+        _percentages: (input.percentages ?? {}) as never,
+        _shares: (input.shares ?? {}) as never,
+      });
+      if (error || !groupId) {
         console.error("[pari] createGroup", error);
         return null;
       }
-      const groupId = group.id as string;
-
-      // Members carry the key they were configured under so the default rule
-      // entered before the group existed lands on the right person.
-      const members: { personId: string; key: string }[] = [];
-      // The owner is always a member — match by identity, never by name.
-      if (currentPersonId) members.push({ personId: currentPersonId, key: "self" });
-
-      for (const rawName of input.personNames) {
-        const trimmed = rawName.trim();
-        if (!trimmed) continue;
-        const key = trimmed.toLowerCase();
-        const existing = data.people.find((p) => p.name.toLowerCase() === key);
-        if (existing) {
-          if (!members.some((m) => m.personId === existing.id)) {
-            members.push({ personId: existing.id, key });
-          }
-          continue;
-        }
-        const { data: created, error: personError } = await supabase
-          .from("people")
-          .insert({ owner_user_id: userId, name: trimmed })
-          .select()
-          .single();
-        if (personError || !created) {
-          console.error("[pari] createGroup person", personError);
-          continue;
-        }
-        members.push({ personId: created.id as string, key });
-      }
-
-      if (members.length > 0) {
-        const { error: memberError } = await supabase.from("group_members").insert(
-          members.map((member, index) => ({
-            owner_user_id: userId,
-            group_id: groupId,
-            person_id: member.personId,
-            role: index === 0 ? "owner" : "member",
-            default_percentage:
-              input.defaultSplitType === "percentage"
-                ? (input.percentages?.[member.key] ?? null)
-                : null,
-            default_weight:
-              input.defaultSplitType === "shares" ? (input.shares?.[member.key] ?? 1) : null,
-          })),
-        );
-        if (memberError) {
-          console.error("[pari] createGroup members", memberError);
-          await supabase.from("groups").delete().eq("id", groupId);
-          return null;
-        }
-      }
-
-      await logActivity("group_created", "group", groupId, groupId, { title: input.name });
       await refresh();
-      return groupId;
+      return groupId as string;
     };
 
     const updateGroup = async (groupId: string, patch: UpdateGroupInput) => {
