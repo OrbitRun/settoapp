@@ -1,103 +1,137 @@
-# Stage S3D-2 — Group write-policy design audit (read-only)
+# Stage S3D-3 — Atomic group creation + ownership transfer (audit only)
 
-Nothing was changed. Everything below comes from the live policy catalog on `public.groups` and from reading the group write paths in `src/data/store.tsx`.
+Read-only. Nothing changed. Based on the live policy/function catalog and `src/data/store.tsx` (`createGroup` lines 976–1048, `updateGroup`, `addGroupMembers`, `removeGroupMember`, `deleteGroup`).
 
-## 1. Current state on `public.groups`
-
-| Policy | Type | Cmd | Roles | USING | WITH CHECK |
-| --- | --- | --- | --- | --- | --- |
-| `own groups` | PERMISSIVE | ALL | authenticated | `auth.uid() = owner_user_id` | `auth.uid() = owner_user_id` |
-| `participants can read groups` | PERMISSIVE | SELECT | authenticated | `is_group_participant(id, auth.uid())` | — |
-
-No RESTRICTIVE policy exists on `groups`. So today: read = owner OR participant; insert/update/delete = owner_user_id only.
-
-`is_group_owner(_group_id, _user_id)` (after S3D-1) is TRUE when `groups.owner_user_id = _user_id` **or** the durable path holds (`owner_person_id` → active, linked person with a non-removed membership). It is a superset of the legacy check for every existing group, and it is SECURITY DEFINER so it never re-enters `groups` RLS.
-
-## 2. Why INSERT must be treated separately
-
-`createGroup` (store.tsx:976–1048) runs in this order:
+## 1. Current client-side creation sequence
 
 ```text
-1. INSERT groups (owner_user_id = auth.uid(), owner_person_id NULL)
-2. INSERT people rows for new names
-3. INSERT group_members (owner row first)
-4. on member failure: DELETE groups (rollback)
+1. INSERT groups            (owner_user_id = auth.uid(), owner_person_id NULL)
+2. INSERT people            (one per new name, owner_user_id = auth.uid())
+3. INSERT group_members     (owner row first, role 'owner'; rest 'member')
+4. on member failure        DELETE groups   (partial rollback)
+5. logActivity('group_created') + refresh()
 ```
 
-At step 1 the row has `owner_person_id = NULL` and **no** `group_members` row yet. `is_group_owner` on that row is TRUE only through the legacy `owner_user_id` branch. A WITH CHECK written purely as `is_group_owner(id, auth.uid())` would therefore still pass — but only because the legacy branch is still in the function. Making INSERT depend on the helper couples group creation to a predicate we intend to change later; the moment the legacy branch is removed, creation breaks (the durable branch cannot be satisfied inside the same statement).
+Weaknesses this stage must remove:
 
-The rollback `DELETE FROM groups` at step 4 also runs while the group has no membership row — so DELETE must keep working on a legacy-only group.
+- Not atomic. A failure at step 2 leaves orphan `people` rows behind; a failure at step 3 deletes the group but the people rows created in step 2 survive. Step 5 is fire-and-forget.
+- `owner_person_id` is never set on creation, so every new group is born legacy-only and depends on `owner_user_id` for authority.
+- Person creation requires the caller to own `people.owner_user_id`, so creation authority and personal-data ownership are entangled.
+- `currentPersonId` is resolved on the client; if it is missing, the group is created with no owner membership row at all.
 
-**Conclusion: yes.** S3D-2 should make UPDATE/DELETE durable and deliberately leave INSERT on the legacy `own groups` predicate until ownership creation/transfer gets its own controlled RPC (a SECURITY DEFINER `create_group` that writes the group, the owner person and the owner membership atomically, then sets `owner_person_id`).
+## 2. Proposed `create_group` RPC (design)
 
-## 3. Proposed migration (design only — not applied)
-
-Two RESTRICTIVE policies. No new permissive grant, so no widening is possible; nothing is dropped, so `own groups` keeps protecting everything it protects today.
-
-```sql
--- Existing-group edits must satisfy the durable owner predicate.
-CREATE POLICY "groups update must be group owner"
-ON public.groups AS RESTRICTIVE FOR UPDATE TO authenticated
-USING (public.is_group_owner(id, auth.uid()))
-WITH CHECK (
-  public.is_group_owner(id, auth.uid())
-  AND owner_user_id = (SELECT g.owner_user_id FROM public.groups g WHERE g.id = groups.id)
-  AND owner_person_id IS NOT DISTINCT FROM
-      (SELECT g.owner_person_id FROM public.groups g WHERE g.id = groups.id)
-);
-
-CREATE POLICY "groups delete must be group owner"
-ON public.groups AS RESTRICTIVE FOR DELETE TO authenticated
-USING (public.is_group_owner(id, auth.uid()));
+```text
+public.create_group(
+  _name text,
+  _default_split_type text,
+  _currency text,
+  _person_names text[],
+  _percentages jsonb default '{}',
+  _shares jsonb default '{}'
+) returns uuid
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 ```
 
-Note on the two subselects: they read the *pre-update* row (the policy is evaluated against the table, not the new tuple), which is exactly the anti-seizure guard — the owner columns must stay byte-identical through any client UPDATE. Ownership transfer is then only possible through a future SECURITY DEFINER RPC, which bypasses RLS by design. If we prefer not to embed subselects in a policy, the equivalent is a `BEFORE UPDATE` trigger that raises when either owner column changes; the audit recommends the policy form for S3D-2 because it needs no new trigger object and rolls back with a single `DROP POLICY`.
+Behaviour, in one transaction (a function body is a single implicit transaction — any RAISE rolls back everything it wrote):
 
-No INSERT policy is added. No policy is dropped or altered. No grant, function, constraint or row is touched.
+1. Reject when `auth.uid()` is NULL.
+2. Validate: trimmed name non-empty (fallback to a default), `_default_split_type` in ('equal','percentage','shares'), currency a 3-letter code, `_person_names` length capped (e.g. 50).
+3. Resolve the caller's own person: the active row with `linked_profile_id = auth.uid()`, preferring `is_self`. If none exists, create it (`owner_user_id = auth.uid()`, `linked_profile_id = auth.uid()`, `is_self = true`, name from `profiles.display_name`). This removes the client's `currentPersonId` dependency.
+4. INSERT the group with `owner_user_id = auth.uid()` and `owner_person_id = <caller person>` **in the same statement** — the group is durable from birth.
+5. For each supplied name: reuse an existing person owned by the caller with a case-insensitive name match, otherwise create a placeholder (`owner_user_id = auth.uid()`, no linked profile).
+6. INSERT `group_members` for the owner (role 'owner') and every other person (role 'member'), applying `default_percentage` / `default_weight` from the jsonb maps keyed as today ('self' + lowercased name).
+7. INSERT the `group_created` activity row inside the same transaction.
+8. Return the group id.
 
-## 4. Effective behaviour with all policies combined
+Grants: `REVOKE ALL FROM PUBLIC, anon`; `GRANT EXECUTE TO authenticated` (plus `service_role`). SECURITY DEFINER with a pinned `search_path`, and every write keyed off `auth.uid()` only — no caller-supplied owner id anywhere in the signature, so the RPC cannot be used to create a group on someone else's behalf.
 
-Postgres: `(OR of permissive) AND (AND of restrictive)`.
+### Rollback semantics
 
-| Command | Permissive side | Restrictive side | Effective |
-| --- | --- | --- | --- |
-| SELECT | `own groups` OR participant read | none | unchanged |
-| INSERT | `own groups` WITH CHECK `auth.uid() = owner_user_id` | none | unchanged — legacy only |
-| UPDATE | `own groups` (`auth.uid() = owner_user_id`) | new durable owner + owner-columns-frozen | owner_user_id owner **and** durable owner, owner columns immutable |
-| DELETE | `own groups` | new durable owner | owner_user_id owner **and** durable owner |
+All-or-nothing. Any validation failure or constraint violation raises, and Postgres discards the group, the people, the memberships and the activity row together. No compensating DELETE and no orphan `people` rows — strictly better than today's step-4 partial rollback. The client sees a single error and shows the existing "kunne ikke gemme" toast.
 
-Because both sides must hold, UPDATE/DELETE today is still gated by `owner_user_id` — nothing is weakened, and the durable predicate is added on top. When a later stage drops the legacy permissive policy and replaces it with a durable permissive one, the restrictive layer is already in place and behaviour does not change for any current group (owner_person_id readiness is 100% per S3D).
+### Why RLS does not need to change
 
-## 5. Test matrix
+The RPC is SECURITY DEFINER, so it bypasses the `groups` INSERT policy entirely. The legacy permissive `own groups` INSERT path can stay exactly as it is during the transition and be retired only in S3D-4 once no client writes `groups` directly.
 
-| # | Scenario | Expected | Why |
-| --- | --- | --- | --- |
-| 1 | Existing owner renames group / changes default split | allowed | both branches of `is_group_owner` true; owner cols unchanged |
-| 2 | Existing owner archives (`archived_at`) | allowed | same; `archived_at` is not an owner column |
-| 3 | Existing owner deletes group | allowed | restrictive DELETE satisfied |
-| 4 | Non-owner participant UPDATE or DELETE | denied | permissive `own groups` already fails; restrictive also fails |
-| 5 | Outsider UPDATE/DELETE/SELECT | denied / 0 rows | no permissive policy matches |
-| 6 | `createGroup` INSERT | allowed | INSERT untouched, legacy WITH CHECK |
-| 7 | INSERT with someone else's `owner_user_id` | denied | `own groups` WITH CHECK `auth.uid() = owner_user_id` |
-| 8 | Owner UPDATE sets `owner_user_id` to another user | denied | frozen-column clause in WITH CHECK |
-| 9 | Owner UPDATE sets `owner_person_id` to another person | denied | frozen-column clause |
-| 10 | Non-owner UPDATE trying to set themselves as owner | denied | fails both layers |
-| 11 | `createGroup` rollback DELETE after member-insert failure | allowed | caller is `owner_user_id`, legacy branch true |
-| 12 | Group/member/expense/settlement counts and balances | identical | SELECT and INSERT paths untouched, no data written |
-| 13 | Invitation create / preview / claim / redeem | unchanged | invitations are governed by `group_invitations` policies and SECDEF functions; `claim`/`redeem` bypass RLS |
-| 14 | `addGroupMembers`, `removeGroupMember`, member restore | unchanged | governed by `group_members` policies, not `groups` |
+## 3. Proposed `transfer_group_ownership` RPC (design)
 
-Verification method: run each write as the real owner (Jonas), as the non-owner participant (Zia) and as an unrelated identity, then re-run the count/balance baseline and diff it against the pre-migration snapshot.
+```text
+public.transfer_group_ownership(_group_id uuid, _successor_person_id uuid) returns void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+```
 
-## 6. Risks and rollback
+Guards, all raising a distinct error message:
 
-- **Risk: double-owner-check confusion.** Both layers must pass, so an owner who somehow satisfies only the durable path (owner_user_id diverged) would be blocked on UPDATE/DELETE. Current data has zero such rows, so the risk is nil today; it is resolved when the legacy permissive policy is replaced in a later stage.
-- **Risk: subselect cost.** Two single-row primary-key lookups per updated row — negligible at this scale.
-- **Risk: an internal code path legitimately changing `owner_user_id`.** None exists in the app; transfer is explicitly deferred to an RPC.
-- **Rollback:** `DROP POLICY "groups update must be group owner" ON public.groups;` and the DELETE equivalent. Purely definitional, no data rewritten.
+1. `auth.uid()` is not NULL.
+2. `public.is_group_owner(_group_id, auth.uid())` is TRUE — only the current owner may transfer.
+3. The successor person exists, `status = 'active'`, `unlinked_at IS NULL`.
+4. The successor is **linked** (`linked_profile_id IS NOT NULL`) — placeholders can never own a group.
+5. The successor has a `group_members` row in this group with `removed_at IS NULL`.
+6. The successor is not already the owner (no-op / idempotent success).
 
-## 7. Recommendation
+Effects, one transaction:
 
-Proceed with S3D-2 as **durable UPDATE/DELETE only**, plus the owner-column freeze, and keep INSERT on `own groups`. Ownership creation and transfer belong in S3D-3+ as a controlled SECURITY DEFINER RPC, after which the legacy permissive policy can be retired in one final step.
+- `groups.owner_person_id = _successor_person_id`
+- `groups.owner_user_id = successor.linked_profile_id` (see §4)
+- `group_members.role`: successor → 'owner', previous owner person → 'member'
+- `groups.orphaned_at = NULL`
+- one `activity` row recording the transfer
 
-Read-only audit. Nothing implemented. S3D-3, S3D-4, S3E, S3F and S4 remain unstarted.
+The RESTRICTIVE freeze policy from S3D-2 does not block this: `group_owner_fields_unchanged` is only consulted in the policy layer, and SECURITY DEFINER writes bypass RLS. That is exactly the escape hatch the freeze was designed to leave open.
+
+## 4. How `owner_user_id` is maintained during the transition
+
+Keep it, keep it in sync, stop relying on it:
+
+- **Phase now (S3D-3):** `owner_person_id` becomes authoritative for authorization (already true via `is_group_owner`), while `owner_user_id` is maintained as a mirror of `owner_person_id`'s linked account. Both RPCs write them together so they can never diverge.
+- **Phase S3D-4:** the legacy branch of `is_group_owner` and the permissive `own groups` policy are replaced by durable equivalents; `owner_user_id` becomes pure creator metadata.
+- **Phase S4:** `owner_user_id` becomes nullable on `groups` so account deletion no longer needs to touch shared rows.
+
+Until then no code path other than these two RPCs may write either column — the S3D-2 freeze already enforces that from the client side.
+
+## 5. Deterministic fallback rules for future account deletion
+
+Not implemented here; specified so S4 has no open decisions. When the owner's account is deleted (their person becomes `status = 'former'`, `unlinked_at` set, `linked_profile_id` cleared):
+
+1. If another **linked, active, non-removed** member exists, ownership passes to the one with the earliest `joined_at` (tie-break: lowest person id). Deterministic and reproducible.
+2. If none exists, `owner_person_id` stays pointing at the former owner's person row, `owner_user_id` is set NULL and `orphaned_at = now()`. The group becomes read-only for remaining members; history survives intact.
+3. An orphaned group is reclaimed automatically by the same rule as (1) the first time a member links an account, or explicitly by the first linked member calling a future `claim_orphaned_group` RPC.
+4. Never delete a group as part of account deletion, and never let the FK do it — `owner_person_id` is already `ON DELETE SET NULL`.
+
+## 6. Frontend write audit and smallest migration path
+
+| Path | Writes today | S3D-3 change |
+| --- | --- | --- |
+| `createGroup` (store.tsx 976–1048) | groups, people, group_members, activity | replaced by a single `create_group` RPC call returning the id, then `refresh()` |
+| `groups.new.tsx` | calls `pari.createGroup` only | none — signature unchanged |
+| `split.result.tsx` "save as group" | same `createGroup` | none |
+| `updateGroup`, `addGroupMembers`, `removeGroupMember`, `setGroupArchived`, `deleteGroup` | direct table writes | untouched in S3D-3 |
+| ownership transfer | does not exist in the UI | RPC only; no UI in this stage |
+
+Smallest path: keep `CreateGroupInput` and the `Promise<string | null>` contract exactly as-is, so `createGroup` becomes a ~10-line `supabase.rpc('create_group', {...})` wrapper and no calling component changes. That is a one-file frontend diff, and the old code path can be restored by reverting that one function.
+
+## 7. Test matrix for the eventual implementation
+
+| # | Scenario | Expected |
+| --- | --- | --- |
+| 1 | Create group with 2 new names | group + 3 members + people created; `owner_person_id` set |
+| 2 | Create group reusing an existing person by name | no duplicate person |
+| 3 | Create group as a user with no self person | self person created, becomes owner |
+| 4 | Percentage / shares defaults supplied | landed on the right member rows |
+| 5 | Forced failure mid-way | zero rows in groups, people, group_members, activity |
+| 6 | anon calls `create_group` | permission denied |
+| 7 | Owner transfers to a linked active member | owner columns + roles swapped, activity logged |
+| 8 | Transfer to a placeholder / removed / inactive person | denied |
+| 9 | Non-owner participant or outsider calls transfer | denied |
+| 10 | Transfer to the current owner | idempotent no-op |
+| 11 | Client tries to change owner columns directly | still 403 (S3D-2 freeze intact) |
+| 12 | Counts and balances after all tests | bit-identical to baseline |
+
+## 8. Risks
+
+- **Two SECURITY DEFINER functions added** → linter warning count rises by two; both are auth-gated and revoked from `anon`.
+- **jsonb split-rule keys** ('self' + lowercased name) are a client convention; the RPC must reproduce it exactly or defaults silently land wrong. Covered by tests 4.
+- **Name-matching person reuse** is case-insensitive and scoped to the caller's own people, matching current behaviour; it does not reuse other users' people.
+
+Read-only audit. Nothing implemented. S3D-4, S3E, S3F and S4 remain unstarted.
