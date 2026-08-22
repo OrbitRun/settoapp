@@ -24,7 +24,7 @@ export type Database = {
           group_id: string | null
           id: string
           metadata: Json
-          owner_user_id: string
+          owner_user_id: string | null
         }
         Insert: {
           activity_type: string
@@ -35,7 +35,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           metadata?: Json
-          owner_user_id: string
+          owner_user_id?: string | null
         }
         Update: {
           activity_type?: string
@@ -46,7 +46,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           metadata?: Json
-          owner_user_id?: string
+          owner_user_id?: string | null
         }
         Relationships: [
           {
@@ -74,7 +74,7 @@ export type Database = {
           id: string
           is_shared: boolean
           name: string
-          owner_user_id: string
+          owner_user_id: string | null
           position: number
           quantity: number
           total_minor: number
@@ -88,7 +88,7 @@ export type Database = {
           id?: string
           is_shared?: boolean
           name: string
-          owner_user_id: string
+          owner_user_id?: string | null
           position?: number
           quantity?: number
           total_minor?: number
@@ -102,7 +102,7 @@ export type Database = {
           id?: string
           is_shared?: boolean
           name?: string
-          owner_user_id?: string
+          owner_user_id?: string | null
           position?: number
           quantity?: number
           total_minor?: number
@@ -124,7 +124,7 @@ export type Database = {
           expense_id: string
           id: string
           original_amount_minor: number | null
-          owner_user_id: string
+          owner_user_id: string | null
           percentage: number | null
           person_id: string
           shares: number | null
@@ -134,7 +134,7 @@ export type Database = {
           expense_id: string
           id?: string
           original_amount_minor?: number | null
-          owner_user_id: string
+          owner_user_id?: string | null
           percentage?: number | null
           person_id: string
           shares?: number | null
@@ -144,7 +144,7 @@ export type Database = {
           expense_id?: string
           id?: string
           original_amount_minor?: number | null
-          owner_user_id?: string
+          owner_user_id?: string | null
           percentage?: number | null
           person_id?: string
           shares?: number | null
@@ -180,7 +180,7 @@ export type Database = {
           merchant: string | null
           original_currency: string | null
           original_total_minor: number | null
-          owner_user_id: string
+          owner_user_id: string | null
           paid_by_person_id: string
           receipt_image_url: string | null
           source_type: string
@@ -201,7 +201,7 @@ export type Database = {
           merchant?: string | null
           original_currency?: string | null
           original_total_minor?: number | null
-          owner_user_id: string
+          owner_user_id?: string | null
           paid_by_person_id: string
           receipt_image_url?: string | null
           source_type?: string
@@ -222,7 +222,7 @@ export type Database = {
           merchant?: string | null
           original_currency?: string | null
           original_total_minor?: number | null
-          owner_user_id?: string
+          owner_user_id?: string | null
           paid_by_person_id?: string
           receipt_image_url?: string | null
           source_type?: string
@@ -284,7 +284,7 @@ export type Database = {
           group_id: string
           id: string
           join_code: string
-          owner_user_id: string
+          owner_user_id: string | null
           person_id: string | null
           revoked_at: string | null
           sent_at: string | null
@@ -298,7 +298,7 @@ export type Database = {
           group_id: string
           id?: string
           join_code: string
-          owner_user_id: string
+          owner_user_id?: string | null
           person_id?: string | null
           revoked_at?: string | null
           sent_at?: string | null
@@ -312,7 +312,7 @@ export type Database = {
           group_id?: string
           id?: string
           join_code?: string
-          owner_user_id?: string
+          owner_user_id?: string | null
           person_id?: string | null
           revoked_at?: string | null
           sent_at?: string | null
@@ -344,7 +344,7 @@ export type Database = {
           group_id: string
           id: string
           joined_at: string
-          owner_user_id: string
+          owner_user_id: string | null
           person_id: string
           removed_at: string | null
           role: string
@@ -355,7 +355,7 @@ export type Database = {
           group_id: string
           id?: string
           joined_at?: string
-          owner_user_id: string
+          owner_user_id?: string | null
           person_id: string
           removed_at?: string | null
           role?: string
@@ -366,7 +366,7 @@ export type Database = {
           group_id?: string
           id?: string
           joined_at?: string
-          owner_user_id?: string
+          owner_user_id?: string | null
           person_id?: string
           removed_at?: string | null
           role?: string
@@ -398,7 +398,7 @@ export type Database = {
           name: string
           orphaned_at: string | null
           owner_person_id: string | null
-          owner_user_id: string
+          owner_user_id: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -409,7 +409,7 @@ export type Database = {
           name: string
           orphaned_at?: string | null
           owner_person_id?: string | null
-          owner_user_id: string
+          owner_user_id?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -420,7 +420,7 @@ export type Database = {
           name?: string
           orphaned_at?: string | null
           owner_person_id?: string | null
-          owner_user_id?: string
+          owner_user_id?: string | null
         }
         Relationships: [
           {
@@ -437,7 +437,7 @@ export type Database = {
           amount_minor: number
           expense_item_id: string
           id: string
-          owner_user_id: string
+          owner_user_id: string | null
           percentage: number | null
           person_id: string
           shares: number | null
@@ -446,7 +446,7 @@ export type Database = {
           amount_minor?: number
           expense_item_id: string
           id?: string
-          owner_user_id: string
+          owner_user_id?: string | null
           percentage?: number | null
           person_id: string
           shares?: number | null
@@ -455,7 +455,7 @@ export type Database = {
           amount_minor?: number
           expense_item_id?: string
           id?: string
-          owner_user_id?: string
+          owner_user_id?: string | null
           percentage?: number | null
           person_id?: string
           shares?: number | null
@@ -485,7 +485,7 @@ export type Database = {
           is_self: boolean
           linked_profile_id: string | null
           name: string
-          owner_user_id: string
+          owner_user_id: string | null
           status: string
           unlinked_at: string | null
         }
@@ -496,7 +496,7 @@ export type Database = {
           is_self?: boolean
           linked_profile_id?: string | null
           name: string
-          owner_user_id: string
+          owner_user_id?: string | null
           status?: string
           unlinked_at?: string | null
         }
@@ -507,7 +507,7 @@ export type Database = {
           is_self?: boolean
           linked_profile_id?: string | null
           name?: string
-          owner_user_id?: string
+          owner_user_id?: string | null
           status?: string
           unlinked_at?: string | null
         }
@@ -562,7 +562,7 @@ export type Database = {
           from_person_id: string
           group_id: string
           id: string
-          owner_user_id: string
+          owner_user_id: string | null
           settled_at: string | null
           status: string
           to_person_id: string
@@ -574,7 +574,7 @@ export type Database = {
           from_person_id: string
           group_id: string
           id?: string
-          owner_user_id: string
+          owner_user_id?: string | null
           settled_at?: string | null
           status?: string
           to_person_id: string
@@ -586,7 +586,7 @@ export type Database = {
           from_person_id?: string
           group_id?: string
           id?: string
-          owner_user_id?: string
+          owner_user_id?: string | null
           settled_at?: string | null
           status?: string
           to_person_id?: string
