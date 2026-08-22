@@ -31,7 +31,7 @@ No ACL is changed during this audit. Only after an unauthenticated call requirem
 
 ## Stage 2: S3D-3B — transfer_group_ownership
 
-Implement only after Stage 1 is GREEN.
+Implement only after Stage 1 is GREEN. If the receipt policy change or the SECDEF audit reveals anything unexpected, STOP before creating `transfer_group_ownership`.
 
 ### 2.1 RPC definition
 `public.transfer_group_ownership(_group_id uuid, _new_owner_person_id uuid)`, SECURITY DEFINER, `search_path = public`, fully schema-qualified, no dynamic SQL, identity only from `auth.uid()`.
@@ -41,6 +41,16 @@ Authorization, before any write:
 - reject unauthenticated callers
 - require BOTH `locked_group.owner_user_id = auth.uid()` AND `public.is_group_owner(_group_id, auth.uid()) = TRUE` (preserves transitional authority until S3D-4)
 
+Validate current durable owner state after locking the group. Require:
+- `locked_group.owner_person_id IS NOT NULL`
+- current owner person exists
+- `status = 'active'`
+- `unlinked_at IS NULL`
+- `linked_profile_id = auth.uid()`
+- current owner person has a `group_members` row in this group with `removed_at IS NULL`
+
+Reason: `is_group_owner` still contains a legacy OR branch based on `owner_user_id`, so `owner_user_id = auth.uid()` plus `is_group_owner()` does not by itself prove the durable `owner_person_id` path is healthy. If durable ownership is inconsistent, raise an explicit transitional-data error — do NOT silently repair it inside the RPC.
+
 Successor must:
 - exist
 - `status = 'active'`
@@ -48,17 +58,24 @@ Successor must:
 - `linked_profile_id IS NOT NULL`
 - already have a `group_members` row in the group with `removed_at IS NULL`
 
+Lock successor eligibility rows: after locking the `groups` row, lock/read the successor person row and the successor `group_members` row before changing ownership, so the successor cannot be removed or unlinked between validation and transfer. Consistent lock order: group → people row(s) → group_members row(s).
+
 If the successor is already owner: return success as a no-op, log no duplicate activity.
 
 ### 2.2 Atomic effects
+Before updating `groups`, store the caller `auth.uid()` and the previous `owner_person_id` in local variables so the activity actor is not derived from the already-updated group row.
+
 - `groups.owner_person_id` = successor person
 - `groups.owner_user_id` = successor `linked_profile_id`
 - `groups.orphaned_at = NULL`
-- successor `group_members.role = 'owner'`
+- successor `group_members.role = 'owner'` — the UPDATE still requires `removed_at IS NULL` and verifies exactly one row was affected
 - previous owner `group_members.role = 'member'`
 - exactly one `ownership_transferred` activity row
 
+Activity insert: inspect the existing activity schema and conventions first. The actor must represent the person who performed the transfer (the previous owner/caller), not the new owner. Match existing required fields exactly; invent no new owner/actor semantics.
+
 Note: `group_owner_fields_unchanged` does NOT protect writes performed inside this RPC, because SECURITY DEFINER bypasses RLS. The RPC's own authorization and successor checks are the seizure protection.
+
 
 ### 2.3 ACL
 - no PUBLIC
