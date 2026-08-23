@@ -76,7 +76,6 @@ export type Expense = {
   /** What the bank actually charged, when the user entered it. */
   card_charged_minor: number | null;
   source_type: ExpenseSource;
-  receipt_image_url: string | null;
   created_at: string;
   updated_at: string;
 };

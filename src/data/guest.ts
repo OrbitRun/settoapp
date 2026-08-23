@@ -120,7 +120,6 @@ export function makeGuestExpense(input: {
     exchange_rate_source: input.exchangeRateSource ?? "same",
     card_charged_minor: input.cardChargedMinor ?? null,
     source_type: input.source,
-    receipt_image_url: null,
     created_at: now,
     updated_at: now,
   };
