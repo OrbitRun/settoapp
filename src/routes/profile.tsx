@@ -153,6 +153,18 @@ function ProfileScreen() {
             >
               {t("profile.signOut")}
             </button>
+            <Divider />
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmWord("");
+                setDeleteError(null);
+                setSheet("delete");
+              }}
+              className="w-full px-4 py-4 text-left text-[15px] text-negative"
+            >
+              {t("profile.deleteAccount")}
+            </button>
           </Panel>
         </div>
       </Screen>
