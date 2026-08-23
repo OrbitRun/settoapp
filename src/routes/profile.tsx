@@ -15,6 +15,8 @@ import { useT, type Language } from "@/lib/i18n";
 import type { Appearance } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { AuthGate } from "@/components/pari/AuthGate";
+import { clearPendingInvite } from "@/data/invitations";
+import { deleteMyAccount } from "@/lib/account.functions";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
