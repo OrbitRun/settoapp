@@ -134,3 +134,153 @@ export const getReceiptSignedUrl = createServerFn({ method: "POST" })
     if (signed.error || !signed.data?.signedUrl) return null;
     return { url: signed.data.signedUrl, expiresInSeconds: 60 };
   });
+
+/**
+ * The caller's own receipts, newest first, with short-lived signed thumbnail URLs.
+ * RLS scopes the rows; a non-owner simply gets an empty list.
+ */
+export const listMyReceipts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const rows = await supabase
+      .from("receipts")
+      .select(
+        "id, merchant_name, purchase_date, currency, total_minor, note, warranty_expires_at, storage_path, created_at",
+      )
+      .order("created_at", { ascending: false });
+    if (rows.error || !rows.data) return [];
+
+    // One batched signing call rather than one per card.
+    const signed = await supabase.storage
+      .from(RECEIPT_BUCKET)
+      .createSignedUrls(
+        rows.data.map((row) => row.storage_path),
+        THUMBNAIL_TTL_SECONDS,
+      );
+    const urlByPath = new Map<string, string>();
+    for (const entry of signed.data ?? []) {
+      if (entry.signedUrl && entry.path) urlByPath.set(entry.path, entry.signedUrl);
+    }
+
+    const links = await supabase
+      .from("expenses")
+      .select("id, receipt_id")
+      .in(
+        "receipt_id",
+        rows.data.map((row) => row.id),
+      );
+    const expenseByReceipt = new Map<string, string>();
+    for (const link of links.data ?? []) {
+      if (link.receipt_id) expenseByReceipt.set(link.receipt_id, link.id);
+    }
+
+    return rows.data.map((row) => ({
+      id: row.id,
+      merchantName: row.merchant_name,
+      purchaseDate: row.purchase_date,
+      currency: row.currency,
+      totalMinor: row.total_minor,
+      note: row.note,
+      warrantyExpiresAt: row.warranty_expires_at,
+      createdAt: row.created_at,
+      thumbnailUrl: urlByPath.get(row.storage_path) ?? null,
+      linkedExpenseId: expenseByReceipt.get(row.id) ?? null,
+    }));
+  });
+
+/** Full owner-only receipt detail: metadata, parsed lines, image URL and linked expense. */
+export const getReceiptDetail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { receiptId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const receipt = await supabase
+      .from("receipts")
+      .select(
+        "id, merchant_name, purchase_date, currency, total_minor, note, warranty_expires_at, storage_path, parsed_json, created_at",
+      )
+      .eq("id", data.receiptId)
+      .maybeSingle();
+    if (receipt.error || !receipt.data) return null;
+
+    const signed = await supabase.storage
+      .from(RECEIPT_BUCKET)
+      .createSignedUrl(receipt.data.storage_path, THUMBNAIL_TTL_SECONDS);
+
+    const link = await supabase
+      .from("expenses")
+      .select("id")
+      .eq("receipt_id", receipt.data.id)
+      .maybeSingle();
+
+    return {
+      id: receipt.data.id,
+      merchantName: receipt.data.merchant_name,
+      purchaseDate: receipt.data.purchase_date,
+      currency: receipt.data.currency,
+      totalMinor: receipt.data.total_minor,
+      note: receipt.data.note,
+      warrantyExpiresAt: receipt.data.warranty_expires_at,
+      createdAt: receipt.data.created_at,
+      imageUrl: signed.data?.signedUrl ?? null,
+      linkedExpenseId: link.data?.id ?? null,
+      lines: extractLines(receipt.data.parsed_json),
+    };
+  });
+
+/**
+ * Owner-editable receipt metadata. Identity columns are never sent, and the
+ * receipt_identity_unchanged guard rejects any attempt to move them anyway.
+ */
+export const updateReceiptMeta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: UpdateReceiptMetaInput) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const patch = buildMetaPatch(data);
+    if (!patch) return { ok: false as const, reason: "nothing_to_update" as const };
+
+    const updated = await supabase
+      .from("receipts")
+      .update(patch)
+      .eq("id", data.receiptId)
+      .select("id")
+      .maybeSingle();
+    if (updated.error || !updated.data) {
+      console.error("[receipt] meta_update_failed", updated.error?.message ?? "no row");
+      return { ok: false as const, reason: "update_failed" as const };
+    }
+    return { ok: true as const };
+  });
+
+/**
+ * Owner-only deletion: storage object first, row second. If the object cannot be
+ * removed the row is kept so a retry still knows where the private image lives.
+ * A linked expense survives via expenses.receipt_id ON DELETE SET NULL.
+ */
+export const deleteReceipt = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { receiptId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const receipt = await supabase
+      .from("receipts")
+      .select("id, storage_path")
+      .eq("id", data.receiptId)
+      .maybeSingle();
+    if (receipt.error || !receipt.data) return { ok: false as const, reason: "not_found" as const };
+
+    const removal = await removeReceiptObjects(supabase, [receipt.data.storage_path]);
+    if (!removal.ok) {
+      console.error("[receipt] object_delete_failed", removal.remaining);
+      return { ok: false as const, reason: "storage_failed" as const };
+    }
+
+    const deleted = await supabase.from("receipts").delete().eq("id", receipt.data.id);
+    if (deleted.error) {
+      console.error("[receipt] row_delete_failed", deleted.error.message);
+      return { ok: false as const, reason: "row_failed" as const };
+    }
+    return { ok: true as const };
+  });
