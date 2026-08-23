@@ -260,6 +260,49 @@ function ProfileScreen() {
             onSelect={(value) => setAppearance(value as Appearance)}
           />
         ) : null}
+
+        {sheet === "delete" ? (
+          <div className="space-y-4 px-1">
+            <h2 className="text-[19px] font-semibold tracking-tight text-negative">
+              {t("profile.deleteAccount")}
+            </h2>
+            <p className="text-[15px] text-muted-foreground">{t("profile.deleteAccountIntro")}</p>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              <li>{t("profile.deleteAccountPoint1")}</li>
+              <li>{t("profile.deleteAccountPoint2")}</li>
+              <li>{t("profile.deleteAccountPoint3")}</li>
+              <li>{t("profile.deleteAccountPoint4")}</li>
+              <li>{t("profile.deleteAccountPoint5")}</li>
+              <li>{t("profile.deleteAccountPoint6")}</li>
+            </ul>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                {t("profile.deleteAccountConfirmHint")}
+              </p>
+              <input
+                value={confirmWord}
+                onChange={(event) => setConfirmWord(event.target.value)}
+                disabled={deleting}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                placeholder={confirmPhrase}
+                className="h-14 w-full rounded-2xl bg-surface-strong px-4 text-[15px] uppercase outline-none ring-accent/40 focus:ring-2"
+              />
+            </div>
+            {deleteError ? <p className="text-sm text-negative">{deleteError}</p> : null}
+            <div className="space-y-2">
+              <PrimaryButton
+                onClick={runDelete}
+                disabled={deleting || confirmWord.trim().toUpperCase() !== confirmPhrase}
+              >
+                {deleting ? t("profile.deleteAccountWorking") : t("profile.deleteAccount")}
+              </PrimaryButton>
+              <SecondaryButton onClick={close} disabled={deleting}>
+                {t("common.cancel")}
+              </SecondaryButton>
+            </div>
+          </div>
+        ) : null}
       </BottomSheet>
     </>
   );
