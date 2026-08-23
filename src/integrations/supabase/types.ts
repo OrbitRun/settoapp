@@ -182,6 +182,7 @@ export type Database = {
           original_total_minor: number | null
           owner_user_id: string | null
           paid_by_person_id: string
+          receipt_id: string | null
           receipt_image_url: string | null
           source_type: string
           title: string
@@ -203,6 +204,7 @@ export type Database = {
           original_total_minor?: number | null
           owner_user_id?: string | null
           paid_by_person_id: string
+          receipt_id?: string | null
           receipt_image_url?: string | null
           source_type?: string
           title: string
@@ -224,6 +226,7 @@ export type Database = {
           original_total_minor?: number | null
           owner_user_id?: string | null
           paid_by_person_id?: string
+          receipt_id?: string | null
           receipt_image_url?: string | null
           source_type?: string
           title?: string
@@ -243,6 +246,13 @@ export type Database = {
             columns: ["paid_by_person_id"]
             isOneToOne: false
             referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
             referencedColumns: ["id"]
           },
         ]
@@ -554,6 +564,57 @@ export type Database = {
         }
         Relationships: []
       }
+      receipts: {
+        Row: {
+          created_at: string
+          currency: string | null
+          file_size_bytes: number
+          id: string
+          merchant_name: string | null
+          mime_type: string
+          note: string | null
+          owner_user_id: string
+          parsed_json: Json
+          purchase_date: string | null
+          storage_path: string
+          total_minor: number | null
+          updated_at: string
+          warranty_expires_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          file_size_bytes: number
+          id?: string
+          merchant_name?: string | null
+          mime_type: string
+          note?: string | null
+          owner_user_id: string
+          parsed_json?: Json
+          purchase_date?: string | null
+          storage_path: string
+          total_minor?: number | null
+          updated_at?: string
+          warranty_expires_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          file_size_bytes?: number
+          id?: string
+          merchant_name?: string | null
+          mime_type?: string
+          note?: string | null
+          owner_user_id?: string
+          parsed_json?: Json
+          purchase_date?: string | null
+          storage_path?: string
+          total_minor?: number | null
+          updated_at?: string
+          warranty_expires_at?: string | null
+        }
+        Relationships: []
+      }
       settlements: {
         Row: {
           amount_minor: number
@@ -694,6 +755,16 @@ export type Database = {
       }
       is_group_participant: {
         Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      receipt_identity_unchanged: {
+        Args: {
+          _file_size_bytes: number
+          _id: string
+          _mime_type: string
+          _owner_user_id: string
+          _storage_path: string
+        }
         Returns: boolean
       }
       redeem_group_invitation: {
