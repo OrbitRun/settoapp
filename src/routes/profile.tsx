@@ -174,6 +174,14 @@ function ProfileScreen() {
             ))}
             <Divider />
             <Link
+              to="/receipts"
+              className="flex items-center justify-between px-4 py-4 text-[15px]"
+            >
+              {t("receipt.archiveTitle")}
+              <ChevronRight className="h-4 w-4 text-muted-foreground/60" strokeWidth={1.6} />
+            </Link>
+            <Divider />
+            <Link
               to="/onboarding"
               className="flex items-center justify-between px-4 py-4 text-[15px]"
             >
@@ -181,6 +189,7 @@ function ProfileScreen() {
               <ChevronRight className="h-4 w-4 text-muted-foreground/60" strokeWidth={1.6} />
             </Link>
           </Panel>
+
 
           <Panel>
             <button
