@@ -179,6 +179,10 @@ function ScanScreen() {
         </p>
 
         {error ? <p className="mt-3 max-w-[30ch] text-sm text-negative">{error}</p> : null}
+
+        <p className="mt-6 max-w-[34ch] text-xs leading-relaxed text-muted-foreground">
+          {t("receipt.aiDisclosure")}
+        </p>
       </div>
 
       {!reading ? (

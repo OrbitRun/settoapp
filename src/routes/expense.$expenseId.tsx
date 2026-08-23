@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Receipt as ReceiptIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Divider, Panel, Screen } from "@/components/pari/AppShell";
@@ -21,6 +21,8 @@ import {
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { FxSummary } from "@/components/pari/FxSummary";
 import { ExpenseHistory } from "@/components/pari/ExpenseHistory";
+import { ReceiptSheet, type ReceiptSummary } from "@/components/pari/ReceiptSheet";
+import { getExpenseReceipt } from "@/lib/receipt.functions";
 
 import { usePari } from "@/data/store";
 import type { Allocation, SplitMode } from "@/lib/split";
@@ -88,6 +90,9 @@ function ExpenseDetailScreen() {
 
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Owner-only: RLS decides whether a receipt row comes back at all.
+  const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
   const [confirmSettled, setConfirmSettled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState(expense?.title ?? "");
@@ -407,6 +412,15 @@ function ExpenseDetailScreen() {
             </Panel>
           ) : null}
 
+          {receipt ? (
+            <div>
+              <SecondaryButton onClick={() => setReceiptOpen(true)}>
+                <ReceiptIcon className="h-4 w-4" strokeWidth={1.8} />
+                {t("receipt.view")}
+              </SecondaryButton>
+            </div>
+          ) : null}
+
           <ExpenseHistory expenseId={expense.id} />
 
           <div className="space-y-2">
@@ -419,6 +433,14 @@ function ExpenseDetailScreen() {
           </div>
         </div>
       )}
+
+      {receipt ? (
+        <ReceiptSheet
+          open={receiptOpen}
+          onClose={() => setReceiptOpen(false)}
+          receipt={receipt}
+        />
+      ) : null}
 
       <BottomSheet open={confirmSettled} onClose={() => setConfirmSettled(false)}>
         <div className="space-y-5 px-1">
