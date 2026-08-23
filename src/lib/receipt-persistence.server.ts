@@ -115,34 +115,43 @@ export type UpdateReceiptMetaInput = {
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Only mutable metadata columns are ever built into an update statement. */
-export function buildMetaPatch(input: UpdateReceiptMetaInput): Record<string, unknown> | null {
-  const patch: Record<string, unknown> = {};
+export type ReceiptMetaPatch = {
+  note?: string | null;
+  warranty_expires_at?: string | null;
+  merchant_name?: string | null;
+  purchase_date?: string | null;
+  total_minor?: number | null;
+  currency?: string | null;
+};
+
+export function buildMetaPatch(input: UpdateReceiptMetaInput): ReceiptMetaPatch | null {
+  const patch: ReceiptMetaPatch = {};
   const text = (value: string | null | undefined) => {
     const trimmed = (value ?? "").trim();
     return trimmed === "" ? null : trimmed;
   };
 
-  if ("note" in input) patch["note"] = text(input.note);
+  if ("note" in input) patch.note = text(input.note);
   if ("warrantyExpiresAt" in input) {
     const value = text(input.warrantyExpiresAt);
     if (value !== null && !ISO_DATE.test(value)) return null;
-    patch["warranty_expires_at"] = value;
+    patch.warranty_expires_at = value;
   }
-  if ("merchantName" in input) patch["merchant_name"] = text(input.merchantName);
+  if ("merchantName" in input) patch.merchant_name = text(input.merchantName);
   if ("purchaseDate" in input) {
     const value = text(input.purchaseDate);
     if (value !== null && !ISO_DATE.test(value)) return null;
-    patch["purchase_date"] = value;
+    patch.purchase_date = value;
   }
   if ("totalMinor" in input) {
     const value = input.totalMinor;
     if (value != null && (!Number.isFinite(value) || value < 0)) return null;
-    patch["total_minor"] = value ?? null;
+    patch.total_minor = value ?? null;
   }
   if ("currency" in input) {
     const value = text(input.currency);
     if (value !== null && !/^[A-Za-z]{3}$/.test(value)) return null;
-    patch["currency"] = value ? value.toUpperCase() : null;
+    patch.currency = value ? value.toUpperCase() : null;
   }
 
   return Object.keys(patch).length > 0 ? patch : null;
