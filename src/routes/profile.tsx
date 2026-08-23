@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -14,6 +15,8 @@ import { useT, type Language } from "@/lib/i18n";
 import type { Appearance } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { AuthGate } from "@/components/pari/AuthGate";
+import { clearPendingInvite } from "@/data/invitations";
+import { deleteMyAccount } from "@/lib/account.functions";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -37,11 +40,48 @@ function ProfileScreen() {
   const pari = usePari();
   const t = useT();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const [sheet, setSheet] = useState<null | "name" | "language" | "currency" | "appearance">(null);
+  const [sheet, setSheet] = useState<
+    null | "name" | "language" | "currency" | "appearance" | "delete"
+  >(null);
   const [nameValue, setNameValue] = useState(pari.currentProfileName);
+  const [confirmWord, setConfirmWord] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const close = () => setSheet(null);
+  const close = () => {
+    if (deleting) return;
+    setSheet(null);
+  };
+
+  const confirmPhrase = t("profile.deleteAccountConfirmWord");
+
+  const runDelete = async () => {
+    if (deleting || confirmWord.trim().toUpperCase() !== confirmPhrase) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const result = await deleteMyAccount();
+      if (!result.success) {
+        setDeleteError(t("profile.deleteAccountError"));
+        return;
+      }
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      clearPendingInvite();
+      try {
+        await pari.signOut();
+      } catch {
+        // The session is already invalid after the account was deleted.
+      }
+      navigate({ to: "/", replace: true });
+    } catch {
+      setDeleteError(t("profile.deleteAccountError"));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const saveName = async () => {
     await pari.updateProfile({ display_name: nameValue.trim() || pari.currentProfileName });
@@ -153,6 +193,18 @@ function ProfileScreen() {
             >
               {t("profile.signOut")}
             </button>
+            <Divider />
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmWord("");
+                setDeleteError(null);
+                setSheet("delete");
+              }}
+              className="w-full px-4 py-4 text-left text-[15px] text-negative"
+            >
+              {t("profile.deleteAccount")}
+            </button>
           </Panel>
         </div>
       </Screen>
@@ -207,6 +259,49 @@ function ProfileScreen() {
             current={pari.appearance}
             onSelect={(value) => setAppearance(value as Appearance)}
           />
+        ) : null}
+
+        {sheet === "delete" ? (
+          <div className="space-y-4 px-1">
+            <h2 className="text-[19px] font-semibold tracking-tight text-negative">
+              {t("profile.deleteAccount")}
+            </h2>
+            <p className="text-[15px] text-muted-foreground">{t("profile.deleteAccountIntro")}</p>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              <li>{t("profile.deleteAccountPoint1")}</li>
+              <li>{t("profile.deleteAccountPoint2")}</li>
+              <li>{t("profile.deleteAccountPoint3")}</li>
+              <li>{t("profile.deleteAccountPoint4")}</li>
+              <li>{t("profile.deleteAccountPoint5")}</li>
+              <li>{t("profile.deleteAccountPoint6")}</li>
+            </ul>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                {t("profile.deleteAccountConfirmHint")}
+              </p>
+              <input
+                value={confirmWord}
+                onChange={(event) => setConfirmWord(event.target.value)}
+                disabled={deleting}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                placeholder={confirmPhrase}
+                className="h-14 w-full rounded-2xl bg-surface-strong px-4 text-[15px] uppercase outline-none ring-accent/40 focus:ring-2"
+              />
+            </div>
+            {deleteError ? <p className="text-sm text-negative">{deleteError}</p> : null}
+            <div className="space-y-2">
+              <PrimaryButton
+                onClick={runDelete}
+                disabled={deleting || confirmWord.trim().toUpperCase() !== confirmPhrase}
+              >
+                {deleting ? t("profile.deleteAccountWorking") : t("profile.deleteAccount")}
+              </PrimaryButton>
+              <SecondaryButton onClick={close} disabled={deleting}>
+                {t("common.cancel")}
+              </SecondaryButton>
+            </div>
+          </div>
         ) : null}
       </BottomSheet>
     </>
