@@ -38,10 +38,46 @@ function ProfileScreen() {
   const t = useT();
   const navigate = useNavigate();
 
-  const [sheet, setSheet] = useState<null | "name" | "language" | "currency" | "appearance">(null);
+  const [sheet, setSheet] = useState<
+    null | "name" | "language" | "currency" | "appearance" | "delete"
+  >(null);
   const [nameValue, setNameValue] = useState(pari.currentProfileName);
+  const [confirmWord, setConfirmWord] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const close = () => setSheet(null);
+  const close = () => {
+    if (deleting) return;
+    setSheet(null);
+  };
+
+  const confirmPhrase = t("profile.deleteAccountConfirmWord");
+
+  const runDelete = async () => {
+    if (deleting || confirmWord.trim().toUpperCase() !== confirmPhrase) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const result = await deleteMyAccount();
+      if (!result.success) {
+        setDeleteError(t("profile.deleteAccountError"));
+        return;
+      }
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      clearPendingInvite();
+      try {
+        await pari.signOut();
+      } catch {
+        // The session is already invalid after the account was deleted.
+      }
+      navigate({ to: "/", replace: true });
+    } catch {
+      setDeleteError(t("profile.deleteAccountError"));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const saveName = async () => {
     await pari.updateProfile({ display_name: nameValue.trim() || pari.currentProfileName });
