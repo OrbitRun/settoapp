@@ -306,6 +306,13 @@ const en: Dict = {
   "receipt.appliesTo": "Applies to {count} items",
   "receipt.clear": "Clear",
   "receipt.confirmSplit": "Confirm split",
+  "receipt.saveFailed": "The expense was saved, but the receipt image could not be saved.",
+  "receipt.view": "View receipt",
+  "receipt.viewTitle": "Receipt",
+  "receipt.viewFailed": "The receipt image could not be opened.",
+  "receipt.warrantyUntil": "Warranty until {date}",
+  "receipt.aiDisclosure":
+    "The image is processed by an AI service to read items and amounts. Saved receipts are private and visible only to you.",
 
   "auth.title": "Welcome to PARI",
   "auth.subtitle": "Share anything. Settle easily.",
@@ -814,6 +821,13 @@ const da: Dict = {
   "receipt.appliesTo": "Gælder {count} varer",
   "receipt.clear": "Ryd",
   "receipt.confirmSplit": "Bekræft deling",
+  "receipt.saveFailed": "Udgiften blev gemt, men kvitteringsbilledet kunne ikke gemmes.",
+  "receipt.view": "Vis kvittering",
+  "receipt.viewTitle": "Kvittering",
+  "receipt.viewFailed": "Kvitteringsbilledet kunne ikke åbnes.",
+  "receipt.warrantyUntil": "Garanti indtil {date}",
+  "receipt.aiDisclosure":
+    "Billedet behandles af en AI-tjeneste for at læse varer og beløb. Gemte kvitteringer er private og kun synlige for dig.",
 
   "auth.title": "Velkommen til PARI",
   "auth.subtitle": "Del alt. Gør op med et tryk.",
