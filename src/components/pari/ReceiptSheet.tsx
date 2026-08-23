@@ -55,7 +55,11 @@ export function ReceiptSheet({
       <div className="space-y-4 px-1">
         <div className="overflow-hidden rounded-2xl bg-surface-strong">
           {url ? (
-            <img src={url} alt={t("receipt.viewTitle")} className="max-h-[52svh] w-full object-contain" />
+            <img
+              src={url}
+              alt={t("receipt.viewTitle")}
+              className="max-h-[52svh] w-full object-contain"
+            />
           ) : (
             <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
               {failed ? t("receipt.viewFailed") : t("common.loading")}
