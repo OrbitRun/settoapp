@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { removeReceiptObjects } from "@/lib/receipt-persistence.server";
+
 
 /**
  * Account deletion orchestration.
@@ -34,8 +36,34 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
       return { success: false as const, stage: "cleanup" as const };
     }
 
+    // Private receipt images must never outlive the account. Rows cascade with
+    // auth.users, but Storage objects do not — so they go first, and a failure
+    // stops the deletion instead of leaving private images behind.
+    const owned = await supabase.from("receipts").select("storage_path");
+    if (owned.error) {
+      console.error("[account-delete] receipt lookup failed", {
+        userId,
+        message: owned.error.message,
+      });
+      return { success: false as const, stage: "receipts" as const };
+    }
+
+    const cleanup = await removeReceiptObjects(
+      supabase,
+      (owned.data ?? []).map((row) => row.storage_path),
+    );
+    if (!cleanup.ok) {
+      console.error("[account-delete] receipt objects remain", {
+        userId,
+        remaining: cleanup.remaining.length,
+      });
+      // delete_my_account is idempotent, so the user can safely retry.
+      return { success: false as const, stage: "receipts" as const };
+    }
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: adminError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
 
     if (adminError) {
       console.error("[account-delete] auth deletion failed", {
