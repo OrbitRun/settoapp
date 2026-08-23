@@ -9,6 +9,7 @@ import { PersonChip } from "@/components/pari/PersonChip";
 import { disambiguateInitials } from "@/components/pari/Avatar";
 import { computeDraftAllocations, itemTotalMinor } from "@/data/draft";
 import { usePari } from "@/data/store";
+import { persistCapturedReceipt } from "@/lib/receipt/persistCapture";
 import { formatMinorIn } from "@/lib/money";
 import { useMoneyLock } from "@/hooks/useMoneyLock";
 import { calculateEqualSplit } from "@/lib/split";
@@ -107,6 +108,10 @@ function ItemSplitScreen() {
       ...(lock.money ? { money: lock.money } : {}),
     });
     if (!expense) return;
+    if (!pari.isGuest) {
+      const outcome = await persistCapturedReceipt(expense.id, draft);
+      if (outcome === "failed") toast.error(t("receipt.saveFailed"));
+    }
     navigate({ to: "/split/result", search: { expenseId: expense.id } });
   };
 
