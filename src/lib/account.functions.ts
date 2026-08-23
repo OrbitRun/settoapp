@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { removeReceiptObjects } from "@/lib/receipt-persistence.server";
+
 
 /**
  * Account deletion orchestration.
