@@ -93,6 +93,16 @@ function ExpenseDetailScreen() {
   // Owner-only: RLS decides whether a receipt row comes back at all.
   const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void getExpenseReceipt({ data: { expenseId } })
+      .then((result) => active && setReceipt(result))
+      .catch(() => active && setReceipt(null));
+    return () => {
+      active = false;
+    };
+  }, [expenseId]);
   const [confirmSettled, setConfirmSettled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState(expense?.title ?? "");
