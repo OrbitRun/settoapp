@@ -1,12 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
+  buildMetaPatch,
   buildParsedJson,
   decodeJpegDataUrl,
+  extractLines,
   MAX_RECEIPT_BYTES,
   RECEIPT_BUCKET,
+  removeReceiptObjects,
+  THUMBNAIL_TTL_SECONDS,
   type SaveReceiptInput,
+  type UpdateReceiptMetaInput,
 } from "./receipt-persistence.server";
+
 
 /**
  * Uploads the normalized JPEG privately, creates the owner-only receipts row and
