@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.expenses_receipt_link_guard() FROM PUBLIC, anon, authenticated;
