@@ -2,6 +2,7 @@ import type { DraftItem } from "@/data/draft";
 import type { Confidence } from "@/lib/fx";
 import { normaliseMerchant } from "@/lib/merchant";
 import { parseReceiptImage, receiptErrorCode } from "./parseReceipt.functions";
+import { clearPendingCapture, setPendingCapture } from "./receiptCapture";
 
 export type ParsedReceipt = {
   /** Short store name used everywhere in the UI. */
@@ -112,7 +113,12 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
   if (!image) throw new Error("IMAGE_MISSING: No image supplied");
 
   const dataUrl = await toDataUrl(image);
+  // A new scan always replaces whatever was captured before.
+  clearPendingCapture();
   const parsed = await parseReceiptImage({ data: { dataUrl } });
+  // Keep the exact normalized bytes OCR read, in memory only, so an
+  // authenticated save can archive them without re-encoding.
+  setPendingCapture(dataUrl, parsed);
 
   const items: DraftItem[] = parsed.items.map((item, index) => ({
     id: `ritem_${index}_${Math.random().toString(36).slice(2, 8)}`,
