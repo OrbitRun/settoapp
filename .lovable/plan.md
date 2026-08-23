@@ -1,161 +1,119 @@
-# Stage S3D-4 — Durable group authority cutover audit (read-only)
+# Receipt Archive — Stage R1 audit (read only)
 
-No changes were made. One requested item could not be executed: the live transferred-owner test (section 4) writes temporary rows, which plan mode blocks. Its result is predicted statically below and is listed as step 1 of the implementation stage.
+Nothing was changed. Findings first, then the proposed architecture and stages.
 
-## 1. groups policy catalog (4 policies, all TO authenticated)
+## 1. Current OCR flow
 
-| Policy | Cmd | Type | USING | WITH CHECK |
-|---|---|---|---|---|
-| own groups | ALL | PERMISSIVE | `auth.uid() = owner_user_id` | `auth.uid() = owner_user_id` |
-| participants can read groups | SELECT | PERMISSIVE | `is_group_participant(id, auth.uid())` | — |
-| groups update must be group owner | UPDATE | RESTRICTIVE | `is_group_owner(id, auth.uid())` | `is_group_owner(id, auth.uid()) AND group_owner_fields_unchanged(id, owner_user_id, owner_person_id)` |
-| groups delete must be group owner | DELETE | RESTRICTIVE | `is_group_owner(id, auth.uid())` | — |
-
-Effective authority `(OR permissive) AND (AND restrictive)`:
-
-- SELECT: `owner_user_id = uid OR is_group_participant`
-- INSERT: `owner_user_id = uid` (no restrictive INSERT policy)
-- UPDATE: `owner_user_id = uid` AND `is_group_owner` AND owner-column freeze
-- DELETE: `owner_user_id = uid` AND `is_group_owner`
-
-Key point: `owner_user_id = uid` is still a hard requirement for UPDATE/DELETE because it is the only permissive path for writes.
-
-## 2. is_group_owner
-
-Unchanged, `SECURITY DEFINER, STABLE, search_path=public`. Two branches:
-
-- A (legacy): `groups.owner_user_id = _user_id`
-- B (durable): `groups.owner_person_id` -> person `status='active'`, `unlinked_at IS NULL`, `linked_profile_id = _user_id`, plus an active `group_members` row (`removed_at IS NULL`)
-
-Dependents: 5 RESTRICTIVE policies (`groups` UPDATE/DELETE, `group_members` INSERT/UPDATE/DELETE) plus the `transfer_group_ownership` function. ACL: authenticated/service_role/postgres only.
-
-## 3. All group write paths (`src/data/store.tsx`)
-
-| Path | Op | Uses RPC | Relies on owner_user_id | Reachable in prod UI |
-|---|---|---|---|---|
-| `createGroup` (~L976) | INSERT | yes, `create_group` | no (RPC is SECURITY DEFINER) | yes |
-| `updateGroup` (~L1003) | UPDATE groups | no | yes (permissive) | yes |
-| `setGroupArchived` (~L1102) | UPDATE groups | no | yes | yes |
-| `deleteGroup` (~L1111-1134) | DELETE children + groups | no | yes | yes |
-| `updateGroup` member defaults, `addGroupMembers`, `removeGroupMember` | INSERT/UPDATE/DELETE group_members | no | yes | yes |
-| guest migration (~L275-375) | people/expenses/splits/items/activity only | n/a | yes | yes |
-
-## 4. Direct groups INSERT — is it still needed?
-
-No. A repo-wide search finds zero `from("groups").insert(...)` calls: `createGroup` is the only creation path and goes through the `create_group` RPC. Guest mode is local-only and guest->account migration creates personal expenses, never groups. So the legacy client INSERT capability on `public.groups` is dead code in the UI — but retiring it is a separate decision from the authority cutover and is not part of the recommended minimal migration.
-
-## 5. Transferred-owner behaviour (static prediction — must be verified live first)
-
-`transfer_group_ownership` moves `groups.owner_person_id` and `groups.owner_user_id` to the successor, but does not touch `group_members.owner_user_id`, `group_invitations.owner_user_id` or `people.owner_user_id` on existing rows. Consequences today:
-
-| Operation after A -> B transfer | New owner B | Old owner A |
-|---|---|---|
-| rename / archive / delete group | allowed (both permissive and restrictive follow owner_user_id) | blocked |
-| insert new group_members row (owner_user_id = B) | allowed | blocked by restrictive |
-| update/delete existing group_members rows (owner_user_id = A) | blocked — fails the permissive `own group members` check | blocked — fails restrictive `is_group_owner` |
-| create invitation (owner_user_id = B) | allowed | allowed only for own rows, restrictive-free table |
-| revoke existing invitations (owner_user_id = A) | blocked | allowed (invitations have no owner restrictive policy) |
-| rename placeholders/people owned by A | blocked | allowed |
-
-So a pre-existing dead zone already exists after a transfer: neither owner can edit member rows created before the transfer. This is the single most important finding and it is caused by child-row `owner_user_id`, not by `is_group_owner`.
-
-## 6. group_members policies
-
-| Policy | Cmd | Type | Condition |
-|---|---|---|---|
-| own group members | ALL | PERMISSIVE | `auth.uid() = owner_user_id` (using + check) |
-| participants can read group members | SELECT | PERMISSIVE | `is_group_participant` |
-| insert must be group owner | INSERT | RESTRICTIVE | `is_group_owner` |
-| update must be group owner | UPDATE | RESTRICTIVE | `is_group_owner` |
-| delete must be group owner | DELETE | RESTRICTIVE | `is_group_owner` |
-
-If `is_group_owner` became durable-only today, nothing about the dead zone improves: the blocking factor for the new owner is the permissive `owner_user_id` clause, and the old owner is already blocked by the restrictive clause. Removing branch A would additionally break any group whose durable path is unhealthy.
-
-## 7. Other dependencies
-
-- Direct function dependents: only the 5 policies above and `transfer_group_ownership`.
-- Indirect: `expenses`, `expense_items`, `expense_splits`, `item_splits`, `settlements`, `activity` are gated by `is_group_participant`, not ownership — unaffected. `group_invitations` and `people` are owner_user_id-only and unaffected. `deleteGroup` cleanup depends on those participant policies plus the groups DELETE authority. `create_group` is SECURITY DEFINER and bypasses policies.
-
-## 8. Existing data readiness (2 groups)
-
-Both groups pass every check: `owner_person_id` set, person exists, `status='active'`, `unlinked_at` null, `linked_profile_id = owner_user_id`, active membership present with `role='owner'` and `removed_at` null. No mismatches, nothing to repair.
-
-## 9. Option comparison
-
-- Option A (make `is_group_owner` durable-only now): highest blast radius — the same function backs group_members writes; any transitional-data drift instantly locks out real owners. Rejected.
-- Option B (new `is_durable_group_owner`, used only by groups policies, plus replacing the `owner_user_id` permissive write path on groups): narrow, reversible, leaves `is_group_owner` and all group_members behaviour untouched. Recommended.
-- Option C (do nothing until S3E): zero risk, zero progress; leaves groups authority tied to `owner_user_id`, which is the thing account deletion must remove.
-
-## 10. Recommended S3D-4 design (SQL below is a proposal, not executed)
-
-1. Add `public.is_durable_group_owner(_group_id uuid, _user_id uuid)` — the durable branch only (owner_person_id -> active linked person -> active membership), SECURITY DEFINER, `EXECUTE` to authenticated + service_role, revoked from PUBLIC and anon.
-2. Split the `own groups` ALL policy so groups writes no longer depend on `owner_user_id`:
-   - keep SELECT as-is (owner or participant),
-   - replace the write side with a permissive UPDATE/DELETE policy gated on `is_durable_group_owner`,
-   - keep a permissive INSERT policy on `auth.uid() = owner_user_id` for now (the RPC does not need it; retiring it is a separate step once the live test confirms no other creation path).
-3. Keep both existing RESTRICTIVE policies, including the owner-column freeze, so ownership can still only move through `transfer_group_ownership`.
-
-Resulting effective logic: SELECT unchanged; INSERT unchanged; UPDATE = durable owner AND `is_group_owner` AND owner columns unchanged; DELETE = durable owner AND `is_group_owner`. No widening to ordinary participants.
-
-Proposed SQL is written out in full in the technical section below.
-
-## 11. owner_user_id dependencies remaining after S3D-4
-
-- groups: INSERT only (plus the column itself, still synced by the transfer RPC)
-- group_members: full permissive ALL write path — the dead zone above; this is S3E's core job
-- group_invitations: sole write authority, no group-anchored policy at all
-- people: sole write authority for placeholders
-- expenses / splits / items / activity / settlements: personal rows only; group rows already participant-gated
-- functions: `create_group`, `redeem/claim/accept` invitation functions still stamp `owner_user_id` on new rows
-
-## 12. Baseline confirmed
-
-groups 2, people 10, group_members 5, expenses 20, expense_items 105, expense_splits 48, item_splits 0, settlements 1, activity 69, invitations 5, split sum 1,892,653 øre. groups policies 4, total policies 48, SECURITY DEFINER functions 12, linter 12 warnings (1 anon SECDEF = `get_invitation_preview`, 11 authenticated).
-
-## Technical notes — proposed SQL for the implementation stage
-
-Step 1 (must run first, in a rolled-back transaction) is the live transferred-owner matrix from section 5; if its results differ from the prediction, stop and re-plan before any policy change.
-
-```sql
-CREATE OR REPLACE FUNCTION public.is_durable_group_owner(_group_id uuid, _user_id uuid)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.groups g
-    JOIN public.people p ON p.id = g.owner_person_id
-    JOIN public.group_members gm
-      ON gm.group_id = g.id AND gm.person_id = p.id AND gm.removed_at IS NULL
-    WHERE g.id = _group_id
-      AND g.owner_person_id IS NOT NULL
-      AND p.linked_profile_id = _user_id
-      AND p.status = 'active'
-      AND p.unlinked_at IS NULL
-  );
-$$;
-REVOKE ALL ON FUNCTION public.is_durable_group_owner(uuid, uuid) FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.is_durable_group_owner(uuid, uuid) FROM anon;
-GRANT EXECUTE ON FUNCTION public.is_durable_group_owner(uuid, uuid) TO authenticated, service_role;
-
-DROP POLICY "own groups" ON public.groups;
-
-CREATE POLICY "own or participant groups read" ON public.groups
-  FOR SELECT TO authenticated
-  USING (auth.uid() = owner_user_id OR public.is_group_participant(id, auth.uid()));
-
-CREATE POLICY "create own groups" ON public.groups
-  FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = owner_user_id);
-
-CREATE POLICY "durable owner updates group" ON public.groups
-  FOR UPDATE TO authenticated
-  USING (public.is_durable_group_owner(id, auth.uid()))
-  WITH CHECK (public.is_durable_group_owner(id, auth.uid()));
-
-CREATE POLICY "durable owner deletes group" ON public.groups
-  FOR DELETE TO authenticated
-  USING (public.is_durable_group_owner(id, auth.uid()));
+```text
+photo picked (split/scan)  ->  client downscale to data URL  ->  parseReceiptImage server fn
+   ->  Lovable AI Gateway (openai/gpt-5.6-sol, strict JSON schema)
+   ->  ParsedReceipt  ->  draft in memory  ->  /split/review edit  ->  addExpense (DB)
 ```
 
-The existing `participants can read groups` SELECT policy stays; both RESTRICTIVE policies stay untouched. Rollback is a single statement set: drop the four new policies and recreate the original `own groups` ALL policy.
+- Input: `src/routes/split.scan.tsx`, two hidden file inputs (camera `capture="environment"` and library). Image-type check only, no size check client-side.
+- Preprocessing: `src/lib/receipt/parseReceipt.ts` — `createImageBitmap` with EXIF orientation applied, longest edge capped at 2200 px, JPEG quality stepped 0.92 → 0.65, then a 0.7 shrink pass, target under ~4.5 MB encoded. Output is a `data:image/jpeg;base64` URL.
+- OCR: `parseReceiptImage` (`src/lib/receipt/parseReceipt.functions.ts`, POST server fn, **no auth middleware**). Rejects >12 MB, 60 s timeout, sends system prompt + `image_url` data URL to `https://ai.gateway.lovable.dev/v1/chat/completions`.
+- Persistence today: **none**. No Storage upload anywhere in the codebase; no original, no normalized copy. Only an in-page `URL.createObjectURL` preview and the transient data URL. Full parsed JSON exists only in the client draft.
+- Errors: typed `CODE: message` strings, localized in the scan screen (timeout, rate limited, credits, too large, no receipt), with Try again / Retake / Choose another / Enter manually. Retry re-sends the same file.
 
-Post-change regression must re-run the full S3D-3C suite plus the transferred-owner matrix, and confirm counts, ownership mappings, balances and linter counts are unchanged.
+## 2. Receipt data retained vs lost
+
+Persisted on `expenses`: title, merchant, expense_date, currency, total_minor, original_currency / original_total_minor / exchange_rate(+date, source), card_charged_minor, source_type, `receipt_image_url` (**always NULL today — 0 of 20 rows set**). On `expense_items`: name, quantity, unit_price_minor, total_minor, category, is_shared, `confidence`, position.
+
+Lost at save time: the image itself, merchant raw header and address lines, subtotal, receipt-level discount, per-line original unit price / discount amount / discount percent, currency confidence + evidence, total confidence, parser warnings, overall confidence, and the raw model JSON.
+
+## 3. Storage bucket audit
+
+Bucket `receipts`: private, no `file_size_limit`, no `allowed_mime_types`, **0 objects — entirely unused**. Four `storage.objects` policies already exist and all key on `auth.uid()::text = (storage.foldername(name))[1]`: read (SELECT), write (INSERT), update, delete. So the `<auth.uid()>/…` layout is already the enforced convention; no group-based path exists. No signed-URL usage anywhere in code.
+
+## 4. Privacy model
+
+Invariant: the original image is private to its owner; group participation never grants access. Current code has no violating path (nothing is stored or shared). The only latent risk is the legacy `expenses.receipt_image_url` text column: it is readable by every group participant through the expenses SELECT policy, so it must never hold a real URL or a path that is meaningful without owner-only storage RLS.
+
+## 5. Recommended minimal `receipts` schema (v1)
+
+Keep it small; put parser detail in JSON.
+
+- `id uuid pk default gen_random_uuid()`
+- `owner_user_id uuid not null references auth.users(id) on delete cascade`
+- `storage_path text not null unique` (relative to bucket)
+- `mime_type text not null`, `file_size_bytes bigint not null`
+- `merchant_name text`, `purchase_date date`, `currency text`, `total_minor bigint`
+- `parsed_json jsonb not null default '{}'` — address, subtotal, discounts, per-line detail, confidences, warnings, model/provider name, parsed_at
+- `note text`, `warranty_expires_at date`
+- `created_at`, `updated_at` (+ existing touch trigger)
+
+Left out of v1 columns (live in `parsed_json`): merchant_address, subtotal_minor, discount_minor, ocr provider/model, width/height, original_filename, category. Promote to columns only when something filters or sorts on them.
+
+## 6. Ownership FK
+
+Recommend **A: `owner_user_id → auth.users ON DELETE CASCADE`, NOT NULL**. Receipts are private account data, unlike shared financial history; cascade is the correct default and makes an orphaned private row impossible. Storage objects are not cascaded, so the account-deletion path must delete objects explicitly (section 14).
+
+## 7. Expense → receipt relation
+
+`expenses.receipt_id uuid null references public.receipts(id) on delete set null`. Deleting a receipt or an account keeps the shared expense with `receipt_id = NULL`; group members never gain image access because access is decided by `receipts` RLS + storage RLS, not by the expense.
+
+Migration from `receipt_image_url`: the column is unused (0 rows), so no data migration is needed — add `receipt_id`, stop writing the text column, and drop it in a later cleanup stage.
+
+## 8. RLS model for `receipts`
+
+Grants: `SELECT, INSERT, UPDATE, DELETE` to `authenticated`; `ALL` to `service_role`; **no anon grant**. Enable RLS, then a single policy per command, all `TO authenticated` with `owner_user_id = auth.uid()` in USING and WITH CHECK. No group-participant exception, no group-owner exception, no security-definer helper.
+
+Authority source: the table row uses `owner_user_id`; the object uses the `auth.uid()` folder prefix. Both must agree — enforce it by requiring `storage_path` to start with `owner_user_id || '/'` (check constraint or trigger), so a row can never point at another user's object.
+
+## 9. Storage path and policies
+
+Layout `<auth.uid()>/<receipt_id>/original.jpg`. The receipt id is a random uuid, so paths are unpredictable. The existing four bucket policies already implement exactly owner-only read/write/update/delete on this prefix — no policy change needed. Store only the relative path; display uses a short-lived `createSignedUrl` (≈60 s) generated on demand, never persisted.
+
+## 10. Image, MIME, size
+
+Recommend **B: archive the normalized OCR image** for v1 — the same 2200 px JPEG that is already produced. It is proof-of-purchase legible, one upload, no second encode, and canvas re-encoding **already strips EXIF including GPS**, which resolves the metadata concern for free. Storing the original (A/C) doubles cost and re-introduces EXIF for marginal quality gain; revisit if warranty use demands it. Limits: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, 10 MB per object.
+
+## 11. OCR privacy and disclosure
+
+The image goes to the Lovable AI Gateway and on to the OpenAI model — it leaves the EU-hosted backend. No provider retention terms are documented anywhere in the codebase, and the scanner currently shows no processing disclosure. **This is an open legal/privacy-policy gap** — no retention guarantee should be asserted until confirmed. Proposed scanner copy: "Billedet sendes til en AI-tjeneste, der læser varer og beløb. Kvitteringen gemmes privat på din konto."
+
+## 12. Save flow
+
+Recommend **Option B**, receipt written together with the expense after confirmation, with the upload just before:
+
+1. Scan → OCR on the in-memory data URL (unchanged, nothing stored).
+2. User reviews and confirms.
+3. Upload the normalized JPEG to `<uid>/<new uuid>/original.jpg`.
+4. Insert the `receipts` row with that id and path, then create the expense with `receipt_id`.
+
+Compensation: upload OK but insert fails → delete the just-uploaded object, surface a retry; insert OK but expense fails → keep the receipt (it is valid archive data on its own) and let the user link or retry; upload fails → save the expense without a receipt rather than losing the split; OCR fails → today's error UI, nothing stored; user cancels after OCR → nothing was written yet. A periodic sweep for `receipts` rows whose object is missing is the backstop. Option C (fully independent archive) stays reachable later — this flow is a strict subset of it.
+
+## 13. Private archive UX
+
+A new "Kvitteringer" section, reached from Profile rather than a sixth nav slot (nav is already at five). Cards: merchant, date, amount, thumbnail via short-lived signed URL, linked-expense indicator. Detail: full image, parsed merchant/date/total, items, note, linked expense, warranty date. Only the owner ever sees this surface.
+
+## 14. Shared-expense behaviour
+
+Owner sees a "Vis kvittering" action on the expense. Other participants see the expense and items exactly as today and get **no indicator at all** — knowing a private image exists invites requests for it and adds no value to a co-participant. Recommend omitting the indicator in v1.
+
+## 15. Account-deletion integration (design only)
+
+Inside the existing `deleteMyAccount` server fn, before `auth.admin.deleteUser`: list `storage.objects` under the user's prefix via the admin client and remove them, then delete the receipt rows (or let the FK cascade do it). Because object deletion is not transactional, treat leftovers as retryable: the whole flow is already idempotent, a second run finds fewer objects and still succeeds, and auth deletion should not be blocked by a storage error alone — log it and let a sweep reclaim orphans. Expenses survive via `receipt_id ON DELETE SET NULL`.
+
+## 16. GDPR / export
+
+A future export should include receipt metadata, parsed OCR JSON, and the original images. Retention notes: images are the most sensitive artefact in the product (addresses, card fragments, purchase patterns); keep them owner-only, never public-URL, and document the AI-processing step in the privacy policy before shipping the archive.
+
+## 17. Staged plan (3 stages)
+
+- **R2 — foundation:** `receipts` table + grants + RLS + path check constraint, `expenses.receipt_id`, bucket MIME/size limits. Storage policies already correct.
+- **R3 — capture + link:** upload in the save flow, receipt row + expense written together, compensation paths, owner-only "Vis kvittering" with short-lived signed URLs, scanner disclosure copy.
+- **R4 — archive + deletion:** Kvitteringer list/detail UI, note and warranty fields, storage cleanup in `deleteMyAccount`, drop `receipt_image_url`.
+
+## 18. Risks and open questions
+
+- Provider retention terms unknown — legal gap, blocks final privacy copy.
+- `parseReceiptImage` has no auth middleware; once uploads are attached, the capture path must be authenticated (guest scanning must stay non-persisting).
+- Guest mode has no account: guests can scan but cannot archive; needs a decision on whether a post-signup migration carries the image over.
+- Bucket has no size or MIME limits yet — set in R2.
+- Thumbnails are full-size images until a resize step exists; acceptable at current volume.
+
+## 19. Baseline confirmed
+
+groups 2 · people 10 · group_members 5 · expenses 20 · expense_items 105 · expense_splits 48 · item_splits 0 · settlements 1 · activity 69 · invitations 5 · split sum 1,892,653 øre. `receipts` bucket: private, 0 objects. `expenses.receipt_image_url`: 0 non-null rows. Nothing was modified.
