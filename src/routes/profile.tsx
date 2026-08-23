@@ -40,6 +40,7 @@ function ProfileScreen() {
   const pari = usePari();
   const t = useT();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [sheet, setSheet] = useState<
     null | "name" | "language" | "currency" | "appearance" | "delete"
