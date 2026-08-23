@@ -639,6 +639,7 @@ export type Database = {
         }
         Returns: string
       }
+      delete_my_account: { Args: never; Returns: Json }
       delete_unused_group_placeholder: {
         Args: { _group_id: string; _person_id: string }
         Returns: boolean
