@@ -183,7 +183,6 @@ export type Database = {
           owner_user_id: string | null
           paid_by_person_id: string
           receipt_id: string | null
-          receipt_image_url: string | null
           source_type: string
           title: string
           total_minor: number
@@ -205,7 +204,6 @@ export type Database = {
           owner_user_id?: string | null
           paid_by_person_id: string
           receipt_id?: string | null
-          receipt_image_url?: string | null
           source_type?: string
           title: string
           total_minor?: number
@@ -227,7 +225,6 @@ export type Database = {
           owner_user_id?: string | null
           paid_by_person_id?: string
           receipt_id?: string | null
-          receipt_image_url?: string | null
           source_type?: string
           title?: string
           total_minor?: number
