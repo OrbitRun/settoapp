@@ -105,6 +105,7 @@ const en: Dict = {
   "scan.errorNoReceipt":
     "We couldn't find a receipt in that photo. Try a sharper, straight-on photo.",
   "scan.notImage": "That file isn't an image. Choose a photo of the receipt.",
+  "scan.disclosure": "AI processes the image · Your receipt is stored privately",
 
   "activity.title": "Activity",
   "activity.empty": "Nothing has happened yet",
@@ -635,6 +636,7 @@ const da: Dict = {
   "scan.errorNoReceipt":
     "Vi fandt ingen kvittering på billedet. Tag et skarpt billede lige forfra.",
   "scan.notImage": "Filen er ikke et billede. Vælg et foto af kvitteringen.",
+  "scan.disclosure": "AI behandler billedet · Kvitteringen gemmes privat",
 
   "activity.title": "Aktivitet",
   "activity.empty": "Der er ikke sket noget endnu",
