@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, ImageUp, RotateCw, X } from "lucide-react";
+import { Camera, ImageUp, RotateCw, Shield, X } from "lucide-react";
 
 import { Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
