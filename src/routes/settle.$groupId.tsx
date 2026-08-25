@@ -117,9 +117,45 @@ function SettleScreen() {
           toName={pari.personName(paying.toPersonId)}
           outstandingMinor={paying.amountMinor}
           onConfirm={async (amountMinor, note) => {
-            await pari.markSettled(groupId, paying, { amountMinor, ...(note ? { note } : {}) });
+            const step = paying;
+            // Derived from the existing engine's plan, before the write:
+            // the pair clears only on a full payment, and the group clears
+            // only when this was the last remaining step in the plan.
+            const pairSettled = amountMinor >= step.amountMinor;
+            const groupSettled = pairSettled && plan.length === 1;
+
+            await pari.markSettled(groupId, step, { amountMinor, ...(note ? { note } : {}) });
             setPayingKey(null);
+
+            if (groupSettled) {
+              setCelebration({ amountMinor });
+              return;
+            }
+            if (pairSettled) {
+              toast.success(
+                t("celebrate.pairSettled", {
+                  from: pari.personName(step.fromPersonId),
+                  to: pari.personName(step.toPersonId),
+                }),
+              );
+              return;
+            }
             toast.success(t("settle.paymentRegistered"));
+          }}
+        />
+      ) : null}
+
+      {celebration ? (
+        <SettledCelebration
+          contextName={group?.name}
+          settledMinor={celebration.amountMinor}
+          onDone={() => {
+            setCelebration(null);
+            void navigate({ to: "/groups/$groupId", params: { groupId } });
+          }}
+          onViewSummary={() => {
+            setCelebration(null);
+            void navigate({ to: "/activity" });
           }}
         />
       ) : null}
