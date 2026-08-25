@@ -87,7 +87,12 @@ export function ReceiptDetailSheet({
   };
 
   return (
-    <BottomSheet open={receiptId !== null} onClose={onClose} title={t("receipt.viewTitle")}>
+    <BottomSheet
+      open={receiptId !== null}
+      onClose={onClose}
+      title={t("receipt.viewTitle")}
+      className="pt-[max(env(safe-area-inset-top),1.25rem)]"
+    >
       <div className="space-y-5 px-1">
         <div className="overflow-hidden rounded-2xl bg-surface-strong">
           {detail?.imageUrl ? (
