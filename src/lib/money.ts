@@ -2,8 +2,10 @@
  * Money helpers. All internal amounts are integers in minor units (øre).
  * Never do arithmetic on decimal currency values.
  */
+import { AMOUNT_MASK, getHideAmounts } from "@/lib/privacy";
 
 export const MINOR_PER_MAJOR = 100;
+
 
 /** App-wide currency/locale, set once from the signed-in profile. */
 let defaultCurrency = "DKK";
