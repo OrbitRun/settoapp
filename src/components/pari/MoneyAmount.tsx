@@ -80,17 +80,22 @@ export function BalanceDisplay({
   label,
   hint,
   className,
+  action,
 }: {
   minor: number;
   label?: string;
   hint?: string;
   className?: string;
+  action?: ReactNode;
 }) {
   const t = useT();
   return (
     <div className={cn("space-y-1", className)}>
       <p className="text-sm text-muted-foreground">{label ?? balanceLabel(minor, t)}</p>
-      <MoneyAmount minor={Math.abs(minor)} size="hero" tone={balanceTone(minor)} />
+      <div className="flex items-center gap-1">
+        <MoneyAmount minor={Math.abs(minor)} size="hero" tone={balanceTone(minor)} />
+        {action}
+      </div>
       {hint ? <p className="pt-1 text-sm text-muted-foreground">{hint}</p> : null}
     </div>
   );
