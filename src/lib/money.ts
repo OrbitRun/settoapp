@@ -113,7 +113,7 @@ export const CURRENCY_OPTIONS = [
 export function formatMinorIn(
   minor: number,
   currency: string,
-  options: { compact?: boolean; showSign?: boolean } = {},
+  options: { compact?: boolean; showSign?: boolean; raw?: boolean } = {},
 ): string {
   return formatMoney(minor, currency, defaultLocale, options);
 }
