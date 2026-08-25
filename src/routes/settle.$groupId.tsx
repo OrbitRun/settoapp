@@ -86,7 +86,7 @@ function SettleScreen() {
                     type="button"
                     onClick={() => {
                       void navigator.clipboard?.writeText(
-                        formatMinor(step.amountMinor, { currency: "" }).trim(),
+                        formatMinor(step.amountMinor, { currency: "", raw: true }).trim(),
                       );
                       toast.success(t("settle.copied"));
                     }}
