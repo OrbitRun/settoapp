@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { AuthGate } from "@/components/pari/AuthGate";
 import { clearPendingInvite } from "@/data/invitations";
 import { deleteMyAccount } from "@/lib/account.functions";
+import { Switch } from "@/components/ui/switch";
+import { setHideAmounts, useHideAmounts } from "@/lib/privacy";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -41,6 +43,7 @@ function ProfileScreen() {
   const t = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const hideAmounts = useHideAmounts();
 
   const [sheet, setSheet] = useState<
     null | "name" | "language" | "currency" | "appearance" | "delete"
