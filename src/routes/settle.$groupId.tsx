@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import { PaymentSheet } from "@/components/pari/PaymentSheet";
+import { SettledCelebration } from "@/components/pari/SettledCelebration";
 
 import { Divider, Panel, Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
@@ -44,6 +45,10 @@ function SettleScreen() {
   const group = pari.data.groups.find((g) => g.id === groupId);
   const plan = pari.settlementPlan(groupId);
   const [payingKey, setPayingKey] = useState<string | null>(null);
+  // Set once by the confirm handler that caused the transition — never derived
+  // from query state, so refetches, reloads and back navigation cannot replay it.
+  const [celebration, setCelebration] = useState<{ amountMinor: number } | null>(null);
+  const navigate = useNavigate();
   const paying = plan.find((s) => `${s.fromPersonId}-${s.toPersonId}` === payingKey);
 
   return (
