@@ -1,6 +1,8 @@
 import { formatMinor } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useHideAmounts } from "@/lib/privacy";
 import { useT, type Translate } from "@/lib/i18n";
+
 
 type Size = "sm" | "md" | "lg" | "hero";
 
@@ -29,6 +31,8 @@ export function MoneyAmount({
   tone?: "default" | "positive" | "negative" | "muted";
   className?: string;
 }) {
+  // Subscribes so amounts re-render the moment privacy mode is toggled.
+  useHideAmounts();
   const toneClass =
     tone === "positive"
       ? "text-positive"
@@ -37,6 +41,8 @@ export function MoneyAmount({
         : tone === "muted"
           ? "text-muted-foreground"
           : "text-foreground";
+
+
 
   return (
     <span

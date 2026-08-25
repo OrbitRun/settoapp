@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PariProvider, usePari } from "@/data/store";
 import { I18nProvider } from "@/lib/i18n";
 import { setMoneyDefaults } from "@/lib/money";
+import { useHideAmounts } from "@/lib/privacy";
 import { setDateLanguage } from "@/lib/dates";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountSheet } from "@/components/pari/AccountSheet";
@@ -122,6 +123,9 @@ function RootShell({ children }: { children: ReactNode }) {
 function AppFrame({ children }: { children: ReactNode }) {
   const pari = usePari();
   useScrollToTopOnNavigate();
+  // Privacy mode is read by the money formatter; subscribe here so every
+  // rendered amount updates the instant the preference changes.
+  useHideAmounts();
 
   setMoneyDefaults(pari.currency, pari.language === "da" ? "da-DK" : "en-GB");
   setDateLanguage(pari.language);

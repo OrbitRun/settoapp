@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { AuthGate } from "@/components/pari/AuthGate";
 import { clearPendingInvite } from "@/data/invitations";
 import { deleteMyAccount } from "@/lib/account.functions";
+import { Switch } from "@/components/ui/switch";
+import { setHideAmounts, useHideAmounts } from "@/lib/privacy";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -41,6 +43,7 @@ function ProfileScreen() {
   const t = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const hideAmounts = useHideAmounts();
 
   const [sheet, setSheet] = useState<
     null | "name" | "language" | "currency" | "appearance" | "delete"
@@ -188,7 +191,19 @@ function ProfileScreen() {
               {t("profile.howItWorks")}
               <ChevronRight className="h-4 w-4 text-muted-foreground/60" strokeWidth={1.6} />
             </Link>
+            <Divider />
+            <div className="flex items-center justify-between gap-4 px-4 py-4">
+              <label htmlFor="hide-amounts" className="min-w-0 text-left text-[15px]">
+                {t("profile.hideAmounts")}
+                <span className="mt-1 block text-[13px] text-muted-foreground">
+                  {t("profile.hideAmountsHint")}
+                </span>
+              </label>
+              <Switch id="hide-amounts" checked={hideAmounts} onCheckedChange={setHideAmounts} />
+            </div>
           </Panel>
+
+
 
 
           <Panel>

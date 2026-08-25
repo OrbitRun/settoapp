@@ -61,11 +61,11 @@ function ResultScreen() {
   ).sort((a, b) => b.amountMinor - a.amountMinor);
 
   const shareText = [
-    `${expense.title} — ${formatMinorIn(expense.original_total_minor ?? expense.total_minor, originalCurrency, { compact: false })}`,
+    `${expense.title} — ${formatMinorIn(expense.original_total_minor ?? expense.total_minor, originalCurrency, { compact: false, raw: true })}`,
     "",
     ...allocations.map(
       (allocation) =>
-        `${pari.personName(allocation.personId)}: ${formatMinorIn(allocation.amountMinor, originalCurrency, { compact: false })}`,
+        `${pari.personName(allocation.personId)}: ${formatMinorIn(allocation.amountMinor, originalCurrency, { compact: false, raw: true })}`,
     ),
     "",
     "PARI",

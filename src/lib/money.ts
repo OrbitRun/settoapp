@@ -2,8 +2,10 @@
  * Money helpers. All internal amounts are integers in minor units (øre).
  * Never do arithmetic on decimal currency values.
  */
+import { AMOUNT_MASK, getHideAmounts } from "@/lib/privacy";
 
 export const MINOR_PER_MAJOR = 100;
+
 
 /** App-wide currency/locale, set once from the signed-in profile. */
 let defaultCurrency = "DKK";
@@ -35,15 +37,18 @@ type FormatOptions = {
   /** Hide decimals when the amount is a whole major unit. */
   compact?: boolean;
   showSign?: boolean;
+  /** Bypass privacy mode — only for editable inputs the user is actively typing in. */
+  raw?: boolean;
 };
 
 export function formatMinor(minor: number, options: FormatOptions = {}): string {
-  const { currency = defaultCurrency, compact = true, showSign = false } = options;
-  return formatMoney(minor, currency, defaultLocale, { compact, showSign });
+  const { currency = defaultCurrency, compact = true, showSign = false, raw = false } = options;
+  return formatMoney(minor, currency, defaultLocale, { compact, showSign, raw });
 }
 
+/** Plain number, no currency. Used by editable amount inputs, so never masked. */
 export function formatMinorNumber(minor: number, compact = true): string {
-  return formatMinor(minor, { currency: "", compact }).trim();
+  return formatMinor(minor, { currency: "", compact, raw: true }).trim();
 }
 
 /**
@@ -54,20 +59,24 @@ export function formatMoney(
   amountMinor: number,
   currency = defaultCurrency,
   locale = defaultLocale,
-  options: { compact?: boolean; showSign?: boolean } = {},
+  options: { compact?: boolean; showSign?: boolean; raw?: boolean } = {},
 ): string {
-  const { compact = true, showSign = false } = options;
+  const { compact = true, showSign = false, raw = false } = options;
   const abs = Math.abs(amountMinor);
   const digits = compact && abs % MINOR_PER_MAJOR === 0 ? 0 : 2;
 
-  const number = new Intl.NumberFormat(locale, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  }).format(toMajor(abs));
+  const masked = !raw && getHideAmounts();
+  const number = masked
+    ? AMOUNT_MASK
+    : new Intl.NumberFormat(locale, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      }).format(toMajor(abs));
 
   const sign = showSign ? (amountMinor < 0 ? "−" : "+") : amountMinor < 0 ? "−" : "";
   return `${sign}${number}${currency ? `\u00a0${currencyLabel(currency, locale)}` : ""}`;
 }
+
 
 /** Consumer-facing currency wording: Danish says "kr.", not "DKK". */
 export function currencyLabel(currency = defaultCurrency, locale = defaultLocale): string {
@@ -104,7 +113,7 @@ export const CURRENCY_OPTIONS = [
 export function formatMinorIn(
   minor: number,
   currency: string,
-  options: { compact?: boolean; showSign?: boolean } = {},
+  options: { compact?: boolean; showSign?: boolean; raw?: boolean } = {},
 ): string {
   return formatMoney(minor, currency, defaultLocale, options);
 }
