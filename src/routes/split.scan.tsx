@@ -236,7 +236,7 @@ function ScanScreen() {
             </>
           )}
         </div>
-      ) : null}
+      </div>
     </Screen>
   );
 }
