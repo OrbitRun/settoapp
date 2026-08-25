@@ -31,6 +31,8 @@ export function MoneyAmount({
   tone?: "default" | "positive" | "negative" | "muted";
   className?: string;
 }) {
+  // Subscribes so amounts re-render the moment privacy mode is toggled.
+  useHideAmounts();
   const toneClass =
     tone === "positive"
       ? "text-positive"
@@ -39,6 +41,8 @@ export function MoneyAmount({
         : tone === "muted"
           ? "text-muted-foreground"
           : "text-foreground";
+
+
 
   return (
     <span
