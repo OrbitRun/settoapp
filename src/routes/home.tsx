@@ -52,7 +52,7 @@ function HomeScreen() {
       <Screen>
         <TopBar title={hydrated ? timeOfDayGreeting(pari.currentProfileName) : ""} />
 
-        <div className="animate-rise flex items-start justify-between gap-3 px-1 pb-9">
+        <div className="animate-rise flex items-start gap-3 px-1 pb-9">
           <BalanceDisplay
             className="min-w-0"
             minor={pari.netBalance}
@@ -61,20 +61,22 @@ function HomeScreen() {
                 ? t("home.settled")
                 : t("home.acrossGroups", { count: active.length })
             }
+            action={
+              <button
+                type="button"
+                onClick={() => setHideAmounts(!hideAmounts)}
+                aria-pressed={hideAmounts}
+                aria-label={hideAmounts ? t("profile.hideAmountsOn") : t("profile.hideAmountsOff")}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-muted-foreground"
+              >
+                {hideAmounts ? (
+                  <EyeOff className="h-5 w-5" strokeWidth={1.6} />
+                ) : (
+                  <Eye className="h-5 w-5" strokeWidth={1.6} />
+                )}
+              </button>
+            }
           />
-          <button
-            type="button"
-            onClick={() => setHideAmounts(!hideAmounts)}
-            aria-pressed={hideAmounts}
-            aria-label={hideAmounts ? t("profile.hideAmountsOn") : t("profile.hideAmountsOff")}
-            className="-mr-1 mt-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground"
-          >
-            {hideAmounts ? (
-              <EyeOff className="h-5 w-5" strokeWidth={1.6} />
-            ) : (
-              <Eye className="h-5 w-5" strokeWidth={1.6} />
-            )}
-          </button>
         </div>
 
         <div className="space-y-8">
