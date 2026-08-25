@@ -9,6 +9,8 @@ import { ExpenseRow, GroupRow } from "@/components/pari/rows";
 import { usePari } from "@/data/store";
 import { timeOfDayGreeting } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
+import { setHideAmounts, useHideAmounts } from "@/lib/privacy";
+import { Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/home")({
   ssr: false,
@@ -43,14 +45,16 @@ function HomeScreen() {
   // Greeting depends on the device clock — render it only after hydration.
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
+  const hideAmounts = useHideAmounts();
 
   return (
     <>
       <Screen>
         <TopBar title={hydrated ? timeOfDayGreeting(pari.currentProfileName) : ""} />
 
-        <div className="animate-rise px-1 pb-9">
+        <div className="animate-rise flex items-start justify-between gap-3 px-1 pb-9">
           <BalanceDisplay
+            className="min-w-0"
             minor={pari.netBalance}
             hint={
               pari.netBalance === 0
@@ -58,6 +62,19 @@ function HomeScreen() {
                 : t("home.acrossGroups", { count: active.length })
             }
           />
+          <button
+            type="button"
+            onClick={() => setHideAmounts(!hideAmounts)}
+            aria-pressed={hideAmounts}
+            aria-label={hideAmounts ? t("profile.hideAmountsOn") : t("profile.hideAmountsOff")}
+            className="-mr-1 mt-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground"
+          >
+            {hideAmounts ? (
+              <EyeOff className="h-5 w-5" strokeWidth={1.6} />
+            ) : (
+              <Eye className="h-5 w-5" strokeWidth={1.6} />
+            )}
+          </button>
         </div>
 
         <div className="space-y-8">
