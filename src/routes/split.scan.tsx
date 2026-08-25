@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, ImageUp, RotateCw, X } from "lucide-react";
+import { Camera, ImageUp, RotateCw, Shield, X } from "lucide-react";
 
 import { Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
@@ -131,13 +131,13 @@ function ScanScreen() {
       />
       <input ref={libraryRef} type="file" accept="image/*" className="hidden" onChange={pick} />
 
-      <div className="flex min-h-[58svh] flex-col items-center justify-center px-2 text-center">
+      <div className="flex min-h-[46svh] flex-col items-center justify-center px-2 text-center">
         {previewUrl ? (
           <div className="relative w-full max-w-[280px] overflow-hidden rounded-[26px] bg-surface shadow-soft">
             <img
               src={previewUrl}
               alt={t("scan.selectedAlt")}
-              className="max-h-[46svh] w-full object-contain"
+              className="max-h-[40svh] w-full object-contain"
             />
             {!reading ? (
               <button
@@ -154,7 +154,7 @@ function ScanScreen() {
             ) : null}
           </div>
         ) : (
-          <div className="relative flex h-56 w-44 items-center justify-center overflow-hidden rounded-[26px] bg-surface shadow-soft">
+          <div className="relative flex h-52 w-44 items-center justify-center overflow-hidden rounded-[26px] bg-surface shadow-soft">
             <div className="absolute inset-x-6 top-8 space-y-2.5">
               {[100, 78, 92, 64, 84, 56].map((width, index) => (
                 <div
@@ -167,10 +167,10 @@ function ScanScreen() {
           </div>
         )}
 
-        <p className="mt-8 text-[17px] font-medium tracking-tight">
+        <p className="mt-6 text-[17px] font-medium tracking-tight">
           {reading ? t("scan.reading") : previewUrl ? t("scan.looksGood") : t("scan.addPhoto")}
         </p>
-        <p className="mt-2 max-w-[30ch] text-sm text-muted-foreground">
+        <p className="mt-1 max-w-[30ch] text-sm text-muted-foreground">
           {reading
             ? t("scan.readingHint")
             : previewUrl
@@ -178,15 +178,18 @@ function ScanScreen() {
               : t("scan.addPhotoHint")}
         </p>
 
-        {error ? <p className="mt-3 max-w-[30ch] text-sm text-negative">{error}</p> : null}
-
-        <p className="mt-6 max-w-[34ch] text-xs leading-relaxed text-muted-foreground">
-          {t("receipt.aiDisclosure")}
-        </p>
+        {error ? <p className="mt-2 max-w-[30ch] text-sm text-negative">{error}</p> : null}
       </div>
 
       {!reading ? (
-        <div className="space-y-2">
+        <div className="space-y-5">
+          {previewUrl ? (
+            <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <Shield className="h-3.5 w-3.5" strokeWidth={1.6} />
+              {t("scan.disclosure")}
+            </p>
+          ) : null}
+          <div className="space-y-2">
           {previewUrl ? (
             <>
               <PrimaryButton onClick={read} disabled={!file}>
@@ -233,7 +236,8 @@ function ScanScreen() {
             </>
           )}
         </div>
-      ) : null}
+      </div>
+    ) : null}
     </Screen>
   );
 }
