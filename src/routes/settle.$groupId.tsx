@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import { PaymentSheet } from "@/components/pari/PaymentSheet";
+import { SettledCelebration } from "@/components/pari/SettledCelebration";
 
 import { Divider, Panel, Screen } from "@/components/pari/AppShell";
 import { FlowHeader } from "@/components/pari/FlowHeader";
@@ -44,6 +45,10 @@ function SettleScreen() {
   const group = pari.data.groups.find((g) => g.id === groupId);
   const plan = pari.settlementPlan(groupId);
   const [payingKey, setPayingKey] = useState<string | null>(null);
+  // Set once by the confirm handler that caused the transition — never derived
+  // from query state, so refetches, reloads and back navigation cannot replay it.
+  const [celebration, setCelebration] = useState<{ amountMinor: number } | null>(null);
+  const navigate = useNavigate();
   const paying = plan.find((s) => `${s.fromPersonId}-${s.toPersonId}` === payingKey);
 
   return (
@@ -117,9 +122,45 @@ function SettleScreen() {
           toName={pari.personName(paying.toPersonId)}
           outstandingMinor={paying.amountMinor}
           onConfirm={async (amountMinor, note) => {
-            await pari.markSettled(groupId, paying, { amountMinor, ...(note ? { note } : {}) });
+            const step = paying;
+            // Derived from the existing engine's plan, before the write:
+            // the pair clears only on a full payment, and the group clears
+            // only when this was the last remaining step in the plan.
+            const pairSettled = amountMinor >= step.amountMinor;
+            const groupSettled = pairSettled && plan.length === 1;
+
+            await pari.markSettled(groupId, step, { amountMinor, ...(note ? { note } : {}) });
             setPayingKey(null);
+
+            if (groupSettled) {
+              setCelebration({ amountMinor });
+              return;
+            }
+            if (pairSettled) {
+              toast.success(
+                t("celebrate.pairSettled", {
+                  from: pari.personName(step.fromPersonId),
+                  to: pari.personName(step.toPersonId),
+                }),
+              );
+              return;
+            }
             toast.success(t("settle.paymentRegistered"));
+          }}
+        />
+      ) : null}
+
+      {celebration ? (
+        <SettledCelebration
+          contextName={group?.name}
+          settledMinor={celebration.amountMinor}
+          onDone={() => {
+            setCelebration(null);
+            void navigate({ to: "/groups/$groupId", params: { groupId } });
+          }}
+          onViewSummary={() => {
+            setCelebration(null);
+            void navigate({ to: "/activity" });
           }}
         />
       ) : null}
