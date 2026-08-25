@@ -2,6 +2,9 @@ import { formatMinor } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { useHideAmounts } from "@/lib/privacy";
 import { useT, type Translate } from "@/lib/i18n";
+import type { ReactNode } from "react";
+
+
 
 
 type Size = "sm" | "md" | "lg" | "hero";
