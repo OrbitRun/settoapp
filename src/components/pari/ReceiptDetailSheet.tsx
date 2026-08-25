@@ -147,21 +147,21 @@ export function ReceiptDetailSheet({
             ) : null}
 
             <div className="space-y-3">
-              <label className="block space-y-1.5">
+              <label className="block w-full min-w-0 space-y-1.5">
                 <span className="text-[13px] text-muted-foreground">{t("receipt.note")}</span>
                 <input
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
-                  className="h-14 w-full rounded-2xl bg-surface-strong px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
+                  className="h-14 w-full min-w-0 max-w-full box-border rounded-2xl bg-surface-strong px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
                 />
               </label>
-              <label className="block space-y-1.5">
+              <label className="block w-full min-w-0 space-y-1.5">
                 <span className="text-[13px] text-muted-foreground">{t("receipt.warranty")}</span>
                 <input
                   type="date"
                   value={warranty}
                   onChange={(event) => setWarranty(event.target.value)}
-                  className="h-14 w-full rounded-2xl bg-surface-strong px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
+                  className="h-14 w-full min-w-0 max-w-full box-border appearance-none rounded-2xl bg-surface-strong px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
                 />
               </label>
             </div>
