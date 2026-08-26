@@ -119,10 +119,12 @@ export function SettledCelebration({
     const prevHtmlBg = html.style.backgroundColor;
     const prevBodyBg = body.style.backgroundColor;
     meta?.setAttribute("content", DARK);
+    html.classList.add("celebrating");
     html.style.backgroundColor = DARK;
     body.style.backgroundColor = DARK;
     return () => {
       if (meta && prevMeta !== null) meta.setAttribute("content", prevMeta);
+      html.classList.remove("celebrating");
       html.style.backgroundColor = prevHtmlBg;
       body.style.backgroundColor = prevBodyBg;
     };
@@ -134,8 +136,13 @@ export function SettledCelebration({
       role="dialog"
       aria-modal="true"
       aria-label={t("celebrate.title")}
-      className="dark fixed inset-0 z-50 overflow-y-auto bg-background text-foreground"
+      className="dark fixed inset-0 z-50 overflow-y-auto bg-[#071c19] text-foreground"
     >
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 top-[-200px] h-[240px] bg-[#071c19]"
+      />
+
       <div className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(2rem+env(safe-area-inset-top))]">
         <div className="flex flex-1 flex-col items-center justify-center gap-6 py-8 text-center">
           <SettoMark />
