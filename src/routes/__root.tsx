@@ -20,6 +20,7 @@ import { setDateLanguage } from "@/lib/dates";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountSheet } from "@/components/pari/AccountSheet";
 import { useScrollToTopOnNavigate } from "@/hooks/useScrollToTopOnNavigate";
+import { hideNativeSplash, syncNativeStatusBar } from "@/lib/native";
 
 function NotFoundComponent() {
   return (
@@ -141,7 +142,14 @@ function AppFrame({ children }: { children: ReactNode }) {
       typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
     const dark = pari.appearance === "dark" || (pari.appearance === "system" && prefersDark);
     document.documentElement.classList.toggle("dark", dark);
+    // Native only: keep the iOS status bar readable on the current surface.
+    void syncNativeStatusBar(dark, dark ? "#071C19" : "#F7F6F2");
   }, [pari.appearance]);
+
+  // Native only: dismiss the launch screen once the app has painted.
+  useEffect(() => {
+    void hideNativeSplash();
+  }, []);
 
   return (
     <I18nProvider language={pari.language}>

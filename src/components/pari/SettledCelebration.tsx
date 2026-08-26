@@ -4,6 +4,7 @@ import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { useT } from "@/lib/i18n";
 import settoMark from "@/assets/setto-mark-dark.png.asset.json";
+import { syncNativeStatusBar } from "@/lib/native";
 
 /**
  * Stage C1 — premium "all settled" state.
@@ -95,11 +96,14 @@ export function SettledCelebration({
     html.classList.add("celebrating");
     html.style.backgroundColor = DARK;
     body.style.backgroundColor = DARK;
+    // Native only: white status-bar content over the deep green surface.
+    void syncNativeStatusBar(true, DARK);
     return () => {
       if (meta && prevMeta !== null) meta.setAttribute("content", prevMeta);
       html.classList.remove("celebrating");
       html.style.backgroundColor = prevHtmlBg;
       body.style.backgroundColor = prevBodyBg;
+      void syncNativeStatusBar(html.classList.contains("dark"), undefined);
     };
   }, []);
 
