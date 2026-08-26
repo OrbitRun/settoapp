@@ -1,119 +1,111 @@
-# Receipt Archive — Stage R1 audit (read only)
+# Native Launch Readiness — N1 audit (read only)
 
-Nothing was changed. Findings first, then the proposed architecture and stages.
+Nothing was changed. Findings below are from reading the current project.
 
-## 1. Current OCR flow
+## 1. Delivery model
 
-```text
-photo picked (split/scan)  ->  client downscale to data URL  ->  parseReceiptImage server fn
-   ->  Lovable AI Gateway (openai/gpt-5.6-sol, strict JSON schema)
-   ->  ParsedReceipt  ->  draft in memory  ->  /split/review edit  ->  addExpense (DB)
-```
+- **PWA only.** No Capacitor, no native wrapper, no `ios/` or `android/` folder, no `capacitor.config.*`. No Capacitor packages in `package.json`.
+- **Bundle identifier:** none exists in the project. The only identifiers present are placeholders inside `public/.well-known/`: `TEAMID.app.pari.ios` and `app.pari.android` — both still carry the old PARI name and a fake team id.
+- **App scheme / deep-link scheme:** none. All links are plain https web URLs.
+- **Associated domains:** not configured (that lives in an iOS project, which does not exist).
+- **`.well-known` files:** `apple-app-site-association` (paths `/invite/*`, placeholder app id) and `assetlinks.json` (placeholder SHA-256 fingerprint). Both are inert today.
+- Manifest (`public/manifest.webmanifest`) is correct Setto branding, `display: standalone`, no service worker registered (no offline mode).
 
-- Input: `src/routes/split.scan.tsx`, two hidden file inputs (camera `capture="environment"` and library). Image-type check only, no size check client-side.
-- Preprocessing: `src/lib/receipt/parseReceipt.ts` — `createImageBitmap` with EXIF orientation applied, longest edge capped at 2200 px, JPEG quality stepped 0.92 → 0.65, then a 0.7 shrink pass, target under ~4.5 MB encoded. Output is a `data:image/jpeg;base64` URL.
-- OCR: `parseReceiptImage` (`src/lib/receipt/parseReceipt.functions.ts`, POST server fn, **no auth middleware**). Rejects >12 MB, 60 s timeout, sends system prompt + `image_url` data URL to `https://ai.gateway.lovable.dev/v1/chat/completions`.
-- Persistence today: **none**. No Storage upload anywhere in the codebase; no original, no normalized copy. Only an in-page `URL.createObjectURL` preview and the transient data URL. Full parsed JSON exists only in the client draft.
-- Errors: typed `CODE: message` strings, localized in the scan screen (timeout, rate limited, credits, too large, no receipt), with Try again / Retake / Choose another / Enter manually. Retry re-sends the same file.
+## 2. Authentication
 
-## 2. Receipt data retained vs lost
+- Providers in use: **email + password** (sign-up, sign-in, password reset) and **Google** via the managed Lovable Cloud OAuth helper (`lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`).
+- **Apple Sign In does not exist anywhere.** The managed helper already accepts `"apple"` as a provider, but the provider is not enabled and no UI calls it.
+- **Apple requirement:** yes. Because Google login is offered, App Review guideline 4.8 requires Sign in with Apple (or an equivalent privacy-preserving login) in the iOS build. This is a hard blocker for App Store submission.
+- Redirect URLs today: `window.location.origin` for OAuth and email confirmation; `${origin}/reset-password` for recovery. All web-origin based, all fine for web, none valid inside a native container.
+- Auth config carrying old PARI identifiers: none in Supabase; only the `.well-known` placeholders mentioned above.
 
-Persisted on `expenses`: title, merchant, expense_date, currency, total_minor, original_currency / original_total_minor / exchange_rate(+date, source), card_charged_minor, source_type, `receipt_image_url` (**always NULL today — 0 of 20 rows set**). On `expense_items`: name, quantity, unit_price_minor, total_minor, category, is_shared, `confidence`, position.
+## 3. Deep links
 
-Lost at save time: the image itself, merchant raw header and address lines, subtotal, receipt-level discount, per-line original unit price / discount amount / discount percent, currency confidence + evidence, total confidence, parser warnings, overall confidence, and the raw model JSON.
+- **Invitations:** canonical `/invite/{token}` (with `/join/{token}` redirecting to it), built from `window.location.origin`. Already designed as the Universal Link target.
+- **Auth callback:** back to the site origin after Google OAuth.
+- **Password reset:** `/reset-password` on the site origin.
+- **Receipt/share links:** none — sharing is clipboard text only.
+- **App Store link** in `src/routes/invite.$token.tsx` is the placeholder `https://apps.apple.com/app/pari`.
+- Must change for Setto/native: real app id + team id in `apple-app-site-association`, real release fingerprint in `assetlinks.json`, associated-domains entitlement for `settoapp.lovable.app`, real App Store URL, and auth redirects that resolve back into the app.
 
-## 3. Storage bucket audit
+## 4. Session / token storage
 
-Bucket `receipts`: private, no `file_size_limit`, no `allowed_mime_types`, **0 objects — entirely unused**. Four `storage.objects` policies already exist and all key on `auth.uid()::text = (storage.foldername(name))[1]`: read (SELECT), write (INSERT), update, delete. So the `<auth.uid()>/…` layout is already the enforced convention; no group-based path exists. No signed-URL usage anywhere in code.
+- Sessions live in the browser via the generated Supabase client: `localStorage`, with a Lovable preview broker used only inside the editor iframe. `persistSession` and `autoRefreshToken` are on.
+- For web this is standard and acceptable. Inside a Capacitor WebView, `localStorage` is app-sandboxed (not shared with other apps), so it is workable, but refresh tokens at rest are not encrypted and can be lost when the WebView storage is cleared.
+- Recommended for native: a small custom Supabase `auth.storage` adapter backed by Keychain (e.g. `capacitor-secure-storage-plugin` or `@capacitor/preferences` + Keychain accessibility). The generated client file must not be edited — this needs a wrapper client or a Lovable-side change.
+- The current web auth flow can be reused inside Capacitor, provided OAuth runs in an in-app browser / ASWebAuthenticationSession with a custom-scheme redirect rather than a plain in-WebView redirect.
 
-## 4. Privacy model
+## 5. Icons / splash / status bar
 
-Invariant: the original image is private to its owner; group participation never grants access. Current code has no violating path (nothing is stored or shared). The only latent risk is the legacy `expenses.receipt_image_url` text column: it is readable by every group participant through the expenses SELECT policy, so it must never hold a real URL or a path that is meaningful without owner-only storage RLS.
+- PWA icons present: `favicon.png`, `apple-touch-icon.png`, `brand/icon-192.png`, `brand/icon-512.png`, `brand/icon-512-dark.png`; manifest wired correctly.
+- Missing for native: iOS `AppIcon` asset catalog (all sizes from the approved 1024×1024 light/dark/tinted art), launch screen / splash assets, `@capacitor/splash-screen` config.
+- Light/dark/tinted source art exists in the earlier brand upload but is not committed as an iOS asset set.
+- Status bar: web-side only (`theme-color`, `viewport-fit=cover`, safe-area padding, the celebration screen overrides `theme-color`). Native needs `@capacitor/status-bar` style handling to mirror that.
 
-## 5. Recommended minimal `receipts` schema (v1)
+## 6. Native privacy / haptics
 
-Keep it small; put parser detail in JSON.
+- App-switcher masking: not possible on web; needs a native privacy-overlay on `appStateChange`.
+- Screenshot/recording protection: not available on web; on iOS only detection is possible (no true block).
+- Face ID / biometrics: absent. Would pair naturally with the existing Privacy Mode as an app lock.
+- Haptics: only `navigator.vibrate` (no-op on iOS) in the celebration. Would move to `@capacitor/haptics`.
+- Clipboard: `navigator.clipboard` in share/settle/invite flows — works in WebView, but `@capacitor/clipboard` is more reliable.
 
-- `id uuid pk default gen_random_uuid()`
-- `owner_user_id uuid not null references auth.users(id) on delete cascade`
-- `storage_path text not null unique` (relative to bucket)
-- `mime_type text not null`, `file_size_bytes bigint not null`
-- `merchant_name text`, `purchase_date date`, `currency text`, `total_minor bigint`
-- `parsed_json jsonb not null default '{}'` — address, subtotal, discounts, per-line detail, confidences, warnings, model/provider name, parsed_at
-- `note text`, `warranty_expires_at date`
-- `created_at`, `updated_at` (+ existing touch trigger)
+## 7. Push notifications
 
-Left out of v1 columns (live in `parsed_json`): merchant_address, subtotal_minor, discount_minor, ocr provider/model, width/height, original_filename, category. Promote to columns only when something filters or sorts on them.
+- No push infrastructure at all: no APNs, no Firebase, no Capacitor Push, no device-token table, no notification triggers.
+- Later this needs an Apple push key, a device-token table with RLS, a send path, and permission UX.
+- Best first notifications, in order: **invitations** (someone invited you / joined), **settlement reminders** (you owe / you were paid), then **group activity** (new expense).
 
-## 6. Ownership FK
+## 8. App Store readiness gaps
 
-Recommend **A: `owner_user_id → auth.users ON DELETE CASCADE`, NOT NULL**. Receipts are private account data, unlike shared financial history; cascade is the correct default and makes an orphaned private row impossible. Storage objects are not cascaded, so the account-deletion path must delete objects explicitly (section 14).
+- Privacy policy URL: **missing** (no page, no link).
+- Terms URL: **missing**.
+- Support URL / contact: **missing**.
+- Account deletion: **implemented and compliant** — in-app, reachable from Profile with typed confirmation, deletes data and the auth user server-side, and cleans up private receipt images. It satisfies guideline 5.1.1(v). It still needs a publicly documented deletion path in the privacy policy.
+- Sign in with Apple: **missing, required** (see §2).
+- Privacy labels: not prepared. Data collected: email, name, expense/receipt data, receipt images; receipts are sent to an AI vision service — this must be declared.
+- Tracking declarations: no tracking SDKs present, so "not used for tracking" — easy.
+- Screenshots, subtitle, description, age rating (4+ likely), export compliance (standard HTTPS only → exempt declaration), TestFlight: all still to do.
 
-## 7. Expense → receipt relation
+## 9. Delivery options
 
-`expenses.receipt_id uuid null references public.receipts(id) on delete set null`. Deleting a receipt or an account keeps the shared expense with `receipt_id = NULL`; group members never gain image access because access is decided by `receipts` RLS + storage RLS, not by the expense.
+| | A. Stay PWA | B. Capacitor | C. Full native shell |
+|---|---|---|---|
+| Effort | none | small–medium | very large |
+| Risk | low | low–medium | high |
+| App Store | not listable | fully suitable | fully suitable |
+| Codebase reuse | 100% | ~100% | ~0% UI |
+| Auth / deep links | works today | needs Apple Sign In + custom scheme + universal links | full rewrite |
+| Camera / receipts | works, limited | native camera, better quality | best |
+| Privacy / haptics / icons | none | full access | full access |
 
-Migration from `receipt_image_url`: the column is unused (0 rows), so no data migration is needed — add `receipt_id`, stop writing the text column, and drop it in a later cleanup stage.
+**Recommendation: B — Capacitor.** It keeps the entire existing app, unlocks App Store distribution, native privacy masking, haptics, real icons and camera, with the smallest safe change surface.
 
-## 8. RLS model for `receipts`
+## 10. Apple Sign In plan (design only)
 
-Grants: `SELECT, INSERT, UPDATE, DELETE` to `authenticated`; `ALL` to `service_role`; **no anon grant**. Enable RLS, then a single policy per command, all `TO authenticated` with `owner_user_id = auth.uid()` in USING and WITH CHECK. No group-participant exception, no group-owner exception, no security-definer helper.
+- **Apple Developer:** App ID with Sign in with Apple capability; Services ID for the web/OAuth leg; a `.p8` key + Key ID + Team ID; the backend callback URL registered on the Services ID.
+- **Backend:** enable the Apple provider through Lovable Cloud's managed social login in the same change that ships the button (otherwise sign-in fails with "provider not supported"). Managed credentials are enough unless custom branding is wanted.
+- **Redirect:** `redirect_uri` must be a full same-origin public URL (`window.location.origin`); native uses an in-app auth session that hands the tokens back to the app.
+- **Native:** add the Sign in with Apple entitlement and the associated-domains entitlement in Xcode.
+- **Frontend:** one Apple button on `/auth` next to Google, calling the existing managed helper with `"apple"`; Apple's exact button styling rules apply.
+- **Account linking:** Apple's private relay emails mean the same human can arrive as a second account. Decide up front whether to match on email and merge, or keep accounts separate (the existing person model makes separate safer).
+- **Testing:** first-time consent (name is only returned once), private-relay email path, repeat sign-in, cancel path, and pending-invite continuation after Apple login.
 
-Authority source: the table row uses `owner_user_id`; the object uses the `auth.uid()` folder prefix. Both must agree — enforce it by requiring `storage_path` to start with `owner_user_id || '/'` (check constraint or trigger), so a row can never point at another user's object.
+## 11. Roadmap after this audit
 
-## 9. Storage path and policies
+- **N2 — Capacitor foundation:** add Capacitor, iOS project, bundle id `app.setto.ios` (final id to confirm), app icons, splash, status bar, safe areas verified on device.
+- **N3 — Auth + deep links:** Sign in with Apple end to end, native-safe OAuth redirect, Keychain-backed session storage, universal links for `/invite/*` and password reset, real `.well-known` values, real App Store URL.
+- **N4 — Native polish:** app-switcher privacy mask (tied to Privacy Mode), optional Face ID lock, native haptics, native camera for receipts, native clipboard/share.
+- **N5 — Store package:** privacy policy / terms / support pages, privacy labels, screenshots, subtitle and description, age rating, export compliance, TestFlight build, submission.
+- Push notifications stay out of the first release; slot them as N6.
 
-Layout `<auth.uid()>/<receipt_id>/original.jpg`. The receipt id is a random uuid, so paths are unpredictable. The existing four bucket policies already implement exactly owner-only read/write/update/delete on this prefix — no policy change needed. Store only the relative path; display uses a short-lived `createSignedUrl` (≈60 s) generated on demand, never persisted.
+## 12. Remaining launch blockers
 
-## 10. Image, MIME, size
-
-Recommend **B: archive the normalized OCR image** for v1 — the same 2200 px JPEG that is already produced. It is proof-of-purchase legible, one upload, no second encode, and canvas re-encoding **already strips EXIF including GPS**, which resolves the metadata concern for free. Storing the original (A/C) doubles cost and re-introduces EXIF for marginal quality gain; revisit if warranty use demands it. Limits: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, 10 MB per object.
-
-## 11. OCR privacy and disclosure
-
-The image goes to the Lovable AI Gateway and on to the OpenAI model — it leaves the EU-hosted backend. No provider retention terms are documented anywhere in the codebase, and the scanner currently shows no processing disclosure. **This is an open legal/privacy-policy gap** — no retention guarantee should be asserted until confirmed. Proposed scanner copy: "Billedet sendes til en AI-tjeneste, der læser varer og beløb. Kvitteringen gemmes privat på din konto."
-
-## 12. Save flow
-
-Recommend **Option B**, receipt written together with the expense after confirmation, with the upload just before:
-
-1. Scan → OCR on the in-memory data URL (unchanged, nothing stored).
-2. User reviews and confirms.
-3. Upload the normalized JPEG to `<uid>/<new uuid>/original.jpg`.
-4. Insert the `receipts` row with that id and path, then create the expense with `receipt_id`.
-
-Compensation: upload OK but insert fails → delete the just-uploaded object, surface a retry; insert OK but expense fails → keep the receipt (it is valid archive data on its own) and let the user link or retry; upload fails → save the expense without a receipt rather than losing the split; OCR fails → today's error UI, nothing stored; user cancels after OCR → nothing was written yet. A periodic sweep for `receipts` rows whose object is missing is the backstop. Option C (fully independent archive) stays reachable later — this flow is a strict subset of it.
-
-## 13. Private archive UX
-
-A new "Kvitteringer" section, reached from Profile rather than a sixth nav slot (nav is already at five). Cards: merchant, date, amount, thumbnail via short-lived signed URL, linked-expense indicator. Detail: full image, parsed merchant/date/total, items, note, linked expense, warranty date. Only the owner ever sees this surface.
-
-## 14. Shared-expense behaviour
-
-Owner sees a "Vis kvittering" action on the expense. Other participants see the expense and items exactly as today and get **no indicator at all** — knowing a private image exists invites requests for it and adds no value to a co-participant. Recommend omitting the indicator in v1.
-
-## 15. Account-deletion integration (design only)
-
-Inside the existing `deleteMyAccount` server fn, before `auth.admin.deleteUser`: list `storage.objects` under the user's prefix via the admin client and remove them, then delete the receipt rows (or let the FK cascade do it). Because object deletion is not transactional, treat leftovers as retryable: the whole flow is already idempotent, a second run finds fewer objects and still succeeds, and auth deletion should not be blocked by a storage error alone — log it and let a sweep reclaim orphans. Expenses survive via `receipt_id ON DELETE SET NULL`.
-
-## 16. GDPR / export
-
-A future export should include receipt metadata, parsed OCR JSON, and the original images. Retention notes: images are the most sensitive artefact in the product (addresses, card fragments, purchase patterns); keep them owner-only, never public-URL, and document the AI-processing step in the privacy policy before shipping the archive.
-
-## 17. Staged plan (3 stages)
-
-- **R2 — foundation:** `receipts` table + grants + RLS + path check constraint, `expenses.receipt_id`, bucket MIME/size limits. Storage policies already correct.
-- **R3 — capture + link:** upload in the save flow, receipt row + expense written together, compensation paths, owner-only "Vis kvittering" with short-lived signed URLs, scanner disclosure copy.
-- **R4 — archive + deletion:** Kvitteringer list/detail UI, note and warranty fields, storage cleanup in `deleteMyAccount`, drop `receipt_image_url`.
-
-## 18. Risks and open questions
-
-- Provider retention terms unknown — legal gap, blocks final privacy copy.
-- `parseReceiptImage` has no auth middleware; once uploads are attached, the capture path must be authenticated (guest scanning must stay non-persisting).
-- Guest mode has no account: guests can scan but cannot archive; needs a decision on whether a post-signup migration carries the image over.
-- Bucket has no size or MIME limits yet — set in R2.
-- Thumbnails are full-size images until a resize step exists; acceptable at current volume.
-
-## 19. Baseline confirmed
-
-groups 2 · people 10 · group_members 5 · expenses 20 · expense_items 105 · expense_splits 48 · item_splits 0 · settlements 1 · activity 69 · invitations 5 · split sum 1,892,653 øre. `receipts` bucket: private, 0 objects. `expenses.receipt_image_url`: 0 non-null rows. Nothing was modified.
+1. No native project at all (no Capacitor, no bundle id).
+2. Sign in with Apple missing while Google is offered.
+3. Privacy policy, terms and support URLs missing.
+4. `.well-known` files carry PARI placeholders and a fake team id/fingerprint.
+5. Placeholder App Store URL on the invite page.
+6. No iOS icon set, launch screen, or status-bar handling.
+7. Session tokens not in Keychain.
+8. Store metadata, screenshots and privacy labels not prepared.
