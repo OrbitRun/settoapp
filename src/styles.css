@@ -233,16 +233,10 @@
 /* ---- Settlement celebration (Stage C1) --------------------------------- */
 /* Two rounded diagonal bars glide into alignment, then a soft mint pulse. */
 
-@keyframes setto-bar-a {
-  0% { transform: translate(-10px, 10px); opacity: 0; }
-  55% { transform: translate(0, 0); opacity: 1; }
-  100% { transform: translate(0, 0); opacity: 1; }
-}
-
-@keyframes setto-bar-b {
-  0% { transform: translate(12px, -12px); opacity: 0; }
-  60% { transform: translate(0, 0); opacity: 1; }
-  100% { transform: translate(0, 0); opacity: 1; }
+@keyframes setto-mark {
+  0% { opacity: 0; transform: translateY(10px) scale(0.94); }
+  60% { opacity: 1; transform: translateY(0) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes setto-glow {
