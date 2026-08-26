@@ -20,10 +20,10 @@ const SPARKS = [
 
 export function SettoMark() {
   return (
-    <div className="relative h-28 w-28">
+    <div className="relative h-32 w-[84px]">
       <div
         aria-hidden
-        className="animate-setto-glow absolute inset-0 rounded-full bg-accent/35 blur-2xl"
+        className="animate-setto-glow absolute -inset-6 rounded-full bg-accent/25 blur-3xl"
       />
       {SPARKS.map((spark) => (
         <span
@@ -41,35 +41,45 @@ export function SettoMark() {
           }
         />
       ))}
-      <svg viewBox="0 0 100 100" className="relative h-28 w-28" role="img" aria-hidden>
-        <g className="animate-setto-bar-a">
-          <rect
-            x="18"
-            y="14"
-            width="16"
-            height="72"
-            rx="8"
-            transform="rotate(24 26 50)"
-            fill="currentColor"
-            className="text-accent"
-          />
-        </g>
-        <g className="animate-setto-bar-b">
-          <rect
-            x="66"
-            y="14"
-            width="16"
-            height="72"
-            rx="8"
-            transform="rotate(24 74 50)"
-            fill="currentColor"
-            className="text-foreground"
-          />
+      <svg
+        viewBox="0 0 301 461"
+        className="relative block h-32 w-[84px]"
+        fill="none"
+        role="img"
+        aria-hidden
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <g transform="matrix(1.04634,0,0,1.06061,-1095.71,-169.045)">
+          <g className="animate-setto-bar-a">
+            <g transform="matrix(0.812663,0.147323,0.138628,0.799857,-110.097,11.255)">
+              <path
+                d="M1459,395L1685,166"
+                stroke="currentColor"
+                className="text-foreground"
+                strokeWidth={110}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </g>
+          </g>
+          <g className="animate-setto-bar-b">
+            <g transform="matrix(0.812663,0.147323,0.138628,0.799857,-140.68,-169.774)">
+              <path
+                d="M1459,395L1685,166"
+                stroke="currentColor"
+                className="text-accent"
+                strokeWidth={110}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </g>
+          </g>
         </g>
       </svg>
     </div>
   );
 }
+
 
 export function SettledCelebration({
   contextName,
@@ -96,6 +106,28 @@ export function SettledCelebration({
       /* haptics are best-effort */
     }
   }, []);
+
+  // Paint the browser chrome / safe-area behind the overlay in the same deep
+  // green so no light band shows above the celebration. Purely visual.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const DARK = "#071c19";
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const prevMeta = meta?.getAttribute("content") ?? null;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlBg = html.style.backgroundColor;
+    const prevBodyBg = body.style.backgroundColor;
+    meta?.setAttribute("content", DARK);
+    html.style.backgroundColor = DARK;
+    body.style.backgroundColor = DARK;
+    return () => {
+      if (meta && prevMeta !== null) meta.setAttribute("content", prevMeta);
+      html.style.backgroundColor = prevHtmlBg;
+      body.style.backgroundColor = prevBodyBg;
+    };
+  }, []);
+
 
   return (
     <div
@@ -133,9 +165,8 @@ export function SettledCelebration({
                 <span className="text-[13px] text-muted-foreground">
                   {t("celebrate.balanceNow")}
                 </span>
-                <span className="text-[13px] font-medium text-accent">
-                  {t("celebrate.balanceZero")}
-                </span>
+                <MoneyAmount minor={0} size="sm" className="text-accent" />
+
               </div>
             </div>
           ) : null}
