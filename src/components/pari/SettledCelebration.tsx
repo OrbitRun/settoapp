@@ -107,6 +107,28 @@ export function SettledCelebration({
     }
   }, []);
 
+  // Paint the browser chrome / safe-area behind the overlay in the same deep
+  // green so no light band shows above the celebration. Purely visual.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const DARK = "#071c19";
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const prevMeta = meta?.getAttribute("content") ?? null;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlBg = html.style.backgroundColor;
+    const prevBodyBg = body.style.backgroundColor;
+    meta?.setAttribute("content", DARK);
+    html.style.backgroundColor = DARK;
+    body.style.backgroundColor = DARK;
+    return () => {
+      if (meta && prevMeta !== null) meta.setAttribute("content", prevMeta);
+      html.style.backgroundColor = prevHtmlBg;
+      body.style.backgroundColor = prevBodyBg;
+    };
+  }, []);
+
+
   return (
     <div
       role="dialog"
