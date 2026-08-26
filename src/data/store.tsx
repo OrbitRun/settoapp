@@ -23,6 +23,7 @@ import {
   type SplitMode,
 } from "@/lib/split";
 import { detectLanguage, type Language } from "@/lib/i18n";
+import { clearNativeSecureSession } from "@/lib/native-secure-session";
 import { diffExpense, type ExpenseSnapshot } from "@/lib/history";
 import { lockMoney, type MoneyContext } from "@/lib/expense-money";
 import { emptyDraft, itemTotalMinor, type DraftItem, type SplitDraft } from "./draft";
