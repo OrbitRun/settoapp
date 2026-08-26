@@ -143,9 +143,8 @@ export function SettledCelebration({
                 <span className="text-[13px] text-muted-foreground">
                   {t("celebrate.balanceNow")}
                 </span>
-                <span className="text-[13px] font-medium text-accent">
-                  {t("celebrate.balanceZero")}
-                </span>
+                <MoneyAmount minor={0} size="sm" className="text-accent" />
+
               </div>
             </div>
           ) : null}
