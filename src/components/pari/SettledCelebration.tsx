@@ -95,11 +95,14 @@ export function SettledCelebration({
     html.classList.add("celebrating");
     html.style.backgroundColor = DARK;
     body.style.backgroundColor = DARK;
+    // Native only: white status-bar content over the deep green surface.
+    void syncNativeStatusBar(true, DARK);
     return () => {
       if (meta && prevMeta !== null) meta.setAttribute("content", prevMeta);
       html.classList.remove("celebrating");
       html.style.backgroundColor = prevHtmlBg;
       body.style.backgroundColor = prevBodyBg;
+      void syncNativeStatusBar(html.classList.contains("dark"), undefined);
     };
   }, []);
 

@@ -20,6 +20,7 @@ import { setDateLanguage } from "@/lib/dates";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountSheet } from "@/components/pari/AccountSheet";
 import { useScrollToTopOnNavigate } from "@/hooks/useScrollToTopOnNavigate";
+import { hideNativeSplash, syncNativeStatusBar } from "@/lib/native";
 
 function NotFoundComponent() {
   return (
