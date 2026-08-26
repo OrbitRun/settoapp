@@ -1227,6 +1227,8 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const signOut = async () => {
       await supabase.auth.signOut();
+      // Native only: drop the Keychain copy of the session as well.
+      await clearNativeSecureSession();
       queryClient.clear();
       clearGuestState();
       setGuestRaw(withSelfPerson(emptyGuestState));
