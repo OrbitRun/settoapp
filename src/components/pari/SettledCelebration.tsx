@@ -4,6 +4,7 @@ import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { useT } from "@/lib/i18n";
 import settoMark from "@/assets/setto-mark-dark.png.asset.json";
+import { syncNativeStatusBar } from "@/lib/native";
 
 /**
  * Stage C1 — premium "all settled" state.
