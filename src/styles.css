@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * PARI design system.
+ * Setto design system.
  * Warm off-white paper, deep forest ink, muted mint accent.
  * All colors are oklch tokens — never hardcode colors in components.
  */

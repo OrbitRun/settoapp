@@ -16,13 +16,13 @@ export const Route = createFileRoute("/home")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Your overview — PARI" },
+      { title: "Your overview — Setto" },
       {
         name: "description",
         content:
           "See what you're owed, what you owe and every shared expense — in one calm overview.",
       },
-      { property: "og:title", content: "Your overview — PARI" },
+      { property: "og:title", content: "Your overview — Setto" },
       {
         property: "og:description",
         content: "The calm way to split shared expenses with the people around you.",

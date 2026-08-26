@@ -15,10 +15,10 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/receipts")({
   head: () => ({
     meta: [
-      { title: "Receipts — PARI" },
-      { name: "description", content: "Your private receipt archive in PARI." },
-      { property: "og:title", content: "Receipts — PARI" },
-      { property: "og:description", content: "Your private receipt archive in PARI." },
+      { title: "Receipts — Setto" },
+      { name: "description", content: "Your private receipt archive in Setto." },
+      { property: "og:title", content: "Receipts — Setto" },
+      { property: "og:description", content: "Your private receipt archive in Setto." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

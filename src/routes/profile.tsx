@@ -23,10 +23,10 @@ import { setHideAmounts, useHideAmounts } from "@/lib/privacy";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "Your profile — PARI" },
-      { name: "description", content: "Your details, people and preferences in PARI." },
-      { property: "og:title", content: "Your profile — PARI" },
-      { property: "og:description", content: "Your details, people and preferences in PARI." },
+      { title: "Your profile — Setto" },
+      { name: "description", content: "Your details, people and preferences in Setto." },
+      { property: "og:title", content: "Your profile — Setto" },
+      { property: "og:description", content: "Your details, people and preferences in Setto." },
     ],
   }),
   component: () => (

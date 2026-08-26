@@ -1,5 +1,5 @@
 /**
- * PARI financial engine.
+ * Setto financial engine.
  *
  * Every function operates on integers in minor units (øre) and guarantees that
  * allocations sum exactly to the total. No UI code may re-implement this math.

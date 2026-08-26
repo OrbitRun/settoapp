@@ -12,12 +12,12 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/split/scan")({
   head: () => ({
     meta: [
-      { title: "Scan a receipt — PARI" },
-      { name: "description", content: "Snap the receipt and PARI reads the items for you." },
-      { property: "og:title", content: "Scan a receipt — PARI" },
+      { title: "Scan a receipt — Setto" },
+      { name: "description", content: "Snap the receipt and Setto reads the items for you." },
+      { property: "og:title", content: "Scan a receipt — Setto" },
       {
         property: "og:description",
-        content: "Snap the receipt and PARI reads the items for you.",
+        content: "Snap the receipt and Setto reads the items for you.",
       },
     ],
   }),

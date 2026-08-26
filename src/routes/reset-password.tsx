@@ -16,12 +16,12 @@ export const Route = createFileRoute("/reset-password")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Reset password — PARI" },
-      { name: "description", content: "Choose a new password for your PARI account." },
-      { property: "og:title", content: "Reset password — PARI" },
+      { title: "Reset password — Setto" },
+      { name: "description", content: "Choose a new password for your Setto account." },
+      { property: "og:title", content: "Reset password — Setto" },
       {
         property: "og:description",
-        content: "Choose a new password for your PARI account.",
+        content: "Choose a new password for your Setto account.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

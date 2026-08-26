@@ -25,9 +25,9 @@ import { PersonSheet, type PersonSheetState } from "@/components/pari/PersonShee
 export const Route = createFileRoute("/groups/$groupId")({
   head: () => ({
     meta: [
-      { title: "Group — PARI" },
+      { title: "Group — Setto" },
       { name: "description", content: "Your balance, the expenses and who shares what." },
-      { property: "og:title", content: "Group — PARI" },
+      { property: "og:title", content: "Group — Setto" },
       {
         property: "og:description",
         content: "Your balance, the expenses and who shares what.",

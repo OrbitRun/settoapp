@@ -20,9 +20,9 @@ import { useMoneyLock } from "@/hooks/useMoneyLock";
 export const Route = createFileRoute("/split/share")({
   head: () => ({
     meta: [
-      { title: "Share the receipt — PARI" },
+      { title: "Share the receipt — Setto" },
       { name: "description", content: "Split the whole receipt by any rule, or go item by item." },
-      { property: "og:title", content: "Share the receipt — PARI" },
+      { property: "og:title", content: "Share the receipt — Setto" },
       {
         property: "og:description",
         content: "Split the whole receipt by any rule, or go item by item.",

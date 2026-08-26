@@ -17,12 +17,12 @@ export const Route = createFileRoute("/auth")({
 
   head: () => ({
     meta: [
-      { title: "Sign in — PARI" },
-      { name: "description", content: "Sign in to PARI to split and settle shared expenses." },
-      { property: "og:title", content: "Sign in — PARI" },
+      { title: "Sign in — Setto" },
+      { name: "description", content: "Sign in to Setto to split and settle shared expenses." },
+      { property: "og:title", content: "Sign in — Setto" },
       {
         property: "og:description",
-        content: "Sign in to PARI to split and settle shared expenses.",
+        content: "Sign in to Setto to split and settle shared expenses.",
       },
     ],
   }),

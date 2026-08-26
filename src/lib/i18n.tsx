@@ -51,7 +51,7 @@ const en: Dict = {
   "home.noGroups": "No groups yet",
   "home.noGroupsHint": "Create a group for the people you share with.",
   "home.groupsNoExpenses": "Your groups are ready",
-  "home.groupsNoExpensesHint": "Add the first expense and PARI keeps the balance.",
+  "home.groupsNoExpensesHint": "Add the first expense and Setto keeps the balance.",
   "home.paidBy": "Paid by {name}",
 
   "groups.title": "Groups",
@@ -186,7 +186,7 @@ const en: Dict = {
   "profile.hideAmountsOff": "Hide amounts",
   "profile.people": "People",
   "profile.addPerson": "Add person",
-  "profile.howItWorks": "How PARI works",
+  "profile.howItWorks": "How Setto works",
   "profile.signOut": "Sign out",
   "profile.deleteAccount": "Delete account",
   "profile.deleteAccountIntro": "This permanently deletes your account. Please read what happens:",
@@ -335,7 +335,7 @@ const en: Dict = {
   "receipt.aiDisclosure":
     "The image is processed by an AI service to read items and amounts. Saved receipts are private and visible only to you.",
 
-  "auth.title": "Welcome to PARI",
+  "auth.title": "Welcome to Setto",
   "auth.subtitle": "Share anything. Settle easily.",
   "auth.email": "Email",
   "auth.password": "Password",
@@ -377,7 +377,7 @@ const en: Dict = {
   "invite.showQr": "Show QR code",
   "invite.hideQr": "Hide QR code",
   "invite.expires": "The link works for 30 days.",
-  "invite.shareText": "Join {group} on PARI so we can split expenses.",
+  "invite.shareText": "Join {group} on Setto so we can split expenses.",
   "invite.invitedBy": "{name} invited you to",
   "invite.join": "Join group",
   "invite.joined": "You joined the group.",
@@ -391,7 +391,7 @@ const en: Dict = {
   "invite.needAccount": "You need an account to join a group — your invitation is kept.",
   "invite.invalidTitle": "Invitation not found",
   "invite.invalidBody": "The link is expired or has been revoked. Ask for a new one.",
-  "invite.getApp": "Get PARI",
+  "invite.getApp": "Get Setto",
   "invite.personTitle": "Invite {name}",
   "invite.personDescription": "{name} keeps their existing expenses and balance.",
   "invite.inviteNewPerson": "+ Invite a new person",
@@ -405,7 +405,7 @@ const en: Dict = {
   "invite.personTaken": "This person is already connected to an account.",
 
 
-  "convert.title": "Save this split in PARI",
+  "convert.title": "Save this split in Setto",
   "convert.body": "Create a free account to keep the split, follow balances and settle up later.",
   "convert.cta": "Save my split",
 
@@ -418,7 +418,7 @@ const en: Dict = {
   "start.title": "Split",
   "start.heading": "How do you want to split?",
   "start.scan": "Scan receipt",
-  "start.scanHint": "Take a photo — PARI finds the items",
+  "start.scanHint": "Take a photo — Setto finds the items",
   "start.manual": "Enter amount",
   "start.manualHint": "Add the amount yourself",
 
@@ -439,14 +439,14 @@ const en: Dict = {
   "onboarding.splitTitle": "Split it your way.",
   "onboarding.splitBody": "Equal, 60/40 or down to individual items.",
   "onboarding.settleTitle": "Settle easily.",
-  "onboarding.settleBody": "PARI keeps track of who owes what.",
+  "onboarding.settleBody": "Setto keeps track of who owes what.",
   "onboarding.getStarted": "Get started",
 
   "groups.defaultSplit": "Default split",
-  "groups.noExpensesHint": "Add the first one and PARI keeps the balance.",
+  "groups.noExpensesHint": "Add the first one and Setto keeps the balance.",
   "groups.peopleHint": "No email needed. They can connect their profile later.",
 
-  "settle.hint": "PARI works out the fewest payments that clear everyone.",
+  "settle.hint": "Setto works out the fewest payments that clear everyone.",
   "settle.nothingPending": "No payments needed in this group right now.",
   "settle.pays": "{from} pays {to}",
   "settle.copyAmount": "Copy amount",
@@ -485,7 +485,7 @@ const en: Dict = {
   "account.title": "Create an account",
   "account.saveTitle": "Save your split",
   "account.save_split":
-    "Create an account to keep the expense, the people and your history in PARI.",
+    "Create an account to keep the expense, the people and your history in Setto.",
   "account.save_expense": "Create an account to save this expense and keep your history.",
 
   "account.create_group": "Groups need an account so balances stay in sync.",
@@ -527,7 +527,7 @@ const en: Dict = {
   "split.over": "{amount} too much",
   "split.finish": "Finish",
   "split.saveAsGroup": "Save as group",
-  "split.saveInPari": "Save in PARI",
+  "split.saveInSetto": "Save in Setto",
   "split.newSplit": "New split",
 
   "split.shareResult": "Share result",
@@ -594,7 +594,7 @@ const da: Dict = {
   "home.noGroups": "Ingen grupper endnu",
   "home.noGroupsHint": "Opret en gruppe til dem, du deler med.",
   "home.groupsNoExpenses": "Dine grupper er klar",
-  "home.groupsNoExpensesHint": "Tilføj den første udgift, så holder PARI styr på balancen.",
+  "home.groupsNoExpensesHint": "Tilføj den første udgift, så holder Setto styr på balancen.",
   "home.paidBy": "Betalt af {name}",
 
   "groups.title": "Grupper",
@@ -730,7 +730,7 @@ const da: Dict = {
   "profile.hideAmountsOff": "Skjul beløb",
   "profile.people": "Personer",
   "profile.addPerson": "Tilføj person",
-  "profile.howItWorks": "Sådan virker PARI",
+  "profile.howItWorks": "Sådan virker Setto",
   "profile.signOut": "Log ud",
   "profile.deleteAccount": "Slet konto",
   "profile.deleteAccountIntro": "Din konto slettes permanent. Læs hvad der sker:",
@@ -879,7 +879,7 @@ const da: Dict = {
   "receipt.aiDisclosure":
     "Billedet behandles af en AI-tjeneste for at læse varer og beløb. Gemte kvitteringer er private og kun synlige for dig.",
 
-  "auth.title": "Velkommen til PARI",
+  "auth.title": "Velkommen til Setto",
   "auth.subtitle": "Del alt. Gør op med et tryk.",
   "auth.email": "E-mail",
   "auth.password": "Adgangskode",
@@ -921,7 +921,7 @@ const da: Dict = {
   "invite.showQr": "Vis QR-kode",
   "invite.hideQr": "Skjul QR-kode",
   "invite.expires": "Linket virker i 30 dage.",
-  "invite.shareText": "Join {group} i PARI, så vi kan dele udgifterne.",
+  "invite.shareText": "Join {group} i Setto, så vi kan dele udgifterne.",
   "invite.invitedBy": "{name} har inviteret dig til",
   "invite.join": "Bliv medlem",
   "invite.joined": "Du er nu med i gruppen.",
@@ -935,7 +935,7 @@ const da: Dict = {
   "invite.needAccount": "Du skal have en konto for at være med — vi husker din invitation.",
   "invite.invalidTitle": "Invitationen findes ikke",
   "invite.invalidBody": "Linket er udløbet eller trukket tilbage. Bed om et nyt.",
-  "invite.getApp": "Hent PARI",
+  "invite.getApp": "Hent Setto",
   "invite.personTitle": "Invitér {name}",
   "invite.personDescription": "{name} beholder sine udgifter og sin saldo.",
   "invite.inviteNewPerson": "+ Invitér ny person",
@@ -949,7 +949,7 @@ const da: Dict = {
   "invite.personTaken": "Denne person er allerede tilknyttet en konto.",
 
 
-  "convert.title": "Gem dit split i PARI",
+  "convert.title": "Gem dit split i Setto",
   "convert.body": "Opret en gratis konto og behold dit split, følg saldi og gør op senere.",
   "convert.cta": "Gem mit split",
 
@@ -962,7 +962,7 @@ const da: Dict = {
   "start.title": "Split",
   "start.heading": "Hvordan vil du splitte?",
   "start.scan": "Scan kvittering",
-  "start.scanHint": "Tag et billede — PARI finder varerne",
+  "start.scanHint": "Tag et billede — Setto finder varerne",
   "start.manual": "Indtast beløb",
   "start.manualHint": "Skriv beløbet selv",
 
@@ -983,14 +983,14 @@ const da: Dict = {
   "onboarding.splitTitle": "Split på din måde.",
   "onboarding.splitBody": "Lige over, 60/40 eller helt ned på varelinjer.",
   "onboarding.settleTitle": "Gør nemt op.",
-  "onboarding.settleBody": "PARI holder styr på, hvem der skylder hvad.",
+  "onboarding.settleBody": "Setto holder styr på, hvem der skylder hvad.",
   "onboarding.getStarted": "Kom i gang",
 
   "groups.defaultSplit": "Standardfordeling",
-  "groups.noExpensesHint": "Tilføj den første, så holder PARI styr på balancen.",
+  "groups.noExpensesHint": "Tilføj den første, så holder Setto styr på balancen.",
   "groups.peopleHint": "Ingen e-mail nødvendig. De kan koble deres profil på senere.",
 
-  "settle.hint": "PARI finder de færreste betalinger, der gør alle kvit.",
+  "settle.hint": "Setto finder de færreste betalinger, der gør alle kvit.",
   "settle.nothingPending": "Der skal ikke betales noget i gruppen lige nu.",
   "settle.pays": "{from} betaler {to}",
   "settle.copyAmount": "Kopiér beløb",
@@ -1028,7 +1028,7 @@ const da: Dict = {
   "guest.migrationFailed": "Vi kunne ikke flytte dit split. Det ligger stadig på denne enhed.",
   "account.title": "Opret en konto",
   "account.saveTitle": "Gem dit split",
-  "account.save_split": "Opret en konto for at gemme udgiften, personerne og din historik i PARI.",
+  "account.save_split": "Opret en konto for at gemme udgiften, personerne og din historik i Setto.",
   "account.save_expense": "Opret en konto for at gemme udgiften og din historik.",
 
   "account.create_group": "Grupper kræver en konto, så saldi holdes opdateret.",
@@ -1070,7 +1070,7 @@ const da: Dict = {
   "split.over": "{amount} for meget",
   "split.finish": "Færdig",
   "split.saveAsGroup": "Gem som gruppe",
-  "split.saveInPari": "Gem i PARI",
+  "split.saveInSetto": "Gem i Setto",
   "split.newSplit": "Nyt split",
 
   "split.shareResult": "Del resultat",
