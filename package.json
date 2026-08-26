@@ -10,8 +10,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "ios:sync": "vite build && cap sync ios",
-    "ios:open": "cap open ios"
+    "ios:sync": "SETTO_NATIVE=1 vite build && cap sync ios",
+    "ios:open": "cap open ios",
+    "build:native": "SETTO_NATIVE=1 vite build"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",
