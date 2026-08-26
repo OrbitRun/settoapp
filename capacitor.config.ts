@@ -12,7 +12,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
   appId: "dk.setto.app",
   appName: "Setto",
-  webDir: ".output/public",
+  webDir: "dist/client",
   ios: {
     contentInset: "never",
     limitsNavigationsToAppBoundDomains: false,
