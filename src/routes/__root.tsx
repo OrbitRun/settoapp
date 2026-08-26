@@ -8,7 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -20,7 +20,9 @@ import { setDateLanguage } from "@/lib/dates";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountSheet } from "@/components/pari/AccountSheet";
 import { useScrollToTopOnNavigate } from "@/hooks/useScrollToTopOnNavigate";
-import { hideNativeSplash, syncNativeStatusBar } from "@/lib/native";
+import { hideNativeSplash, isNative, syncNativeStatusBar } from "@/lib/native";
+import { initNativeSecureSession } from "@/lib/native-secure-session";
+import { useDeepLinks } from "@/lib/deep-links";
 
 function NotFoundComponent() {
   return (
@@ -128,6 +130,8 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function AppFrame({ children }: { children: ReactNode }) {
   const pari = usePari();
+  // Native only: Universal Links (/invite, /join, /reset-password, /auth/callback).
+  useDeepLinks();
   useScrollToTopOnNavigate();
   // Privacy mode is read by the money formatter; subscribe here so every
   // rendered amount updates the instant the preference changes.
@@ -159,8 +163,29 @@ function AppFrame({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Native only: the Keychain session copy must be back in place before anything
+ * reads the Supabase session. Resolves synchronously-fast on web (no-op).
+ */
+function useSecureSessionReady() {
+  const [ready, setReady] = useState(!isNative());
+  useEffect(() => {
+    let active = true;
+    void initNativeSecureSession().then(() => {
+      if (active) setReady(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  return ready;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const secureSessionReady = useSecureSessionReady();
+
+  if (!secureSessionReady) return <div className="min-h-svh bg-background" />;
 
   return (
     <QueryClientProvider client={queryClient}>

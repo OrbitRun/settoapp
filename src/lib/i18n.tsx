@@ -342,6 +342,7 @@ const en: Dict = {
   "auth.signIn": "Sign in",
   "auth.signUp": "Create account",
   "auth.google": "Continue with Google",
+  "auth.apple": "Sign in with Apple",
   "auth.toSignUp": "New here? Create an account",
   "auth.toSignIn": "Already have an account? Sign in",
   "auth.checkEmail": "Check your email to confirm your account.",
@@ -458,6 +459,8 @@ const en: Dict = {
 
   "auth.error": "Something went wrong",
   "auth.googleFailed": "Google sign-in failed",
+  "auth.appleFailed": "Apple sign-in failed",
+  "auth.cancelled": "Sign-in cancelled",
   "settle.registerPayment": "Register payment",
   "settle.amount": "Amount",
   "settle.outstanding": "Remaining balance",
@@ -886,6 +889,7 @@ const da: Dict = {
   "auth.signIn": "Log ind",
   "auth.signUp": "Opret konto",
   "auth.google": "Fortsæt med Google",
+  "auth.apple": "Log ind med Apple",
   "auth.toSignUp": "Ny her? Opret en konto",
   "auth.toSignIn": "Har du allerede en konto? Log ind",
   "auth.checkEmail": "Tjek din mail for at bekræfte kontoen.",
@@ -1020,6 +1024,8 @@ const da: Dict = {
 
   "auth.error": "Noget gik galt",
   "auth.googleFailed": "Google-login mislykkedes",
+  "auth.appleFailed": "Apple-login mislykkedes",
+  "auth.cancelled": "Login annulleret",
 
   "guest.badge": "Gæst",
   "guest.yourSplits": "Dine splits",

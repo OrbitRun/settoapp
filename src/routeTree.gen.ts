@@ -17,6 +17,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReceiptsRouteImport } from './routes/receipts'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ExpenseExpenseIdRouteImport } from './routes/expense.$expenseId'
 import { Route as GroupsIndexRouteImport } from './routes/groups.index'
 import { Route as GroupsGroupIdRouteImport } from './routes/groups.$groupId'
@@ -72,6 +73,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
 } as any)
 const ExpenseExpenseIdRoute = ExpenseExpenseIdRouteImport.update({
   id: '/expense/$expenseId',
@@ -152,12 +158,13 @@ const GroupsGroupIdEditRoute = GroupsGroupIdEditRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/receipts': typeof ReceiptsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
@@ -177,12 +184,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/receipts': typeof ReceiptsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
@@ -203,12 +211,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/receipts': typeof ReceiptsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/expense/$expenseId': typeof ExpenseExpenseIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRoute
   '/groups/new': typeof GroupsNewRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/receipts'
     | '/reset-password'
+    | '/auth/callback'
     | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/receipts'
     | '/reset-password'
+    | '/auth/callback'
     | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/receipts'
     | '/reset-password'
+    | '/auth/callback'
     | '/expense/$expenseId'
     | '/groups/$groupId'
     | '/groups/new'
@@ -306,7 +318,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   HomeRoute: typeof HomeRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
@@ -386,6 +398,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/expense/$expenseId': {
       id: '/expense/$expenseId'
@@ -495,10 +514,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   HomeRoute: HomeRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,

@@ -39,8 +39,12 @@ export const Route = createFileRoute("/invite/$token")({
   component: InviteScreen,
 });
 
-/** Placeholder until the native app ships — the link stays the same. */
-const APP_STORE_URL = "https://apps.apple.com/app/pari";
+/**
+ * The real App Store listing does not exist yet, so no store link is rendered.
+ * The invitation itself works fully in the browser. Add the real
+ * `https://apps.apple.com/app/id<APP_ID>` URL in N5 once the listing is live.
+ */
+const APP_STORE_URL: string | null = null;
 
 function InviteScreen() {
   const { token } = Route.useParams();
@@ -158,14 +162,16 @@ function InviteScreen() {
             </p>
           </>
         ) : null}
-        <a
-          href={APP_STORE_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="block py-3 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {t("invite.getApp")}
-        </a>
+        {APP_STORE_URL ? (
+          <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="block py-3 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("invite.getApp")}
+          </a>
+        ) : null}
       </div>
     </Screen>
   );

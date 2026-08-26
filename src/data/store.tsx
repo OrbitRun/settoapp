@@ -23,6 +23,7 @@ import {
   type SplitMode,
 } from "@/lib/split";
 import { detectLanguage, type Language } from "@/lib/i18n";
+import { clearNativeSecureSession } from "@/lib/native-secure-session";
 import { diffExpense, type ExpenseSnapshot } from "@/lib/history";
 import { lockMoney, type MoneyContext } from "@/lib/expense-money";
 import { emptyDraft, itemTotalMinor, type DraftItem, type SplitDraft } from "./draft";
@@ -1227,6 +1228,8 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const signOut = async () => {
       await supabase.auth.signOut();
+      // Native only: drop the Keychain copy of the session as well.
+      await clearNativeSecureSession();
       queryClient.clear();
       clearGuestState();
       setGuestRaw(withSelfPerson(emptyGuestState));

@@ -8,6 +8,8 @@ import { readPendingInvite } from "@/data/invitations";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { authMessageKey } from "@/lib/auth-errors";
+import { isNative } from "@/lib/native";
+import { nativeOAuthSignIn } from "@/lib/native-auth";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
@@ -98,19 +100,43 @@ function AuthScreen() {
     }
   };
 
-  const google = async () => {
+  /**
+   * Web: unchanged browser redirect through the Lovable broker.
+   * Native: system-browser auth session returning through the hosted
+   * Universal Link callback (see src/lib/native-auth.ts).
+   */
+  const oauth = async (provider: "google" | "apple") => {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
+    const failKey = provider === "google" ? "auth.googleFailed" : "auth.appleFailed";
+
+    if (isNative()) {
+      const result = await nativeOAuthSignIn(provider);
+      setBusy(false);
+      if (result.status === "cancelled") {
+        toast.message(t("auth.cancelled"));
+        return;
+      }
+      if (result.status === "error") {
+        toast.error(t(failKey));
+        return;
+      }
+      navigate({ to: "/home" });
+      return;
+    }
+
+    // Web flow stays exactly as before: broker redirect back to the origin.
+    const result = await lovable.auth.signInWithOAuth(provider, {
       redirect_uri: window.location.origin,
     });
     if (result.error) {
       setBusy(false);
-      toast.error(t("auth.googleFailed"));
+      toast.error(t(failKey));
       return;
     }
     if (result.redirected) return;
     navigate({ to: "/home" });
   };
+
 
   return (
     <div className="flex min-h-svh items-center bg-background px-6">
@@ -156,10 +182,23 @@ function AuthScreen() {
           </PrimaryButton>
         </form>
 
-        <div className="mt-3">
-          <SecondaryButton onClick={google} disabled={busy}>
+        <div className="mt-3 space-y-3">
+          <SecondaryButton onClick={() => oauth("google")} disabled={busy}>
             {t("auth.google")}
           </SecondaryButton>
+          {/* Apple's presentation rules: equal prominence, full width, the
+              Apple logo and the official "Sign in with Apple" wording. */}
+          <button
+            type="button"
+            onClick={() => oauth("apple")}
+            disabled={busy}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-black text-[15px] font-medium text-white disabled:opacity-60"
+          >
+            <svg viewBox="0 0 384 512" aria-hidden="true" className="h-[18px] w-[18px] fill-current">
+              <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+            </svg>
+            {t("auth.apple")}
+          </button>
         </div>
 
         {mode === "signin" ? (

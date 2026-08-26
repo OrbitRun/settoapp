@@ -3,8 +3,13 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["TEAMID.app.pari.ios"],
-        "components": [{ "/": "/invite/*", "comment": "Group invitations" }]
+        "appIDs": ["TEAMID.dk.setto.app"],
+        "components": [
+          { "/": "/invite/*", "comment": "Group invitations" },
+          { "/": "/join/*", "comment": "Join codes" },
+          { "/": "/reset-password", "comment": "Password reset" },
+          { "/": "/auth/callback", "comment": "OAuth return" }
+        ]
       }
     ]
   }
