@@ -124,8 +124,9 @@ function AuthScreen() {
       return;
     }
 
+    // Web flow stays exactly as before: broker redirect back to the origin.
     const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: `${window.location.origin}/auth/callback`,
+      redirect_uri: window.location.origin,
     });
     if (result.error) {
       setBusy(false);
