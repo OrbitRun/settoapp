@@ -26,7 +26,7 @@ export type NativeAuthProvider = "google" | "apple";
 export type NativeAuthResult =
   | { status: "success" }
   | { status: "cancelled" }
-  | { status: "error"; reason: "provider" | "network" | "unknown"; message?: string };
+  | { status: "error"; reason: "provider" | "network" | "unknown"; message?: string | undefined };
 
 const CALLBACK_TIMEOUT_MS = 180_000;
 
