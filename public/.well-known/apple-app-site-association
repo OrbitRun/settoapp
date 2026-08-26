@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["TEAMID.dk.setto.app"],
+        "appIDs": ["PPRV986F35.dk.setto.app"],
         "components": [
           { "/": "/invite/*", "comment": "Group invitations" },
           { "/": "/join/*", "comment": "Join codes" },
