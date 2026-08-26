@@ -1,13 +1,13 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
- * Setto — native shell configuration (N2 foundation).
+ * Setto — native shell configuration.
  *
- * The web app is a TanStack Start app with server-side rendering and server
- * functions, so the native shell loads the deployed Setto origin instead of a
- * purely static local bundle (a local bundle would have no SSR HTML and no
- * server-function endpoint). `webDir` still points at the built client assets
- * so `cap sync` has a valid, non-secret asset payload to copy.
+ * The iOS app boots from its bundled local web assets (`dist/client`, built with
+ * `SETTO_NATIVE=1 vite build`, which emits a real `index.html` SPA shell).
+ * There is no production `server.url`: the app is not a remote website wrapper.
+ * Server functions are called against the deployed Setto origin at runtime via
+ * the native server-function fetch adapter (`src/lib/native-serverfn.ts`).
  */
 const config: CapacitorConfig = {
   appId: "dk.setto.app",
@@ -17,11 +17,11 @@ const config: CapacitorConfig = {
     contentInset: "never",
     limitsNavigationsToAppBoundDomains: false,
     backgroundColor: "#F7F6F2",
+    scheme: "capacitor",
   },
   server: {
-    // Production Setto deployment. Replaced by a local bundle only if the app
-    // is ever migrated to a fully client-rendered build.
-    url: "https://settoapp.lovable.app",
+    iosScheme: "capacitor",
+    androidScheme: "https",
     cleartext: false,
   },
   plugins: {
