@@ -79,11 +79,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "PARI — Share anything. Settle easily." },
+      { title: "Setto — Share anything. Settle easily." },
       {
         name: "description",
         content:
-          "PARI is the calm way to split shared expenses — dinner, rent, groceries or a weekend away.",
+          "Setto is the calm way to split shared expenses — dinner, rent, groceries or a weekend away.",
       },
       { name: "theme-color", content: "#F7F6F2" },
       { property: "og:type", content: "website" },

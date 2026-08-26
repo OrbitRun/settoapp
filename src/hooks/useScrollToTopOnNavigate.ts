@@ -4,7 +4,7 @@ import { useRouterState } from "@tanstack/react-router";
 /**
  * Global forward-navigation scroll reset.
  *
- * PARI scrolls the document (Screen has no inner overflow container), so a new
+ * Setto scrolls the document (Screen has no inner overflow container), so a new
  * screen can otherwise inherit the previous screen's offset. Back/forward
  * (POP) is left to TanStack's scroll restoration; only pathname changes from a
  * push/replace reset to the top. Search/hash changes and bottom sheets never

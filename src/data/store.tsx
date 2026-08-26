@@ -187,7 +187,7 @@ type PariContextValue = {
   resetDraft: () => void;
   /** True once the Supabase session check has resolved. */
   authReady: boolean;
-  /** True when nobody is signed in — PARI runs as a local, device-only workspace. */
+  /** True when nobody is signed in — Setto runs as a local, device-only workspace. */
   isGuest: boolean;
 
   /** Opens the contextual "create an account" sheet instead of redirecting. */
@@ -280,7 +280,7 @@ async function migrateGuestData(userId: string, state: GuestState): Promise<stri
       .from("people")
       .insert({
         owner_user_id: userId,
-        name: (profileRow?.display_name as string | undefined) || "PARI",
+        name: (profileRow?.display_name as string | undefined) || "Setto",
         is_self: true,
         linked_profile_id: userId,
       })
@@ -1345,7 +1345,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       currentPersonId,
       // The "me" person is the identity used in every split, so it wins over
       // the generic profile default.
-      currentProfileName: selfPerson?.name || profile?.display_name || "PARI",
+      currentProfileName: selfPerson?.name || profile?.display_name || "Setto",
 
       personById,
       personName,

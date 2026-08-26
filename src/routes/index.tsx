@@ -7,13 +7,13 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "PARI — Share anything. Settle easily." },
+      { title: "Setto — Share anything. Settle easily." },
       {
         name: "description",
         content:
-          "Split a bill in seconds — scan a receipt or enter an amount. No account needed to try PARI.",
+          "Split a bill in seconds — scan a receipt or enter an amount. No account needed to try Setto.",
       },
-      { property: "og:title", content: "PARI — Share anything. Settle easily." },
+      { property: "og:title", content: "Setto — Share anything. Settle easily." },
       {
         property: "og:description",
         content: "The calm way to split shared expenses with the people around you.",
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
 });
 
 /**
- * The canonical unauthenticated root of PARI. Signed-in users are forwarded to
+ * The canonical unauthenticated root of Setto. Signed-in users are forwarded to
  * their authenticated home; guests stay here with no app shell around them.
  */
 function WelcomeScreen() {
@@ -40,7 +40,7 @@ function WelcomeScreen() {
     <div className="min-h-svh bg-background">
       <div className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col px-7 pb-[max(env(safe-area-inset-bottom),2rem)] pt-16">
         <div className="animate-rise flex flex-1 flex-col justify-center">
-          <p className="text-sm text-muted-foreground">PARI</p>
+          <p className="text-sm text-muted-foreground">Setto</p>
           <h1 className="mt-4 whitespace-pre-line text-[38px] font-semibold leading-[1.08] tracking-[-0.035em]">
             {t("welcome.title")}
           </h1>

@@ -12,12 +12,12 @@ import { AuthGate } from "@/components/pari/AuthGate";
 export const Route = createFileRoute("/groups/")({
   head: () => ({
     meta: [
-      { title: "Groups — PARI" },
+      { title: "Groups — Setto" },
       {
         name: "description",
         content: "Households, holidays and everyday groups with a balance you can trust.",
       },
-      { property: "og:title", content: "Groups — PARI" },
+      { property: "og:title", content: "Groups — Setto" },
       {
         property: "og:description",
         content: "Households, holidays and everyday groups with a balance you can trust.",

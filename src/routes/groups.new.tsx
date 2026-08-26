@@ -26,12 +26,12 @@ export const Route = createFileRoute("/groups/new")({
     typeof search["people"] === "string" ? { people: search["people"] } : {},
   head: () => ({
     meta: [
-      { title: "Create a group — PARI" },
+      { title: "Create a group — Setto" },
       {
         name: "description",
         content: "Name it, add the people, done. No sign-ups needed for anyone else.",
       },
-      { property: "og:title", content: "Create a group — PARI" },
+      { property: "og:title", content: "Create a group — Setto" },
       {
         property: "og:description",
         content: "Name it, add the people, done. No sign-ups needed for anyone else.",

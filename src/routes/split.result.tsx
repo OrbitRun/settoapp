@@ -18,9 +18,9 @@ export const Route = createFileRoute("/split/result")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Split saved — PARI" },
+      { title: "Split saved — Setto" },
       { name: "description", content: "Everyone's share, calculated to the øre." },
-      { property: "og:title", content: "Split saved — PARI" },
+      { property: "og:title", content: "Split saved — Setto" },
       { property: "og:description", content: "Everyone's share, calculated to the øre." },
     ],
   }),
@@ -68,7 +68,7 @@ function ResultScreen() {
         `${pari.personName(allocation.personId)}: ${formatMinorIn(allocation.amountMinor, originalCurrency, { compact: false, raw: true })}`,
     ),
     "",
-    "PARI",
+    "Setto",
   ].join("\n");
 
   const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
@@ -86,7 +86,7 @@ function ResultScreen() {
     toast.success(t("split.copied"));
   };
 
-  const saveInPari = () => {
+  const saveInSetto = () => {
     if (pari.isGuest) {
       pari.requireAccount("save_split");
       return;
@@ -163,11 +163,11 @@ function ResultScreen() {
               <p className="text-[15px] font-medium tracking-tight">{t("convert.title")}</p>
               <p className="mt-1 text-sm text-muted-foreground">{t("convert.body")}</p>
               <div className="mt-4">
-                <SecondaryButton onClick={saveInPari}>{t("convert.cta")}</SecondaryButton>
+                <SecondaryButton onClick={saveInSetto}>{t("convert.cta")}</SecondaryButton>
               </div>
             </div>
           ) : (
-            <SecondaryButton onClick={saveInPari}>{t("split.saveAsGroup")}</SecondaryButton>
+            <SecondaryButton onClick={saveInSetto}>{t("split.saveAsGroup")}</SecondaryButton>
           )
         ) : null}
 

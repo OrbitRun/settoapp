@@ -18,12 +18,12 @@ import { AuthGate } from "@/components/pari/AuthGate";
 export const Route = createFileRoute("/activity")({
   head: () => ({
     meta: [
-      { title: "Activity — PARI" },
+      { title: "Activity — Setto" },
       {
         name: "description",
         content: "A calm, transparent log of every expense, change and settlement.",
       },
-      { property: "og:title", content: "Activity — PARI" },
+      { property: "og:title", content: "Activity — Setto" },
       {
         property: "og:description",
         content: "A calm, transparent log of every expense, change and settlement.",

@@ -10,15 +10,15 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/split/start")({
   head: () => ({
     meta: [
-      { title: "Split an expense — PARI" },
+      { title: "Split an expense — Setto" },
       {
         name: "description",
-        content: "Scan a receipt or enter an amount — PARI splits it in seconds.",
+        content: "Scan a receipt or enter an amount — Setto splits it in seconds.",
       },
-      { property: "og:title", content: "Split an expense — PARI" },
+      { property: "og:title", content: "Split an expense — Setto" },
       {
         property: "og:description",
-        content: "Scan a receipt or enter an amount — PARI splits it in seconds.",
+        content: "Scan a receipt or enter an amount — Setto splits it in seconds.",
       },
     ],
   }),

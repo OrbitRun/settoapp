@@ -1,5 +1,5 @@
 /**
- * Guest workspace — a fully local PARI dataset for people who haven't created
+ * Guest workspace — a fully local Setto dataset for people who haven't created
  * an account yet. Stored on the device so a reload (or an OAuth redirect)
  * never loses a split in progress. Never contains demo data.
  */
