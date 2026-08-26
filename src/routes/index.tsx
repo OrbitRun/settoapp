@@ -42,7 +42,7 @@ function WelcomeScreen() {
       <div className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col px-7 pb-[max(env(safe-area-inset-bottom),2rem)] pt-16">
         <div className="animate-rise flex flex-1 flex-col justify-center">
           <Wordmark className="h-6" />
-          <h1 className="mt-4 whitespace-pre-line text-[38px] font-semibold leading-[1.08] tracking-[-0.035em]">
+          <h1 className="mt-6 whitespace-pre-line text-[38px] font-semibold leading-[1.08] tracking-[-0.035em]">
             {t("welcome.title")}
           </h1>
           <p className="mt-4 max-w-[28ch] text-[17px] text-muted-foreground">
@@ -63,14 +63,18 @@ function WelcomeScreen() {
           >
             {t("welcome.secondary")}
           </Link>
-          <Link
-            to="/auth"
-            search={{ mode: "signup" }}
-            className="mx-auto block py-3 text-center text-sm text-muted-foreground"
-          >
-            {t("welcome.createAccount")}
-          </Link>
-          <p className="text-center text-xs text-muted-foreground">{t("welcome.note")}</p>
+          <div className="space-y-1">
+            <Link
+              to="/auth"
+              search={{ mode: "signup" }}
+              className="mx-auto block py-3 text-center text-sm text-muted-foreground"
+            >
+              {t("welcome.createAccount")}
+            </Link>
+            <p className="text-center text-[11px] leading-snug text-muted-foreground/70">
+              {t("welcome.note")}
+            </p>
+          </div>
         </div>
       </div>
     </div>
