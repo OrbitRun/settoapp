@@ -41,41 +41,13 @@ export function SettoMark() {
           }
         />
       ))}
-      <svg
-        viewBox="0 0 301 461"
-        className="relative block h-32 w-[84px]"
-        fill="none"
-        role="img"
+      <img
+        src={settoMark.url}
+        alt=""
         aria-hidden
-        preserveAspectRatio="xMidYMid meet"
-      >
-        <g transform="matrix(1.04634,0,0,1.06061,-1095.71,-169.045)">
-          <g className="animate-setto-bar-a">
-            <g transform="matrix(0.812663,0.147323,0.138628,0.799857,-110.097,11.255)">
-              <path
-                d="M1459,395L1685,166"
-                stroke="currentColor"
-                className="text-foreground"
-                strokeWidth={110}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </g>
-          </g>
-          <g className="animate-setto-bar-b">
-            <g transform="matrix(0.812663,0.147323,0.138628,0.799857,-140.68,-169.774)">
-              <path
-                d="M1459,395L1685,166"
-                stroke="currentColor"
-                className="text-accent"
-                strokeWidth={110}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </g>
-          </g>
-        </g>
-      </svg>
+        decoding="async"
+        className="animate-setto-mark relative block h-32 w-full object-contain"
+      />
     </div>
   );
 }
