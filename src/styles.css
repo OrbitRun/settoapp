@@ -262,8 +262,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-setto-bar-a,
-  .animate-setto-bar-b,
+  .animate-setto-mark,
   .animate-setto-glow,
   .animate-setto-spark,
   .animate-rise {
