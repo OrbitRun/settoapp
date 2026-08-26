@@ -63,14 +63,18 @@ function WelcomeScreen() {
           >
             {t("welcome.secondary")}
           </Link>
-          <Link
-            to="/auth"
-            search={{ mode: "signup" }}
-            className="mx-auto block py-3 text-center text-sm text-muted-foreground"
-          >
-            {t("welcome.createAccount")}
-          </Link>
-          <p className="text-center text-xs text-muted-foreground">{t("welcome.note")}</p>
+          <div className="space-y-1">
+            <Link
+              to="/auth"
+              search={{ mode: "signup" }}
+              className="mx-auto block py-3 text-center text-sm text-muted-foreground"
+            >
+              {t("welcome.createAccount")}
+            </Link>
+            <p className="text-center text-[11px] leading-snug text-muted-foreground/70">
+              {t("welcome.note")}
+            </p>
+          </div>
         </div>
       </div>
     </div>
