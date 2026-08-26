@@ -285,3 +285,10 @@
     opacity: 0.18;
   }
 }
+
+/* Celebration: paint root + safe-area behind the status bar in the same deep green. */
+html.celebrating,
+html.celebrating body {
+  background-color: #071c19 !important;
+  color-scheme: dark;
+}
