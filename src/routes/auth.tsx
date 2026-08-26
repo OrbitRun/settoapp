@@ -98,19 +98,42 @@ function AuthScreen() {
     }
   };
 
-  const google = async () => {
+  /**
+   * Web: unchanged browser redirect through the Lovable broker.
+   * Native: system-browser auth session returning through the hosted
+   * Universal Link callback (see src/lib/native-auth.ts).
+   */
+  const oauth = async (provider: "google" | "apple") => {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const failKey = provider === "google" ? "auth.googleFailed" : "auth.appleFailed";
+
+    if (isNative()) {
+      const result = await nativeOAuthSignIn(provider);
+      setBusy(false);
+      if (result.status === "cancelled") {
+        toast.message(t("auth.cancelled"));
+        return;
+      }
+      if (result.status === "error") {
+        toast.error(t(failKey));
+        return;
+      }
+      navigate({ to: "/home" });
+      return;
+    }
+
+    const result = await lovable.auth.signInWithOAuth(provider, {
+      redirect_uri: `${window.location.origin}/auth/callback`,
     });
     if (result.error) {
       setBusy(false);
-      toast.error(t("auth.googleFailed"));
+      toast.error(t(failKey));
       return;
     }
     if (result.redirected) return;
     navigate({ to: "/home" });
   };
+
 
   return (
     <div className="flex min-h-svh items-center bg-background px-6">
