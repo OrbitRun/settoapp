@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
+import { Wordmark } from "@/components/pari/Wordmark";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,7 +41,7 @@ function WelcomeScreen() {
     <div className="min-h-svh bg-background">
       <div className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col px-7 pb-[max(env(safe-area-inset-bottom),2rem)] pt-16">
         <div className="animate-rise flex flex-1 flex-col justify-center">
-          <p className="text-sm text-muted-foreground">Setto</p>
+          <Wordmark className="h-6" />
           <h1 className="mt-4 whitespace-pre-line text-[38px] font-semibold leading-[1.08] tracking-[-0.035em]">
             {t("welcome.title")}
           </h1>

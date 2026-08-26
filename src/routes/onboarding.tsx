@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PrimaryButton } from "@/components/pari/Buttons";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
+import { Wordmark } from "@/components/pari/Wordmark";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -37,7 +38,7 @@ function OnboardingScreen() {
     <div className="min-h-svh bg-background">
       <div className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col px-7 pb-12 pt-16">
         <div key={step} className="animate-rise flex flex-1 flex-col justify-center">
-          <p className="text-sm text-muted-foreground">Setto</p>
+          <Wordmark className="h-6" />
           <h1 className="mt-4 text-[38px] font-semibold leading-[1.08] tracking-[-0.035em]">
             {t(current.titleKey)}
           </h1>
