@@ -62,7 +62,22 @@ function CreateGroupScreen() {
   const navigate = useNavigate();
 
   // Coming from a finished split: reuse exactly the people who shared it.
-  const { people: carried, expenseId: carriedExpenseId } = Route.useSearch();
+  const {
+    people: carried,
+    peopleIds: carriedIds,
+    expenseId: carriedExpenseId,
+  } = Route.useSearch();
+  // Durable identity for the people carried over from a split, so the group is
+  // built from exactly those person rows instead of a name lookup.
+  const carriedIdByName = new Map<string, string>();
+  {
+    const names = (carried ?? "").split("|").map((value) => value.trim());
+    const ids = (carriedIds ?? "").split("|").map((value) => value.trim());
+    names.forEach((personName, index) => {
+      const id = ids[index];
+      if (personName && id) carriedIdByName.set(personName.toLowerCase(), id);
+    });
+  }
   const [name, setName] = useState("");
   // Only the other people — "you" is always a member and comes from the account.
   const [others, setOthers] = useState<string[]>(() =>
