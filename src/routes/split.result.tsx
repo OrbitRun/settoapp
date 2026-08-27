@@ -96,11 +96,23 @@ function ResultScreen() {
       navigate({ to: "/groups/$groupId", params: { groupId: expense.group_id } });
       return;
     }
-    const names = allocations
-      .map((allocation) => pari.personName(allocation.personId))
-      .filter((name) => name && name !== "—");
-    // Carry the just-saved split along so the new group actually contains it.
-    navigate({ to: "/groups/new", search: { people: names.join("|"), expenseId: expense.id } });
+    const participants = allocations
+      .map((allocation) => ({
+        id: allocation.personId,
+        name: pari.personName(allocation.personId),
+      }))
+      .filter((person) => person.name && person.name !== "—");
+    // Carry the just-saved split along so the new group actually contains it —
+    // people travel with their ids, so the group reuses the exact same person
+    // rows the split already refers to instead of matching on display name.
+    navigate({
+      to: "/groups/new",
+      search: {
+        people: participants.map((person) => person.name).join("|"),
+        peopleIds: participants.map((person) => person.id).join("|"),
+        expenseId: expense.id,
+      },
+    });
   };
 
   const newSplit = () => {

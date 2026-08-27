@@ -19,11 +19,12 @@ import { cn } from "@/lib/utils";
 import type { SplitMode } from "@/lib/split";
 import { AuthGate } from "@/components/pari/AuthGate";
 
-type GroupSearch = { people?: string; expenseId?: string };
+type GroupSearch = { people?: string; peopleIds?: string; expenseId?: string };
 
 export const Route = createFileRoute("/groups/new")({
   validateSearch: (search: Record<string, unknown>): GroupSearch => ({
     ...(typeof search["people"] === "string" ? { people: search["people"] } : {}),
+    ...(typeof search["peopleIds"] === "string" ? { peopleIds: search["peopleIds"] } : {}),
     ...(typeof search["expenseId"] === "string" ? { expenseId: search["expenseId"] } : {}),
   }),
   head: () => ({
@@ -61,7 +62,22 @@ function CreateGroupScreen() {
   const navigate = useNavigate();
 
   // Coming from a finished split: reuse exactly the people who shared it.
-  const { people: carried, expenseId: carriedExpenseId } = Route.useSearch();
+  const {
+    people: carried,
+    peopleIds: carriedIds,
+    expenseId: carriedExpenseId,
+  } = Route.useSearch();
+  // Durable identity for the people carried over from a split, so the group is
+  // built from exactly those person rows instead of a name lookup.
+  const carriedIdByName = new Map<string, string>();
+  {
+    const names = (carried ?? "").split("|").map((value) => value.trim());
+    const ids = (carriedIds ?? "").split("|").map((value) => value.trim());
+    names.forEach((personName, index) => {
+      const id = ids[index];
+      if (personName && id) carriedIdByName.set(personName.toLowerCase(), id);
+    });
+  }
   const [name, setName] = useState("");
   // Only the other people — "you" is always a member and comes from the account.
   const [others, setOthers] = useState<string[]>(() =>
@@ -107,6 +123,7 @@ function CreateGroupScreen() {
       const groupId = await pari.createGroup({
         name,
         personNames: people,
+        personIds: people.map((person) => carriedIdByName.get(person.toLowerCase()) ?? null),
         defaultSplitType: defaultSplit,
         percentages: rule.percentages,
         shares: rule.shares,

@@ -687,16 +687,28 @@ export type Database = {
           status: string
         }[]
       }
-      create_group: {
-        Args: {
-          _default_split_type: string
-          _name: string
-          _percentages?: Json
-          _person_names?: string[]
-          _shares?: Json
-        }
-        Returns: string
-      }
+      create_group:
+        | {
+            Args: {
+              _default_split_type: string
+              _name: string
+              _percentages?: Json
+              _person_names?: string[]
+              _shares?: Json
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _default_split_type: string
+              _name: string
+              _percentages?: Json
+              _person_ids?: string[]
+              _person_names?: string[]
+              _shares?: Json
+            }
+            Returns: string
+          }
       delete_my_account: { Args: never; Returns: Json }
       delete_unused_group_placeholder: {
         Args: { _group_id: string; _person_id: string }
