@@ -123,6 +123,7 @@ function CreateGroupScreen() {
       const groupId = await pari.createGroup({
         name,
         personNames: people,
+        personIds: people.map((person) => carriedIdByName.get(person.toLowerCase()) ?? null),
         defaultSplitType: defaultSplit,
         percentages: rule.percentages,
         shares: rule.shares,
