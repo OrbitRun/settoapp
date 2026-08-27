@@ -10,6 +10,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { authMessageKey } from "@/lib/auth-errors";
 import { isNative } from "@/lib/native";
 import { nativeOAuthSignIn } from "@/lib/native-auth";
+import { postAuthDestination } from "@/lib/first-run";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth/")({
@@ -86,12 +87,12 @@ function AuthScreen() {
         });
         if (error) throw error;
         const { data: session } = await supabase.auth.getSession();
-        if (session.session) navigate({ to: "/home" });
+        if (session.session) navigate(await postAuthDestination());
         else toast.success(t("auth.checkEmail"));
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/home" });
+        navigate(await postAuthDestination());
       }
     } catch (error) {
       toast.error(t(authMessageKey(error)));
@@ -120,7 +121,7 @@ function AuthScreen() {
         toast.error(t(failKey));
         return;
       }
-      navigate({ to: "/home" });
+      navigate(await postAuthDestination());
       return;
     }
 
@@ -134,7 +135,7 @@ function AuthScreen() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/home" });
+    navigate(await postAuthDestination());
   };
 
 
