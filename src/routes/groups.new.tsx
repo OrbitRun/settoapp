@@ -61,7 +61,7 @@ function CreateGroupScreen() {
   const navigate = useNavigate();
 
   // Coming from a finished split: reuse exactly the people who shared it.
-  const { people: carried } = Route.useSearch();
+  const { people: carried, expenseId: carriedExpenseId } = Route.useSearch();
   const [name, setName] = useState("");
   // Only the other people — "you" is always a member and comes from the account.
   const [others, setOthers] = useState<string[]>(() =>
