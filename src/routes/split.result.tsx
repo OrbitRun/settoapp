@@ -99,7 +99,8 @@ function ResultScreen() {
     const names = allocations
       .map((allocation) => pari.personName(allocation.personId))
       .filter((name) => name && name !== "—");
-    navigate({ to: "/groups/new", search: { people: names.join("|") } });
+    // Carry the just-saved split along so the new group actually contains it.
+    navigate({ to: "/groups/new", search: { people: names.join("|"), expenseId: expense.id } });
   };
 
   const newSplit = () => {

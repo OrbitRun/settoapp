@@ -19,11 +19,13 @@ import { cn } from "@/lib/utils";
 import type { SplitMode } from "@/lib/split";
 import { AuthGate } from "@/components/pari/AuthGate";
 
-type GroupSearch = { people?: string };
+type GroupSearch = { people?: string; expenseId?: string };
 
 export const Route = createFileRoute("/groups/new")({
-  validateSearch: (search: Record<string, unknown>): GroupSearch =>
-    typeof search["people"] === "string" ? { people: search["people"] } : {},
+  validateSearch: (search: Record<string, unknown>): GroupSearch => ({
+    ...(typeof search["people"] === "string" ? { people: search["people"] } : {}),
+    ...(typeof search["expenseId"] === "string" ? { expenseId: search["expenseId"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Create a group — Setto" },
@@ -59,7 +61,7 @@ function CreateGroupScreen() {
   const navigate = useNavigate();
 
   // Coming from a finished split: reuse exactly the people who shared it.
-  const { people: carried } = Route.useSearch();
+  const { people: carried, expenseId: carriedExpenseId } = Route.useSearch();
   const [name, setName] = useState("");
   // Only the other people — "you" is always a member and comes from the account.
   const [others, setOthers] = useState<string[]>(() =>
@@ -110,6 +112,16 @@ function CreateGroupScreen() {
         shares: rule.shares,
       });
       if (!groupId) return;
+
+      // Saving a finished ad hoc split as a group: move that expense into the
+      // new group, so the group opens with it (and its balance) already there.
+      // The group was created from exactly these people, so the split's
+      // participants are already members — only the link is missing.
+      const carriedExpense = carriedExpenseId ? pari.expenseById(carriedExpenseId) : undefined;
+      if (carriedExpense && !carriedExpense.group_id) {
+        await pari.updateExpense(carriedExpense.id, { groupId });
+      }
+
       navigate({ to: "/groups/$groupId", params: { groupId } });
     } catch {
       toast.error(t("common.saveFailed"));
