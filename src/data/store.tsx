@@ -84,6 +84,12 @@ export type AddExpenseInput = {
 type CreateGroupInput = {
   name: string;
   personNames: string[];
+  /**
+   * Optional durable identities, index-aligned with `personNames`. When a person
+   * already exists (e.g. carried over from a finished split), pass the id so the
+   * group reuses that exact row instead of guessing by name.
+   */
+  personIds?: (string | null)[];
   defaultSplitType: SplitMode;
   /**
    * Default rule values keyed by member key: "self" for the owner, otherwise the
