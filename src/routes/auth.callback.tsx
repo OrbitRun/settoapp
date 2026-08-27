@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { postAuthDestination } from "@/lib/first-run";
+import { readPendingInvite } from "@/data/invitations";
 import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/i18n";
 
@@ -64,7 +64,12 @@ function AuthCallbackScreen() {
         return;
       }
 
-      navigate(await postAuthDestination()).catch(() => undefined);
+      const pending = readPendingInvite();
+      navigate(
+        pending
+          ? { to: "/invite/$token", params: { token: pending }, replace: true }
+          : { to: "/home", replace: true },
+      ).catch(() => undefined);
     };
 
     void finish();
