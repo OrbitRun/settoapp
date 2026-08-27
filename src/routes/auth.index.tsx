@@ -12,7 +12,7 @@ import { isNative } from "@/lib/native";
 import { nativeOAuthSignIn } from "@/lib/native-auth";
 import { useT } from "@/lib/i18n";
 
-export const Route = createFileRoute("/auth")({
+export const Route = createFileRoute("/auth/")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>): { mode?: "signup" } =>
     search["mode"] === "signup" ? { mode: "signup" } : {},

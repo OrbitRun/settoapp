@@ -11,12 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivityRouteImport } from './routes/activity'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReceiptsRouteImport } from './routes/receipts'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ExpenseExpenseIdRouteImport } from './routes/expense.$expenseId'
 import { Route as GroupsIndexRouteImport } from './routes/groups.index'
@@ -44,11 +44,6 @@ const ActivityRoute = ActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
@@ -74,10 +69,15 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: '/auth/',
+  path: '/auth/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/callback',
-  path: '/callback',
-  getParentRoute: () => AuthRoute,
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ExpenseExpenseIdRoute = ExpenseExpenseIdRouteImport.update({
   id: '/expense/$expenseId',
@@ -158,7 +158,6 @@ const GroupsGroupIdEditRoute = GroupsGroupIdEditRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/auth': typeof AuthRouteWithChildren
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
@@ -178,13 +177,13 @@ export interface FileRoutesByFullPath {
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
   '/split/start': typeof SplitStartRoute
+  '/auth/': typeof AuthIndexRoute
   '/groups/': typeof GroupsIndexRoute
   '/groups/$groupId/edit': typeof GroupsGroupIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/auth': typeof AuthRouteWithChildren
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
@@ -204,6 +203,7 @@ export interface FileRoutesByTo {
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
   '/split/start': typeof SplitStartRoute
+  '/auth': typeof AuthIndexRoute
   '/groups': typeof GroupsIndexRoute
   '/groups/$groupId/edit': typeof GroupsGroupIdEditRoute
 }
@@ -211,7 +211,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/auth': typeof AuthRouteWithChildren
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
@@ -231,6 +230,7 @@ export interface FileRoutesById {
   '/split/scan': typeof SplitScanRoute
   '/split/share': typeof SplitShareRoute
   '/split/start': typeof SplitStartRoute
+  '/auth/': typeof AuthIndexRoute
   '/groups/': typeof GroupsIndexRoute
   '/groups/$groupId_/edit': typeof GroupsGroupIdEditRoute
 }
@@ -239,7 +239,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activity'
-    | '/auth'
     | '/home'
     | '/onboarding'
     | '/profile'
@@ -259,13 +258,13 @@ export interface FileRouteTypes {
     | '/split/scan'
     | '/split/share'
     | '/split/start'
+    | '/auth/'
     | '/groups/'
     | '/groups/$groupId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/activity'
-    | '/auth'
     | '/home'
     | '/onboarding'
     | '/profile'
@@ -285,13 +284,13 @@ export interface FileRouteTypes {
     | '/split/scan'
     | '/split/share'
     | '/split/start'
+    | '/auth'
     | '/groups'
     | '/groups/$groupId/edit'
   id:
     | '__root__'
     | '/'
     | '/activity'
-    | '/auth'
     | '/home'
     | '/onboarding'
     | '/profile'
@@ -311,6 +310,7 @@ export interface FileRouteTypes {
     | '/split/scan'
     | '/split/share'
     | '/split/start'
+    | '/auth/'
     | '/groups/'
     | '/groups/$groupId_/edit'
   fileRoutesById: FileRoutesById
@@ -318,12 +318,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
-  AuthRoute: typeof AuthRouteWithChildren
   HomeRoute: typeof HomeRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
   ReceiptsRoute: typeof ReceiptsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   ExpenseExpenseIdRoute: typeof ExpenseExpenseIdRoute
   GroupsGroupIdRoute: typeof GroupsGroupIdRoute
   GroupsNewRoute: typeof GroupsNewRoute
@@ -337,6 +337,7 @@ export interface RootRouteChildren {
   SplitScanRoute: typeof SplitScanRoute
   SplitShareRoute: typeof SplitShareRoute
   SplitStartRoute: typeof SplitStartRoute
+  AuthIndexRoute: typeof AuthIndexRoute
   GroupsIndexRoute: typeof GroupsIndexRoute
   GroupsGroupIdEditRoute: typeof GroupsGroupIdEditRoute
 }
@@ -355,13 +356,6 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/activity'
       preLoaderRoute: typeof ActivityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -399,12 +393,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/': {
+      id: '/auth/'
+      path: '/auth'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/callback': {
       id: '/auth/callback'
-      path: '/callback'
+      path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
-      parentRoute: typeof AuthRoute
+      parentRoute: typeof rootRouteImport
     }
     '/expense/$expenseId': {
       id: '/expense/$expenseId'
@@ -514,25 +515,15 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthRouteChildren {
-  AuthCallbackRoute: typeof AuthCallbackRoute
-}
-
-const AuthRouteChildren: AuthRouteChildren = {
-  AuthCallbackRoute: AuthCallbackRoute,
-}
-
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
-  AuthRoute: AuthRouteWithChildren,
   HomeRoute: HomeRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
   ReceiptsRoute: ReceiptsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   ExpenseExpenseIdRoute: ExpenseExpenseIdRoute,
   GroupsGroupIdRoute: GroupsGroupIdRoute,
   GroupsNewRoute: GroupsNewRoute,
@@ -546,6 +537,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplitScanRoute: SplitScanRoute,
   SplitShareRoute: SplitShareRoute,
   SplitStartRoute: SplitStartRoute,
+  AuthIndexRoute: AuthIndexRoute,
   GroupsIndexRoute: GroupsIndexRoute,
   GroupsGroupIdEditRoute: GroupsGroupIdEditRoute,
 }
