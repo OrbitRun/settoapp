@@ -1035,6 +1035,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
         _name: input.name,
         _default_split_type: input.defaultSplitType,
         _person_names: input.personNames,
+        _person_ids: (input.personIds ?? []) as never,
         _percentages: (input.percentages ?? {}) as never,
         _shares: (input.shares ?? {}) as never,
       });
