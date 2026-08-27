@@ -112,6 +112,20 @@ function CreateGroupScreen() {
         shares: rule.shares,
       });
       if (!groupId) return;
+
+      // Saving a finished ad hoc split as a group: move that expense into the
+      // new group, so the group opens with it (and its balance) already there.
+      const carriedExpense = carriedExpenseId ? pari.expenseById(carriedExpenseId) : undefined;
+      if (carriedExpense && !carriedExpense.group_id) {
+        const memberIds = new Set(pari.groupPersonIds(groupId));
+        const missing = pari
+          .expenseAllocations(carriedExpense.id)
+          .map((allocation) => allocation.personId)
+          .filter((personId) => personId && !memberIds.has(personId));
+        if (missing.length > 0) await pari.addGroupMembers(groupId, [...new Set(missing)]);
+        await pari.updateExpense(carriedExpense.id, { groupId });
+      }
+
       navigate({ to: "/groups/$groupId", params: { groupId } });
     } catch {
       toast.error(t("common.saveFailed"));
