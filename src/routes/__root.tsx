@@ -8,7 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -20,8 +20,7 @@ import { setDateLanguage } from "@/lib/dates";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountSheet } from "@/components/pari/AccountSheet";
 import { useScrollToTopOnNavigate } from "@/hooks/useScrollToTopOnNavigate";
-import { hideNativeSplash, isNative, syncNativeStatusBar } from "@/lib/native";
-import { initNativeSecureSession } from "@/lib/native-secure-session";
+import { hideNativeSplash, syncNativeStatusBar } from "@/lib/native";
 import { useDeepLinks } from "@/lib/deep-links";
 
 function NotFoundComponent() {
