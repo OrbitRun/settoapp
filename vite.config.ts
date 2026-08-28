@@ -25,6 +25,9 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // Custom client entry: restores the native Keychain session before hydrating
+    // so the first client render always matches the prerendered/SSR markup.
+    client: { entry: "client-entry" },
     ...(isNativeBuild
       ? {
           spa: {

@@ -8,7 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -20,8 +20,7 @@ import { setDateLanguage } from "@/lib/dates";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountSheet } from "@/components/pari/AccountSheet";
 import { useScrollToTopOnNavigate } from "@/hooks/useScrollToTopOnNavigate";
-import { hideNativeSplash, isNative, syncNativeStatusBar } from "@/lib/native";
-import { initNativeSecureSession } from "@/lib/native-secure-session";
+import { hideNativeSplash, syncNativeStatusBar } from "@/lib/native";
 import { useDeepLinks } from "@/lib/deep-links";
 
 function NotFoundComponent() {
@@ -164,28 +163,12 @@ function AppFrame({ children }: { children: ReactNode }) {
 }
 
 /**
- * Native only: the Keychain session copy must be back in place before anything
- * reads the Supabase session. Resolves synchronously-fast on web (no-op).
+ * Native only: the Keychain session copy is restored in src/client-entry.tsx
+ * BEFORE hydration, so the root renders the same markup on server/prerender
+ * and on the first client render (no hydration mismatch / React #418).
  */
-function useSecureSessionReady() {
-  const [ready, setReady] = useState(!isNative());
-  useEffect(() => {
-    let active = true;
-    void initNativeSecureSession().then(() => {
-      if (active) setReady(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-  return ready;
-}
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const secureSessionReady = useSecureSessionReady();
-
-  if (!secureSessionReady) return <div className="min-h-svh bg-background" />;
 
   return (
     <QueryClientProvider client={queryClient}>
