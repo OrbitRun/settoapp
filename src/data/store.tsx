@@ -152,6 +152,9 @@ type PariContextValue = {
   expenseOriginalAllocations: (expenseId: string) => Allocation[];
   groupBalances: (groupId: string) => Balance[];
   myGroupBalance: (groupId: string) => number;
+  /** The person id this account is inside that group (claimed person wins). */
+  myPersonIdInGroup: (groupId: string) => string;
+
   netBalance: number;
   settlementPlan: (groupId: string) => SettlementStep[];
   recentExpenses: (limit?: number) => Expense[];
