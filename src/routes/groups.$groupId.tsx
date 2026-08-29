@@ -110,8 +110,9 @@ function GroupDetailScreen() {
 
   const addExpense = () => {
     pari.setDraft({
-      ...emptyDraft(pari.currentPersonId),
+      ...emptyDraft(pari.myPersonIdInGroup(groupId)),
       groupId,
+
       participants: memberIds,
       mode: defaults ? "percentage" : "equal",
       percentages: defaults ?? {},
