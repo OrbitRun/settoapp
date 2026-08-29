@@ -648,8 +648,22 @@ export function PariProvider({ children }: { children: ReactNode }) {
       );
     };
 
+    /**
+     * The person this account *is* inside one group. An invitation claim links
+     * an account to an existing group person, which is normally not the
+     * account's own `is_self` row, so "me" must be resolved per group.
+     */
+    const myPersonIdInGroup = (groupId: string) => {
+      if (!userId) return currentPersonId;
+      const mine = groupPersonIds(groupId).find(
+        (personId) => personById(personId)?.linked_profile_id === userId,
+      );
+      return mine ?? currentPersonId;
+    };
+
     const myGroupBalance = (groupId: string) =>
-      groupBalances(groupId).find((b) => b.personId === currentPersonId)?.netMinor ?? 0;
+      groupBalances(groupId).find((b) => b.personId === myPersonIdInGroup(groupId))?.netMinor ?? 0;
+
 
     const netBalance = data.groups.reduce((sum, group) => sum + myGroupBalance(group.id), 0);
 
