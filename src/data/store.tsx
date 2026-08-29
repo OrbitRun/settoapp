@@ -1395,6 +1395,8 @@ export function PariProvider({ children }: { children: ReactNode }) {
       expenseOriginalAllocations,
       groupBalances,
       myGroupBalance,
+      myPersonIdInGroup,
+
       netBalance,
       settlementPlan,
       recentExpenses,
