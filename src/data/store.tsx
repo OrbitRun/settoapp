@@ -464,8 +464,17 @@ export function PariProvider({ children }: { children: ReactNode }) {
   }, [isGuest, accountData, guest]);
 
   const profile = accountData.profiles[0] ?? null;
-  const selfPerson = data.people.find((p) => p.is_self) ?? data.people[0];
+  // Identity is the account link, never the name: a person claimed through an
+  // invitation is this account too, even though it is not the `is_self` row.
+  const selfPerson =
+    (userId
+      ? (data.people.find((p) => p.linked_profile_id === userId && p.is_self) ??
+        data.people.find((p) => p.linked_profile_id === userId))
+      : null) ??
+    data.people.find((p) => p.is_self) ??
+    data.people[0];
   const currentPersonId = selfPerson?.id ?? "";
+
 
   const refresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ["pari"] });
