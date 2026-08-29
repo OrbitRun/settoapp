@@ -110,8 +110,9 @@ function GroupDetailScreen() {
 
   const addExpense = () => {
     pari.setDraft({
-      ...emptyDraft(pari.currentPersonId),
+      ...emptyDraft(pari.myPersonIdInGroup(groupId)),
       groupId,
+
       participants: memberIds,
       mode: defaults ? "percentage" : "equal",
       percentages: defaults ?? {},
@@ -283,7 +284,7 @@ function GroupDetailScreen() {
                 const pending = pendingPersonIds.has(balance.personId);
                 const former = removedIds.includes(balance.personId);
                 const name = pari.personName(balance.personId);
-                const isSelf = balance.personId === pari.currentPersonId;
+                const isSelf = balance.personId === pari.myPersonIdInGroup(groupId);
                 return (
                   <div key={balance.personId}>
                     {index > 0 ? <Divider /> : null}

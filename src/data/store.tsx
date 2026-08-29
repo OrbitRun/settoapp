@@ -152,6 +152,9 @@ type PariContextValue = {
   expenseOriginalAllocations: (expenseId: string) => Allocation[];
   groupBalances: (groupId: string) => Balance[];
   myGroupBalance: (groupId: string) => number;
+  /** The person id this account is inside that group (claimed person wins). */
+  myPersonIdInGroup: (groupId: string) => string;
+
   netBalance: number;
   settlementPlan: (groupId: string) => SettlementStep[];
   recentExpenses: (limit?: number) => Expense[];
@@ -464,8 +467,17 @@ export function PariProvider({ children }: { children: ReactNode }) {
   }, [isGuest, accountData, guest]);
 
   const profile = accountData.profiles[0] ?? null;
-  const selfPerson = data.people.find((p) => p.is_self) ?? data.people[0];
+  // Identity is the account link, never the name: a person claimed through an
+  // invitation is this account too, even though it is not the `is_self` row.
+  const selfPerson =
+    (userId
+      ? (data.people.find((p) => p.linked_profile_id === userId && p.is_self) ??
+        data.people.find((p) => p.linked_profile_id === userId))
+      : null) ??
+    data.people.find((p) => p.is_self) ??
+    data.people[0];
   const currentPersonId = selfPerson?.id ?? "";
+
 
   const refresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ["pari"] });
@@ -639,8 +651,22 @@ export function PariProvider({ children }: { children: ReactNode }) {
       );
     };
 
+    /**
+     * The person this account *is* inside one group. An invitation claim links
+     * an account to an existing group person, which is normally not the
+     * account's own `is_self` row, so "me" must be resolved per group.
+     */
+    const myPersonIdInGroup = (groupId: string) => {
+      if (!userId) return currentPersonId;
+      const mine = groupPersonIds(groupId).find(
+        (personId) => personById(personId)?.linked_profile_id === userId,
+      );
+      return mine ?? currentPersonId;
+    };
+
     const myGroupBalance = (groupId: string) =>
-      groupBalances(groupId).find((b) => b.personId === currentPersonId)?.netMinor ?? 0;
+      groupBalances(groupId).find((b) => b.personId === myPersonIdInGroup(groupId))?.netMinor ?? 0;
+
 
     const netBalance = data.groups.reduce((sum, group) => sum + myGroupBalance(group.id), 0);
 
@@ -1369,6 +1395,8 @@ export function PariProvider({ children }: { children: ReactNode }) {
       expenseOriginalAllocations,
       groupBalances,
       myGroupBalance,
+      myPersonIdInGroup,
+
       netBalance,
       settlementPlan,
       recentExpenses,

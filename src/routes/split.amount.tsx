@@ -81,15 +81,17 @@ function ManualExpenseScreen() {
   const setGroup = (groupId: string | null) => {
     const groupDefault = groupId ? pari.groupRule(groupId) : null;
     const ids = groupId ? pari.groupPersonIds(groupId) : [pari.currentPersonId];
+    const me = groupId ? pari.myPersonIdInGroup(groupId) : pari.currentPersonId;
     setDraft((prev) => ({
       ...prev,
       groupId,
       participants: ids,
       paidByPersonId: ids.includes(prev.paidByPersonId)
         ? prev.paidByPersonId
-        : ids.includes(pari.currentPersonId)
-          ? pari.currentPersonId
+        : ids.includes(me)
+          ? me
           : (ids[0] ?? prev.paidByPersonId),
+
 
       mode: groupDefault?.mode ?? "equal",
       percentages: groupDefault?.percentages ?? {},

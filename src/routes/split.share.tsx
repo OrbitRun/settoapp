@@ -79,6 +79,7 @@ function ShareScreen() {
   const setGroup = (groupId: string | null) => {
     const groupDefault = groupId ? pari.groupRule(groupId) : null;
     const ids = groupId ? pari.groupPersonIds(groupId) : [pari.currentPersonId];
+    const me = groupId ? pari.myPersonIdInGroup(groupId) : pari.currentPersonId;
     setDraft((prev) => ({
       ...prev,
       groupId,
@@ -86,9 +87,10 @@ function ShareScreen() {
       // Keep the payer only when they belong to the new group.
       paidByPersonId: ids.includes(prev.paidByPersonId)
         ? prev.paidByPersonId
-        : ids.includes(pari.currentPersonId)
-          ? pari.currentPersonId
+        : ids.includes(me)
+          ? me
           : (ids[0] ?? prev.paidByPersonId),
+
       mode: groupDefault?.mode ?? "equal",
       percentages: groupDefault?.percentages ?? {},
       shares: groupDefault?.shares ?? {},
