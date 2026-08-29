@@ -283,7 +283,7 @@ function GroupDetailScreen() {
                 const pending = pendingPersonIds.has(balance.personId);
                 const former = removedIds.includes(balance.personId);
                 const name = pari.personName(balance.personId);
-                const isSelf = balance.personId === pari.currentPersonId;
+                const isSelf = balance.personId === pari.myPersonIdInGroup(groupId);
                 return (
                   <div key={balance.personId}>
                     {index > 0 ? <Divider /> : null}
