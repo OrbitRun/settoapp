@@ -172,13 +172,13 @@ function EditGroupScreen() {
                     <Avatar name={pari.personName(personId)} size="sm" />
                     <span className="min-w-0 flex-1 truncate text-[15px]">
                       {pari.personName(personId)}
-                      {personId === pari.currentPersonId ? (
+                      {personId === pari.myPersonIdInGroup(groupId) ? (
                         <span className="ml-2 text-xs text-muted-foreground">
                           {t("common.you")}
                         </span>
                       ) : null}
                     </span>
-                    {personId !== pari.currentPersonId ? (
+                    {personId !== pari.myPersonIdInGroup(groupId) ? (
                       <button
                         type="button"
                         aria-label={`${t("common.remove")} ${pari.personName(personId)}`}
