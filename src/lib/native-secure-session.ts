@@ -131,7 +131,8 @@ export function initNativeSecureSession(): Promise<void> {
 export async function clearNativeSecureSession(): Promise<void> {
   if (!isNative()) return;
   try {
-    const store = await secureStorage();
+    const handle = await secureStorage();
+    const store = handle.plugin;
     const keys = await store.keys();
     await Promise.all(keys.filter(isAuthKey).map((key) => store.remove(key).catch(() => false)));
   } catch {
