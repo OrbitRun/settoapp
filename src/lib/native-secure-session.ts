@@ -29,17 +29,22 @@ let patched = false;
 
 const isAuthKey = (key: string) => key.startsWith(AUTH_KEY_PREFIX);
 
-async function secureStorage() {
-  const { SecureStorage } = await import("@aparajita/capacitor-secure-storage");
-  return SecureStorage;
+type SecureStorageHandle = {
+  plugin: typeof import("@aparajita/capacitor-secure-storage").SecureStorage;
+};
+
+async function secureStorage(): Promise<SecureStorageHandle> {
+  const module = await import("@aparajita/capacitor-secure-storage");
+  return { plugin: module.SecureStorage };
 }
 
-type SecureStorageApi = Awaited<ReturnType<typeof secureStorage>>;
+type SecureStorageApi = SecureStorageHandle;
 
 function patchStorage(store: SecureStorageApi) {
   if (patched || typeof Storage === "undefined") return;
   patched = true;
 
+  const plugin = store.plugin;
   const proto = Storage.prototype;
   const originalSet = proto.setItem;
   const originalRemove = proto.removeItem;
@@ -48,14 +53,14 @@ function patchStorage(store: SecureStorageApi) {
   proto.setItem = function setItem(key: string, value: string) {
     originalSet.call(this, key, value);
     if (this === window.localStorage && isAuthKey(key)) {
-      void store.setItem(key, value).catch(() => undefined);
+      void plugin.setItem(key, value).catch(() => undefined);
     }
   };
 
   proto.removeItem = function removeItem(key: string) {
     originalRemove.call(this, key);
     if (this === window.localStorage && isAuthKey(key)) {
-      void store.remove(key).catch(() => undefined);
+      void plugin.remove(key).catch(() => undefined);
     }
   };
 
@@ -89,7 +94,8 @@ export function initNativeSecureSession(): Promise<void> {
   hydration = (async () => {
     try {
       console.log("[NATIVE_BOOT KEYCHAIN 1] plugin import starting");
-      const store = await secureStorage();
+      const handle = await secureStorage();
+      const store = handle.plugin;
       console.log("[NATIVE_BOOT KEYCHAIN 2] plugin import resolved");
       const rawSet = Storage.prototype.setItem;
       console.log("[NATIVE_BOOT KEYCHAIN 3] keys() starting");
@@ -104,7 +110,7 @@ export function initNativeSecureSession(): Promise<void> {
           rawSet.call(window.localStorage, key, value);
         }
       }
-      patchStorage(store);
+      patchStorage(handle);
       console.log("[NATIVE_BOOT KEYCHAIN 6] hydration completed");
     } catch (error) {
       /* Keychain unavailable — fall back to the default storage silently. */
@@ -125,7 +131,8 @@ export function initNativeSecureSession(): Promise<void> {
 export async function clearNativeSecureSession(): Promise<void> {
   if (!isNative()) return;
   try {
-    const store = await secureStorage();
+    const handle = await secureStorage();
+    const store = handle.plugin;
     const keys = await store.keys();
     await Promise.all(keys.filter(isAuthKey).map((key) => store.remove(key).catch(() => false)));
   } catch {
