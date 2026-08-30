@@ -171,9 +171,19 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
     nativeLog("response received", { ok: true });
   } catch (error) {
     nativeLog("response received", { ok: false });
-    nativeLog("error", safeErrorDetail(error));
+    const detail = safeErrorDetail(error);
+    // Single readable lines so Xcode shows the real message, not just name=TypeError.
+    if (isNative()) {
+      console.info(
+        `[NATIVE_RECEIPT] error name=${detail.name} code=${detail.code ?? "unknown"} status=${detail.status ?? "none"} message=${detail.message}`,
+      );
+      if (detail.stack) console.info(`[NATIVE_RECEIPT] stack ${detail.stack}`);
+    } else {
+      nativeLog("error", detail);
+    }
     throw error;
   }
+  logReturnedShape(parsed);
   nativeLog("success", { items: parsed.items.length });
   // Keep the exact normalized bytes OCR read, in memory only, so an
   // authenticated save can archive them without re-encoding.
