@@ -36,7 +36,7 @@ function OnboardingScreen() {
 
   return (
     <div className="min-h-svh bg-background">
-      <div className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col px-7 pb-12 pt-16">
+      <div className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col px-7 pb-12 pt-[calc(env(safe-area-inset-top)+4rem)]">
         <div key={step} className="animate-rise flex flex-1 flex-col justify-center">
           <Wordmark className="h-6" />
           <h1 className="mt-4 text-[38px] font-semibold leading-[1.08] tracking-[-0.035em]">

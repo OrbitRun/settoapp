@@ -139,7 +139,7 @@ function AuthScreen() {
 
 
   return (
-    <div className="flex min-h-svh items-center bg-background px-6">
+    <div className="flex min-h-svh items-center bg-background px-6 pt-[env(safe-area-inset-top)]">
       <div className="mx-auto w-full max-w-[400px] py-14">
         <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.03em]">
           {t("auth.title")}

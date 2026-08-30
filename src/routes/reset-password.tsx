@@ -94,7 +94,7 @@ function ResetPasswordScreen() {
   };
 
   return (
-    <div className="flex min-h-svh items-center bg-background px-6">
+    <div className="flex min-h-svh items-center bg-background px-6 pt-[env(safe-area-inset-top)]">
       <div className="mx-auto w-full max-w-[400px] py-14">
         {linkState === "checking" ? (
           <p className="text-sm text-muted-foreground">{t("auth.checkingLink")}</p>
