@@ -29,7 +29,7 @@ function safeErrorDetail(error: unknown): {
       stack: error.stack?.split("\n").slice(0, 4).join(" | ") ?? null,
     };
   }
-  return { name: typeof error, code: null, status: null, message: String(error).slice(0, 200) };
+  return { name: typeof error, code: null, status: null, message: String(error).slice(0, 200), stack: null };
 }
 
 /** Shape-only diagnostics — never receipt contents. */
