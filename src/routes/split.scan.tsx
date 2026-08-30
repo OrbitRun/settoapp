@@ -8,6 +8,7 @@ import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { parseReceipt, receiptErrorCode } from "@/lib/receipt/parseReceipt";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
+import { isNative } from "@/lib/native";
 
 export const Route = createFileRoute("/split/scan")({
   head: () => ({
@@ -97,6 +98,13 @@ function ScanScreen() {
     } catch (caught) {
       setReading(false);
       const code = receiptErrorCode(caught);
+      if (isNative()) {
+        console.info(
+          `[NATIVE_RECEIPT] error code=${code ?? "unknown"} name=${
+            caught instanceof Error ? caught.name : typeof caught
+          }`,
+        );
+      }
       const key =
         code === "AI_TIMEOUT"
           ? "scan.errorTimeout"
