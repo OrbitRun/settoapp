@@ -58,6 +58,7 @@ function isCallback(raw: string): boolean {
 export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<NativeAuthResult> {
   if (!isNative()) return { status: "error", reason: "unknown", message: "not native" };
 
+  console.info("[NATIVE_OAUTH] provider start");
   const [{ Browser }, { App }] = await Promise.all([
     import("@capacitor/browser"),
     import("@capacitor/app"),
@@ -76,6 +77,7 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
       return { status: "error", reason: "provider", message: error?.message };
     }
     authUrl = data.url;
+    console.info("[NATIVE_OAUTH] auth URL created");
   } catch (error) {
     return {
       status: "error",
@@ -103,15 +105,20 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
     void (async () => {
       urlListener = await App.addListener("appUrlOpen", ({ url }) => {
         if (!isCallback(url)) return;
+        console.info("[NATIVE_OAUTH] appUrlOpen callback received");
         void (async () => {
           const { code, error } = readCallbackUrl(url);
           if (error || !code) {
+            if (error) console.info(`[NATIVE_OAUTH] exchange error ${error}`);
             await finish({ status: "error", reason: "provider", message: error });
             return;
           }
+          console.info("[NATIVE_OAUTH] code found");
           try {
+            console.info("[NATIVE_OAUTH] exchange starting");
             const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
             if (exchangeError) {
+              console.info(`[NATIVE_OAUTH] exchange error ${exchangeError.message}`);
               await finish({
                 status: "error",
                 reason: "provider",
@@ -119,12 +126,16 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
               });
               return;
             }
+            console.info("[NATIVE_OAUTH] exchange success");
+            console.info("[NATIVE_OAUTH] finish success");
             await finish({ status: "success" });
           } catch (thrown) {
+            const message = thrown instanceof Error ? thrown.message : undefined;
+            console.info(`[NATIVE_OAUTH] exchange error ${message ?? "unknown"}`);
             await finish({
               status: "error",
               reason: "network",
-              message: thrown instanceof Error ? thrown.message : undefined,
+              message,
             });
           }
         })();
@@ -132,13 +143,19 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
 
       // Dismissing the sheet without completing sign-in is a cancellation.
       closeListener = await Browser.addListener("browserFinished", () => {
+        console.info("[NATIVE_OAUTH] browserFinished");
+        console.info("[NATIVE_OAUTH] finish cancelled");
         void finish({ status: "cancelled" });
       });
 
-      timer = setTimeout(() => void finish({ status: "cancelled" }), CALLBACK_TIMEOUT_MS);
+      timer = setTimeout(() => {
+        console.info("[NATIVE_OAUTH] finish cancelled");
+        void finish({ status: "cancelled" });
+      }, CALLBACK_TIMEOUT_MS);
 
       try {
         await Browser.open({ url: authUrl, presentationStyle: "popover" });
+        console.info("[NATIVE_OAUTH] browser opened");
       } catch (error) {
         await finish({
           status: "error",

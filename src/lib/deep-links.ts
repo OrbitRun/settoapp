@@ -39,11 +39,14 @@ export function parseDeepLink(raw: string): Handled | null {
 }
 
 /**
- * Establishes the Supabase session carried by an auth link (recovery e-mail or
- * OAuth callback) before routing. Tokens are consumed here and never logged.
+ * Establishes the Supabase session carried by a recovery e-mail link before
+ * routing. Tokens are consumed here and never logged.
+ *
+ * /auth/callback is deliberately NOT consumed here: native-auth.ts owns the
+ * OAuth PKCE exchange for that path. Consuming it in both listeners would race
+ * on the one-time code.
  */
 async function consumeAuthParams(link: Handled): Promise<void> {
-  const query = new URLSearchParams(link.search);
   const fragment = new URLSearchParams(link.hash.replace(/^#/, ""));
 
   const accessToken = fragment.get("access_token");
@@ -55,7 +58,7 @@ async function consumeAuthParams(link: Handled): Promise<void> {
     return;
   }
 
-  const code = query.get("code");
+  const code = new URLSearchParams(link.search).get("code");
   if (code) {
     await supabase.auth.exchangeCodeForSession(code).catch(() => undefined);
   }
@@ -73,8 +76,11 @@ export function useDeepLinks() {
       const link = parseDeepLink(raw);
       if (!link || !active) return;
 
-      if (link.path === "/reset-password" || link.path === "/auth/callback") {
+      if (link.path === "/reset-password") {
         await consumeAuthParams(link);
+      } else if (link.path === "/auth/callback") {
+        // native-auth.ts exchanges the one-time PKCE code; never consume here.
+        console.info("[NATIVE_DEEPLINK] auth callback observed — not consuming code");
       }
       if (!active) return;
 
