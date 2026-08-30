@@ -80,11 +80,22 @@ export function initNativeSecureSession(): Promise<void> {
     return hydration;
   }
 
+  // TEMPORARY DIAGNOSTICS: stage markers + counts only, never key/session values.
+  let pending = true;
+  const watchdog = setTimeout(() => {
+    if (pending) console.log("[NATIVE_BOOT WATCHDOG] secure session init still pending");
+  }, 3000);
+
   hydration = (async () => {
     try {
+      console.log("[NATIVE_BOOT KEYCHAIN 1] plugin import starting");
       const store = await secureStorage();
+      console.log("[NATIVE_BOOT KEYCHAIN 2] plugin import resolved");
       const rawSet = Storage.prototype.setItem;
+      console.log("[NATIVE_BOOT KEYCHAIN 3] keys() starting");
       const keys = await store.keys();
+      console.log(`[NATIVE_BOOT KEYCHAIN 4] keys() resolved — count=${keys.length}`);
+      console.log("[NATIVE_BOOT KEYCHAIN 5] getItem starting");
       for (const key of keys) {
         if (!isAuthKey(key)) continue;
         const value = await store.getItem(key);
@@ -94,13 +105,21 @@ export function initNativeSecureSession(): Promise<void> {
         }
       }
       patchStorage(store);
-    } catch {
+      console.log("[NATIVE_BOOT KEYCHAIN 6] hydration completed");
+    } catch (error) {
       /* Keychain unavailable — fall back to the default storage silently. */
+      console.log(
+        `[NATIVE_BOOT KEYCHAIN ERROR] name=${(error as Error)?.name ?? "unknown"} message=${(error as Error)?.message ?? String(error)}`,
+      );
+    } finally {
+      pending = false;
+      clearTimeout(watchdog);
     }
   })();
 
   return hydration;
 }
+
 
 /** Removes every persisted Supabase auth key from the Keychain. */
 export async function clearNativeSecureSession(): Promise<void> {
