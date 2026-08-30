@@ -12,7 +12,13 @@ function nativeLog(marker: string, detail?: Record<string, unknown>) {
   else console.info(`[NATIVE_RECEIPT] ${marker}`);
 }
 
-function safeErrorDetail(error: unknown): Record<string, unknown> {
+function safeErrorDetail(error: unknown): {
+  name: string;
+  code: string | null;
+  status: number | null;
+  message: string;
+  stack: string | null;
+} {
   if (error instanceof Error) {
     const anyError = error as Error & { status?: number; statusCode?: number; code?: string };
     return {
@@ -24,6 +30,22 @@ function safeErrorDetail(error: unknown): Record<string, unknown> {
     };
   }
   return { name: typeof error, code: null, status: null, message: String(error).slice(0, 200) };
+}
+
+/** Shape-only diagnostics — never receipt contents. */
+function logReturnedShape(value: unknown) {
+  if (!isNative()) return;
+  const isPlainObject =
+    typeof value === "object" && value !== null && !Array.isArray(value);
+  const items = isPlainObject ? (value as Record<string, unknown>)["items"] : undefined;
+  console.info("[NATIVE_RECEIPT] returned value shape", {
+    typeofValue: typeof value,
+    isNull: value === null,
+    isArray: Array.isArray(value),
+    keys: isPlainObject ? Object.keys(value as Record<string, unknown>) : null,
+    typeofItems: typeof items,
+    itemsIsArray: Array.isArray(items),
+  });
 }
 
 export type ParsedReceipt = {
