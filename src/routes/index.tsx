@@ -39,7 +39,7 @@ function WelcomeScreen() {
 
   return (
     <div className="min-h-svh bg-background">
-      <div className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col px-7 pb-[max(env(safe-area-inset-bottom),2rem)] pt-16">
+      <div className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col px-7 pb-[max(env(safe-area-inset-bottom),2rem)] pt-[calc(env(safe-area-inset-top)+4rem)]">
         <div className="animate-rise flex flex-1 flex-col justify-center">
           <Wordmark className="h-6" />
           <h1 className="mt-6 whitespace-pre-line text-[38px] font-semibold leading-[1.08] tracking-[-0.035em]">

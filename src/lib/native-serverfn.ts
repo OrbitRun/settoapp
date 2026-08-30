@@ -47,6 +47,8 @@ export const settoServerFnFetch: CustomFetch = (input, init) => {
   if (!path) return fetch(input as RequestInfo, init);
 
   const target = `${SETTO_REMOTE_ORIGIN}${path}`;
+  // Path only — never query values, bodies, headers or tokens.
+  console.info(`[NATIVE_SERVERFN] rewriting to remote origin ${path.split("?")[0]}`);
 
   if (typeof Request !== "undefined" && input instanceof Request) {
     // Cloning through the Request constructor keeps method, headers, body,

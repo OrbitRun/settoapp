@@ -85,7 +85,7 @@ function AuthCallbackScreen() {
   }, [failed, navigate]);
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background px-6">
+    <div className="flex min-h-svh items-center justify-center bg-background px-6 pt-[env(safe-area-inset-top)]">
       <p className="text-sm text-muted-foreground">
         {failed ? t("auth.googleFailed") : t("auth.checkingLink")}
       </p>

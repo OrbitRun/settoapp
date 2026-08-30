@@ -23,7 +23,9 @@ export function Screen({
       <div
         className={cn(
           "mx-auto w-full max-w-[430px] pb-[calc(6.5rem+env(safe-area-inset-bottom))]",
-          padded && "px-5 pt-4",
+          // viewport-fit=cover means the WebView paints under the status bar,
+          // so the existing spacing is added on top of the safe-area inset.
+          padded && "px-5 pt-[calc(env(safe-area-inset-top)+1rem)]",
           className,
         )}
       >
