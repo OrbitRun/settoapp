@@ -29,12 +29,16 @@ let patched = false;
 
 const isAuthKey = (key: string) => key.startsWith(AUTH_KEY_PREFIX);
 
-async function secureStorage() {
-  const { SecureStorage } = await import("@aparajita/capacitor-secure-storage");
-  return SecureStorage;
+type SecureStorageHandle = {
+  plugin: typeof import("@aparajita/capacitor-secure-storage").SecureStorage;
+};
+
+async function secureStorage(): Promise<SecureStorageHandle> {
+  const module = await import("@aparajita/capacitor-secure-storage");
+  return { plugin: module.SecureStorage };
 }
 
-type SecureStorageApi = Awaited<ReturnType<typeof secureStorage>>;
+type SecureStorageApi = SecureStorageHandle;
 
 function patchStorage(store: SecureStorageApi) {
   if (patched || typeof Storage === "undefined") return;
