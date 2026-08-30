@@ -94,7 +94,7 @@ export function initNativeSecureSession(): Promise<void> {
   hydration = (async () => {
     try {
       console.log("[NATIVE_BOOT KEYCHAIN 1] plugin import starting");
-      const store = await secureStorage();
+      const { plugin: store } = await secureStorage();
       console.log("[NATIVE_BOOT KEYCHAIN 2] plugin import resolved");
       const rawSet = Storage.prototype.setItem;
       console.log("[NATIVE_BOOT KEYCHAIN 3] keys() starting");
