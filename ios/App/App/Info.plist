@@ -22,6 +22,10 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Setto bruger kameraet til at tage billeder af kvitteringer, så de kan læses og deles.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Setto bruger dit fotobibliotek, når du vælger et billede af en kvittering.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
