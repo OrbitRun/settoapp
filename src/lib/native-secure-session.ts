@@ -94,7 +94,8 @@ export function initNativeSecureSession(): Promise<void> {
   hydration = (async () => {
     try {
       console.log("[NATIVE_BOOT KEYCHAIN 1] plugin import starting");
-      const { plugin: store } = await secureStorage();
+      const handle = await secureStorage();
+      const store = handle.plugin;
       console.log("[NATIVE_BOOT KEYCHAIN 2] plugin import resolved");
       const rawSet = Storage.prototype.setItem;
       console.log("[NATIVE_BOOT KEYCHAIN 3] keys() starting");
@@ -109,7 +110,7 @@ export function initNativeSecureSession(): Promise<void> {
           rawSet.call(window.localStorage, key, value);
         }
       }
-      patchStorage(store);
+      patchStorage(handle);
       console.log("[NATIVE_BOOT KEYCHAIN 6] hydration completed");
     } catch (error) {
       /* Keychain unavailable — fall back to the default storage silently. */
