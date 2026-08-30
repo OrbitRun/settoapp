@@ -44,6 +44,7 @@ function patchStorage(store: SecureStorageApi) {
   if (patched || typeof Storage === "undefined") return;
   patched = true;
 
+  const plugin = store.plugin;
   const proto = Storage.prototype;
   const originalSet = proto.setItem;
   const originalRemove = proto.removeItem;
@@ -52,14 +53,14 @@ function patchStorage(store: SecureStorageApi) {
   proto.setItem = function setItem(key: string, value: string) {
     originalSet.call(this, key, value);
     if (this === window.localStorage && isAuthKey(key)) {
-      void store.setItem(key, value).catch(() => undefined);
+      void plugin.setItem(key, value).catch(() => undefined);
     }
   };
 
   proto.removeItem = function removeItem(key: string) {
     originalRemove.call(this, key);
     if (this === window.localStorage && isAuthKey(key)) {
-      void store.remove(key).catch(() => undefined);
+      void plugin.remove(key).catch(() => undefined);
     }
   };
 
