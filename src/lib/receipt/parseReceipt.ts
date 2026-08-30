@@ -3,6 +3,28 @@ import type { Confidence } from "@/lib/fx";
 import { normaliseMerchant } from "@/lib/merchant";
 import { parseReceiptImage, receiptErrorCode } from "./parseReceipt.functions";
 import { clearPendingCapture, setPendingCapture } from "./receiptCapture";
+import { isNative } from "@/lib/native";
+
+/** Native-only breadcrumbs. Never logs image bytes, tokens or receipt text. */
+function nativeLog(marker: string, detail?: Record<string, unknown>) {
+  if (!isNative()) return;
+  if (detail) console.info(`[NATIVE_RECEIPT] ${marker}`, detail);
+  else console.info(`[NATIVE_RECEIPT] ${marker}`);
+}
+
+function safeErrorDetail(error: unknown): Record<string, unknown> {
+  if (error instanceof Error) {
+    const anyError = error as Error & { status?: number; statusCode?: number; code?: string };
+    return {
+      name: error.name,
+      code: anyError.code ?? receiptErrorCode(error) ?? null,
+      status: anyError.status ?? anyError.statusCode ?? null,
+      message: error.message.slice(0, 200),
+      stack: error.stack?.split("\n").slice(0, 4).join(" | ") ?? null,
+    };
+  }
+  return { name: typeof error, code: null, status: null, message: String(error).slice(0, 200) };
+}
 
 export type ParsedReceipt = {
   /** Short store name used everywhere in the UI. */
@@ -112,10 +134,25 @@ function toIsoDate(value: string | null): string {
 export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
   if (!image) throw new Error("IMAGE_MISSING: No image supplied");
 
+  nativeLog("parse start", {
+    mime: image.type || "unknown",
+    bytes: image.size,
+  });
+
   const dataUrl = await toDataUrl(image);
   // A new scan always replaces whatever was captured before.
   clearPendingCapture();
-  const parsed = await parseReceiptImage({ data: { dataUrl } });
+  nativeLog("request starting", { encodedChars: dataUrl.length });
+  let parsed: Awaited<ReturnType<typeof parseReceiptImage>>;
+  try {
+    parsed = await parseReceiptImage({ data: { dataUrl } });
+    nativeLog("response received", { ok: true });
+  } catch (error) {
+    nativeLog("response received", { ok: false });
+    nativeLog("error", safeErrorDetail(error));
+    throw error;
+  }
+  nativeLog("success", { items: parsed.items.length });
   // Keep the exact normalized bytes OCR read, in memory only, so an
   // authenticated save can archive them without re-encoding.
   setPendingCapture(dataUrl, parsed);
