@@ -12,7 +12,13 @@ function nativeLog(marker: string, detail?: Record<string, unknown>) {
   else console.info(`[NATIVE_RECEIPT] ${marker}`);
 }
 
-function safeErrorDetail(error: unknown): Record<string, unknown> {
+function safeErrorDetail(error: unknown): {
+  name: string;
+  code: string | null;
+  status: number | null;
+  message: string;
+  stack: string | null;
+} {
   if (error instanceof Error) {
     const anyError = error as Error & { status?: number; statusCode?: number; code?: string };
     return {
@@ -23,7 +29,23 @@ function safeErrorDetail(error: unknown): Record<string, unknown> {
       stack: error.stack?.split("\n").slice(0, 4).join(" | ") ?? null,
     };
   }
-  return { name: typeof error, code: null, status: null, message: String(error).slice(0, 200) };
+  return { name: typeof error, code: null, status: null, message: String(error).slice(0, 200), stack: null };
+}
+
+/** Shape-only diagnostics — never receipt contents. */
+function logReturnedShape(value: unknown) {
+  if (!isNative()) return;
+  const isPlainObject =
+    typeof value === "object" && value !== null && !Array.isArray(value);
+  const items = isPlainObject ? (value as Record<string, unknown>)["items"] : undefined;
+  console.info("[NATIVE_RECEIPT] returned value shape", {
+    typeofValue: typeof value,
+    isNull: value === null,
+    isArray: Array.isArray(value),
+    keys: isPlainObject ? Object.keys(value as Record<string, unknown>) : null,
+    typeofItems: typeof items,
+    itemsIsArray: Array.isArray(items),
+  });
 }
 
 export type ParsedReceipt = {
@@ -149,9 +171,19 @@ export async function parseReceipt(image: File | Blob): Promise<ParsedReceipt> {
     nativeLog("response received", { ok: true });
   } catch (error) {
     nativeLog("response received", { ok: false });
-    nativeLog("error", safeErrorDetail(error));
+    const detail = safeErrorDetail(error);
+    // Single readable lines so Xcode shows the real message, not just name=TypeError.
+    if (isNative()) {
+      console.info(
+        `[NATIVE_RECEIPT] error name=${detail.name} code=${detail.code ?? "unknown"} status=${detail.status ?? "none"} message=${detail.message}`,
+      );
+      if (detail.stack) console.info(`[NATIVE_RECEIPT] stack ${detail.stack}`);
+    } else {
+      nativeLog("error", detail);
+    }
     throw error;
   }
+  logReturnedShape(parsed);
   nativeLog("success", { items: parsed.items.length });
   // Keep the exact normalized bytes OCR read, in memory only, so an
   // authenticated save can archive them without re-encoding.

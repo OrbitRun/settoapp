@@ -558,7 +558,7 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
     if (!detectedCurrency) warnings.push("CURRENCY_NOT_DETECTED");
     else if (currencyConfidence === "low") warnings.push("CURRENCY_UNCERTAIN");
 
-    return {
+    const result: ParsedReceiptPayload = {
       merchant: parsed.merchant?.trim() || null,
       totalMinor,
       subtotalMinor,
@@ -572,6 +572,13 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
       warnings,
       confidence,
     };
+    // Shape-only marker: proves the handler returned a valid payload before transport.
+    console.log("[receipt] handler_return", {
+      hasItems: Array.isArray(result.items),
+      itemCount: result.items.length,
+      totalIsNumber: typeof result.totalMinor === "number",
+    });
+    return result;
   });
 
 function stripFence(content: string): string {
