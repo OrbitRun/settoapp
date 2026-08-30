@@ -26,7 +26,12 @@ function nativeCorsHeaders(origin: string): Record<string, string> {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "content-type, authorization, x-tsr-serverfn, accept",
+    // The RPC client reads these to know how to deserialize the payload.
+    // Cross-origin they are invisible unless explicitly exposed — without this
+    // the native app receives `undefined` instead of the server fn result.
+    "Access-Control-Expose-Headers": "content-type, x-tss-raw, x-tss-serialized",
     "Access-Control-Max-Age": "86400",
+
     Vary: "Origin",
   };
 }
