@@ -76,7 +76,7 @@ function AuthScreen() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -85,9 +85,41 @@ function AuthScreen() {
           },
         });
         if (error) throw error;
-        const { data: session } = await supabase.auth.getSession();
-        if (session.session) navigate({ to: "/home" });
-        else toast.success(t("auth.checkEmail"));
+
+        // Managed auth has auto-confirm enabled, so a successful signUp should
+        // return (or quickly produce) a session. Use it immediately instead of
+        // asking the user to check their email.
+        if (signUpData.session) {
+          navigate({ to: "/home" });
+          return;
+        }
+
+        const { data: immediate } = await supabase.auth.getSession();
+        if (immediate.session) {
+          navigate({ to: "/home" });
+          return;
+        }
+
+        // Briefly wait for the auth-state change that auto-confirm will fire.
+        await new Promise<void>((resolve) => {
+          let timer: number | undefined;
+          const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === "SIGNED_IN" && session) {
+              cleanup();
+              resolve();
+            }
+          });
+          timer = window.setTimeout(() => {
+            cleanup();
+            resolve();
+          }, 2000);
+          function cleanup() {
+            if (timer) window.clearTimeout(timer);
+            listener.subscription.unsubscribe();
+          }
+        });
+
+        navigate({ to: "/home" });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
