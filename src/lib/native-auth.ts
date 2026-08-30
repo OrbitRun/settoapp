@@ -58,6 +58,7 @@ function isCallback(raw: string): boolean {
 export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<NativeAuthResult> {
   if (!isNative()) return { status: "error", reason: "unknown", message: "not native" };
 
+  console.info("[NATIVE_OAUTH] provider start");
   const [{ Browser }, { App }] = await Promise.all([
     import("@capacitor/browser"),
     import("@capacitor/app"),
@@ -76,6 +77,7 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
       return { status: "error", reason: "provider", message: error?.message };
     }
     authUrl = data.url;
+    console.info("[NATIVE_OAUTH] auth URL created");
   } catch (error) {
     return {
       status: "error",
