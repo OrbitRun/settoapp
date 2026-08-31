@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { authMessageKey } from "@/lib/auth-errors";
 import { isNative } from "@/lib/native";
-import { nativeOAuthSignIn } from "@/lib/native-auth";
+import { nativeOAuthSignIn, SETTO_WEB_ORIGIN } from "@/lib/native-auth";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth/")({
@@ -58,8 +58,11 @@ function AuthScreen() {
     event.preventDefault();
     setResetBusy(true);
     try {
+      const redirectTo = isNative()
+        ? `${SETTO_WEB_ORIGIN}/reset-password`
+        : `${window.location.origin}/reset-password`;
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo,
       });
       if (error) throw error;
       setResetOpen(false);
