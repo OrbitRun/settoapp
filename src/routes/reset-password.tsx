@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { supabase } from "@/integrations/supabase/client";
 import { authMessageKey } from "@/lib/auth-errors";
+import { isNative } from "@/lib/native";
+import { SETTO_WEB_ORIGIN } from "@/lib/native-auth";
 import { useT } from "@/lib/i18n";
 
 /**
