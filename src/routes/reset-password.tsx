@@ -34,6 +34,18 @@ export const Route = createFileRoute("/reset-password")({
 
 type LinkState = "checking" | "ready" | "invalid";
 
+function isIOSBrowser() {
+  if (typeof window === "undefined" || !window.navigator) return false;
+  const ua = window.navigator.userAgent;
+  return /iPad|iPhone|iPod/.test(ua) && !isNative();
+}
+
+function openInSettoUrl() {
+  const hash = typeof window !== "undefined" ? window.location.hash : "";
+  const search = typeof window !== "undefined" ? window.location.search : "";
+  return `${SETTO_WEB_ORIGIN}/reset-password${search}${hash}`;
+}
+
 function ResetPasswordScreen() {
   const t = useT();
   const navigate = useNavigate();
