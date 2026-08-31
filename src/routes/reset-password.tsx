@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { supabase } from "@/integrations/supabase/client";
 import { authMessageKey } from "@/lib/auth-errors";
+import { isNative } from "@/lib/native";
+import { SETTO_WEB_ORIGIN } from "@/lib/native-auth";
 import { useT } from "@/lib/i18n";
 
 /**
@@ -31,6 +33,18 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 type LinkState = "checking" | "ready" | "invalid";
+
+function isIOSBrowser() {
+  if (typeof window === "undefined" || !window.navigator) return false;
+  const ua = window.navigator.userAgent;
+  return /iPad|iPhone|iPod/.test(ua) && !isNative();
+}
+
+function openInSettoUrl() {
+  const hash = typeof window !== "undefined" ? window.location.hash : "";
+  const search = typeof window !== "undefined" ? window.location.search : "";
+  return `${SETTO_WEB_ORIGIN}/reset-password${search}${hash}`;
+}
 
 function ResetPasswordScreen() {
   const t = useT();
@@ -115,6 +129,27 @@ function ResetPasswordScreen() {
             <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]">
               {t("auth.resetTitle")}
             </h1>
+            {isIOSBrowser() ? (
+              <>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Åbn linket i Setto-appen for at vælge en ny adgangskode.
+                </p>
+                <a
+                  href={openInSettoUrl()}
+                  className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-accent px-4 text-[15px] font-semibold text-white transition-colors hover:bg-accent/90"
+                >
+                  Åbn i Setto
+                </a>
+                <div className="relative mt-8">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase text-muted-foreground">
+                    <span className="bg-background px-2">Eller fortsæt her</span>
+                  </div>
+                </div>
+              </>
+            ) : null}
             <form onSubmit={submit} className="mt-8 space-y-3">
               <input
                 type="password"
