@@ -31,6 +31,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { isNative } from "./native";
 
 export const SETTO_WEB_ORIGIN = "https://settoapp.lovable.app";
+/** Dedicated Universal Link origin for native hand-off. OAuth must keep using the web origin. */
+export const SETTO_APPLINK_ORIGIN = "https://open.setto.dk";
 export const AUTH_CALLBACK_URL = `${SETTO_WEB_ORIGIN}/auth/callback`;
 /** Broker initiate endpoint — same path the cloud-auth-js package defaults to. */
 export const OAUTH_BROKER_URL = `${SETTO_WEB_ORIGIN}/~oauth/initiate`;

@@ -6,7 +6,7 @@ import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { supabase } from "@/integrations/supabase/client";
 import { authMessageKey } from "@/lib/auth-errors";
 import { isNative } from "@/lib/native";
-import { SETTO_WEB_ORIGIN } from "@/lib/native-auth";
+import { SETTO_APPLINK_ORIGIN } from "@/lib/native-auth";
 import { useT } from "@/lib/i18n";
 
 /**
@@ -43,7 +43,7 @@ function isIOSBrowser() {
 function openInSettoUrl() {
   const hash = typeof window !== "undefined" ? window.location.hash : "";
   const search = typeof window !== "undefined" ? window.location.search : "";
-  return `${SETTO_WEB_ORIGIN}/reset-password${search}${hash}`;
+  return `${SETTO_APPLINK_ORIGIN}/reset-password${search}${hash}`;
 }
 
 function ResetPasswordScreen() {

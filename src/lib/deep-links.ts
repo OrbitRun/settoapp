@@ -15,10 +15,13 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 import { isNative } from "./native";
-import { SETTO_WEB_ORIGIN } from "./native-auth";
+import { SETTO_APPLINK_ORIGIN, SETTO_WEB_ORIGIN } from "./native-auth";
 
 /** Exactly the Setto links the app claims. */
 const ALLOWED_PREFIXES = ["/invite/", "/join/", "/reset-password", "/auth/callback"] as const;
+
+/** Origins that iOS may hand to the native app as Universal Links. */
+const ALLOWED_ORIGINS = [SETTO_WEB_ORIGIN, SETTO_APPLINK_ORIGIN] as const;
 
 type Handled = { path: string; search: string; hash: string };
 
@@ -29,8 +32,8 @@ export function parseDeepLink(raw: string): Handled | null {
   } catch {
     return null;
   }
-  // Scoped to the real Setto host only.
-  if (url.origin !== SETTO_WEB_ORIGIN) return null;
+  // Scoped to the explicit Universal Link origins only.
+  if (!ALLOWED_ORIGINS.includes(url.origin as typeof ALLOWED_ORIGINS[number])) return null;
   const matched = ALLOWED_PREFIXES.some(
     (prefix) => url.pathname === prefix || url.pathname.startsWith(prefix),
   );
