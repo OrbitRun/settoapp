@@ -1,7 +1,7 @@
 /**
  * Universal Link routing for the native shell.
  *
- * iOS hands `https://settoapp.lovable.app/...` links to the installed app; this
+ * iOS hands `https://setto.dk/...` links to the installed app; this
  * hook turns them into ordinary TanStack client navigations, both on cold start
  * (`App.getLaunchUrl`) and while the app is running/backgrounded
  * (`appUrlOpen`). Anything outside the allowlisted Setto paths is ignored, so a
@@ -15,13 +15,21 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 import { isNative } from "./native";
-import { SETTO_APPLINK_ORIGIN, SETTO_WEB_ORIGIN } from "./native-auth";
+import {
+  SETTO_APPLINK_ORIGIN,
+  SETTO_LEGACY_WEB_ORIGIN,
+  SETTO_WEB_ORIGIN,
+} from "./native-auth";
 
 /** Exactly the Setto links the app claims. */
 const ALLOWED_PREFIXES = ["/invite/", "/join/", "/reset-password", "/auth/callback"] as const;
 
 /** Origins that iOS may hand to the native app as Universal Links. */
-const ALLOWED_ORIGINS = [SETTO_WEB_ORIGIN, SETTO_APPLINK_ORIGIN] as const;
+const ALLOWED_ORIGINS = [
+  SETTO_WEB_ORIGIN,
+  SETTO_LEGACY_WEB_ORIGIN,
+  SETTO_APPLINK_ORIGIN,
+] as const;
 
 type Handled = { path: string; search: string; hash: string };
 

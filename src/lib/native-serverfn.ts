@@ -13,7 +13,7 @@ import type { CustomFetch } from "@tanstack/react-start";
 
 import { isNative } from "./native";
 
-export const SETTO_REMOTE_ORIGIN = "https://settoapp.lovable.app";
+export const SETTO_REMOTE_ORIGIN = "https://setto.dk";
 
 const SERVER_FN_PREFIX = "/_serverFn/";
 

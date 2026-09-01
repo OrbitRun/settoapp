@@ -14,7 +14,7 @@
  * opened in the system browser (SFSafariViewController via `@capacitor/browser`).
  * The broker returns to the hosted HTTPS callback
  *
- *     https://settoapp.lovable.app/auth/callback
+ *     https://setto.dk/auth/callback
  *
  * which iOS hands back to the installed app as a Universal Link, carrying
  * `state` plus `access_token`/`refresh_token` (or `error`). The session is then
@@ -30,7 +30,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { isNative } from "./native";
 
-export const SETTO_WEB_ORIGIN = "https://settoapp.lovable.app";
+/** Canonical web/auth origin. Primary custom domain; serves 200 directly. */
+export const SETTO_WEB_ORIGIN = "https://setto.dk";
+/** Previous canonical origin — still accepted for links already issued. */
+export const SETTO_LEGACY_WEB_ORIGIN = "https://settoapp.lovable.app";
 /** Dedicated Universal Link origin for native hand-off. OAuth must keep using the web origin. */
 export const SETTO_APPLINK_ORIGIN = "https://open.setto.dk";
 export const AUTH_CALLBACK_URL = `${SETTO_WEB_ORIGIN}/auth/callback`;
