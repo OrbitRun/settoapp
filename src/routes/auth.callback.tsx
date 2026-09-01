@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/i18n";
 
 /**
- * The single hosted OAuth return target: https://settoapp.lovable.app/auth/callback
+ * The single hosted OAuth return target: https://setto.dk/auth/callback
  *
  * On the web it finishes the provider round-trip and continues to the pending
  * invitation (if any) or the app home. On iOS the very same URL is claimed as a

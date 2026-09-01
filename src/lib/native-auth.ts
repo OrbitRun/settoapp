@@ -14,7 +14,7 @@
  * opened in the system browser (SFSafariViewController via `@capacitor/browser`).
  * The broker returns to the hosted HTTPS callback
  *
- *     https://settoapp.lovable.app/auth/callback
+ *     https://setto.dk/auth/callback
  *
  * which iOS hands back to the installed app as a Universal Link, carrying
  * `state` plus `access_token`/`refresh_token` (or `error`). The session is then
