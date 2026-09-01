@@ -9,6 +9,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:settoapp.lovable.app</string>
+		<string>applinks:open.setto.dk</string>
 	</array>
 </dict>
 </plist>
