@@ -978,7 +978,17 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const deleteExpense = async (id: string) => {
       const existing = expenseById(id);
-      await supabase.from("expenses").delete().eq("id", id);
+      // The deletion must be proven before anything is recorded: a row hidden
+      // by access rules comes back as an empty result, not as an error.
+      const { data: removed, error } = await supabase
+        .from("expenses")
+        .delete()
+        .eq("id", id)
+        .select("id");
+      if (error) throw error;
+      if (!removed || removed.length === 0) {
+        throw new Error("expense-delete-denied");
+      }
       // Keeps the deletion attached to the expense's own history instead of
       // becoming a separate feed row.
       await logActivity("expense_deleted", "expense", id, existing?.group_id ?? null, {
@@ -987,6 +997,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       });
       await refresh();
     };
+
 
     const addPerson = async (name: string): Promise<Person | null> => {
       if (!userId) return null;
