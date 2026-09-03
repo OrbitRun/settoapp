@@ -161,6 +161,8 @@ const en: Dict = {
   "expense.deleteConfirm": "Delete this expense?",
   "expense.deleteHint": "Balances update straight away. This can't be undone.",
   "expense.deleted": "Expense deleted",
+  "expense.deleteFailed": "The expense could not be deleted. Try again.",
+
   "expense.saved": "Expense updated",
   "expense.gone": "This expense no longer exists",
   "expense.saveChanges": "Save changes",
