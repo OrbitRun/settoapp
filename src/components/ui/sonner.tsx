@@ -6,6 +6,13 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
+      // Keeps top toasts clear of the iOS status bar / Dynamic Island while
+      // staying at a normal offset on the web.
+      style={
+        {
+          "--offset-top": "calc(env(safe-area-inset-top, 0px) + 16px)",
+        } as React.CSSProperties
+      }
       toastOptions={{
         classNames: {
           toast:
@@ -19,5 +26,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
     />
   );
 };
+
 
 export { Toaster };
