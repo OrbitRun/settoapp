@@ -46,10 +46,3 @@ export function authMessageKey(error: unknown): AuthMessageKey {
   }
   return "auth.error";
 }
-
-  if (raw.includes("failed to fetch") || raw.includes("network")) return "auth.offline";
-  if (raw.includes("expired") || raw.includes("invalid token") || raw.includes("otp")) {
-    return "auth.linkInvalidBody";
-  }
-  return "auth.error";
-}
