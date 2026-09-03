@@ -357,6 +357,10 @@ const en: Dict = {
   "auth.setPassword": "Save new password",
   "auth.passwordMismatch": "The two passwords are not the same.",
   "auth.passwordShort": "Use at least 6 characters.",
+  "auth.passwordRules": "At least 6 characters. Avoid passwords you use elsewhere.",
+  "auth.passwordBreached":
+    "This password has appeared in a data breach. Pick another one — longer, or with a special character.",
+
   "auth.passwordUpdated": "Your password has been updated.",
   "auth.linkInvalidTitle": "This link no longer works",
   "auth.linkInvalidBody": "It may have expired or already been used. Request a new one.",
