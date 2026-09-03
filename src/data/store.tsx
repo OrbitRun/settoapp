@@ -691,11 +691,24 @@ export function PariProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    /** Full audit trail for one expense, oldest first. */
-    const expenseHistory = (expenseId: string) =>
-      data.activity
+    /**
+     * Full audit trail for one expense, oldest first. Duplicate deletion rows
+     * (created by an earlier bug that logged a deletion even when the database
+     * refused it) collapse into the first one; the raw rows stay untouched.
+     */
+    const expenseHistory = (expenseId: string) => {
+      let seenDeleted = false;
+      return data.activity
         .filter((entry) => entry.entity_type === "expense" && entry.entity_id === expenseId)
-        .sort((a, b) => a.created_at.localeCompare(b.created_at));
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .filter((entry) => {
+          if (entry.activity_type !== "expense_deleted") return true;
+          if (seenDeleted) return false;
+          seenDeleted = true;
+          return true;
+        });
+    };
+
 
     const groupRule = (groupId: string): GroupRule | null => {
       const group = data.groups.find((g) => g.id === groupId);
