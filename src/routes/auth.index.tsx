@@ -212,6 +212,10 @@ function AuthScreen() {
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
             className="h-14 w-full rounded-2xl bg-surface px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
           />
+          {mode === "signup" ? (
+            <p className="px-1 text-[13px] text-muted-foreground">{t("auth.passwordRules")}</p>
+          ) : null}
+
           <PrimaryButton type="submit" disabled={busy}>
             {mode === "signup" ? t("auth.signUp") : t("auth.signIn")}
           </PrimaryButton>

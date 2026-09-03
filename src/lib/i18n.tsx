@@ -161,6 +161,8 @@ const en: Dict = {
   "expense.deleteConfirm": "Delete this expense?",
   "expense.deleteHint": "Balances update straight away. This can't be undone.",
   "expense.deleted": "Expense deleted",
+  "expense.deleteFailed": "The expense could not be deleted. Try again.",
+
   "expense.saved": "Expense updated",
   "expense.gone": "This expense no longer exists",
   "expense.saveChanges": "Save changes",
@@ -355,6 +357,10 @@ const en: Dict = {
   "auth.setPassword": "Save new password",
   "auth.passwordMismatch": "The two passwords are not the same.",
   "auth.passwordShort": "Use at least 6 characters.",
+  "auth.passwordRules": "At least 6 characters. Avoid passwords you use elsewhere.",
+  "auth.passwordBreached":
+    "This password has appeared in a data breach. Pick another one — longer, or with a special character.",
+
   "auth.passwordUpdated": "Your password has been updated.",
   "auth.linkInvalidTitle": "This link no longer works",
   "auth.linkInvalidBody": "It may have expired or already been used. Request a new one.",
@@ -706,6 +712,8 @@ const da: Dict = {
   "expense.deleteConfirm": "Slet denne udgift?",
   "expense.deleteHint": "Balancerne opdateres med det samme. Det kan ikke fortrydes.",
   "expense.deleted": "Udgift slettet",
+  "expense.deleteFailed": "Udgiften kunne ikke slettes. Prøv igen.",
+
   "expense.saved": "Udgift opdateret",
   "expense.gone": "Denne udgift findes ikke længere",
   "expense.saveChanges": "Gem ændringer",
@@ -901,6 +909,10 @@ const da: Dict = {
   "auth.setPassword": "Gem ny adgangskode",
   "auth.passwordMismatch": "De to adgangskoder er ikke ens.",
   "auth.passwordShort": "Brug mindst 6 tegn.",
+  "auth.passwordRules": "Mindst 6 tegn. Undgå adgangskoder, du bruger andre steder.",
+  "auth.passwordBreached":
+    "Denne adgangskode er set i et datalæk. Vælg en anden — gerne længere eller med et specialtegn.",
+
   "auth.passwordUpdated": "Din adgangskode er opdateret.",
   "auth.linkInvalidTitle": "Linket virker ikke længere",
   "auth.linkInvalidBody": "Det er måske udløbet eller allerede brugt. Bed om et nyt.",

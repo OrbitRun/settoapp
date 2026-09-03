@@ -691,11 +691,24 @@ export function PariProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    /** Full audit trail for one expense, oldest first. */
-    const expenseHistory = (expenseId: string) =>
-      data.activity
+    /**
+     * Full audit trail for one expense, oldest first. Duplicate deletion rows
+     * (created by an earlier bug that logged a deletion even when the database
+     * refused it) collapse into the first one; the raw rows stay untouched.
+     */
+    const expenseHistory = (expenseId: string) => {
+      let seenDeleted = false;
+      return data.activity
         .filter((entry) => entry.entity_type === "expense" && entry.entity_id === expenseId)
-        .sort((a, b) => a.created_at.localeCompare(b.created_at));
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .filter((entry) => {
+          if (entry.activity_type !== "expense_deleted") return true;
+          if (seenDeleted) return false;
+          seenDeleted = true;
+          return true;
+        });
+    };
+
 
     const groupRule = (groupId: string): GroupRule | null => {
       const group = data.groups.find((g) => g.id === groupId);
@@ -965,7 +978,17 @@ export function PariProvider({ children }: { children: ReactNode }) {
 
     const deleteExpense = async (id: string) => {
       const existing = expenseById(id);
-      await supabase.from("expenses").delete().eq("id", id);
+      // The deletion must be proven before anything is recorded: a row hidden
+      // by access rules comes back as an empty result, not as an error.
+      const { data: removed, error } = await supabase
+        .from("expenses")
+        .delete()
+        .eq("id", id)
+        .select("id");
+      if (error) throw error;
+      if (!removed || removed.length === 0) {
+        throw new Error("expense-delete-denied");
+      }
       // Keeps the deletion attached to the expense's own history instead of
       // becoming a separate feed row.
       await logActivity("expense_deleted", "expense", id, existing?.group_id ?? null, {
@@ -974,6 +997,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       });
       await refresh();
     };
+
 
     const addPerson = async (name: string): Promise<Person | null> => {
       if (!userId) return null;

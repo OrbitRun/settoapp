@@ -241,12 +241,20 @@ function ExpenseDetailScreen() {
   };
 
   const remove = async () => {
+    if (busy) return;
     setBusy(true);
-    await pari.deleteExpense(expense.id);
-    setBusy(false);
-    toast.success(t("expense.deleted"));
-    navigate({ to: "/home" });
+    try {
+      await pari.deleteExpense(expense.id);
+      toast.success(t("expense.deleted"));
+      navigate({ to: "/home" });
+    } catch {
+      // Stay on the expense: nothing was removed, so nothing may be claimed.
+      toast.error(t("expense.deleteFailed"));
+    } finally {
+      setBusy(false);
+    }
   };
+
 
   return (
     <Screen className="pb-32">

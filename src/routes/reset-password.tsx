@@ -171,7 +171,9 @@ function ResetPasswordScreen() {
                 autoComplete="new-password"
                 className="h-14 w-full rounded-2xl bg-surface px-4 text-[15px] outline-none ring-accent/40 focus:ring-2"
               />
+              <p className="px-1 text-[13px] text-muted-foreground">{t("auth.passwordRules")}</p>
               <PrimaryButton type="submit" disabled={busy}>
+
                 {t("auth.setPassword")}
               </PrimaryButton>
             </form>
