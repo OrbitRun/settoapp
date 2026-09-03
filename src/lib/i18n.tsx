@@ -903,6 +903,10 @@ const da: Dict = {
   "auth.setPassword": "Gem ny adgangskode",
   "auth.passwordMismatch": "De to adgangskoder er ikke ens.",
   "auth.passwordShort": "Brug mindst 6 tegn.",
+  "auth.passwordRules": "Mindst 6 tegn. Undgå adgangskoder, du bruger andre steder.",
+  "auth.passwordBreached":
+    "Denne adgangskode er set i et datalæk. Vælg en anden — gerne længere eller med et specialtegn.",
+
   "auth.passwordUpdated": "Din adgangskode er opdateret.",
   "auth.linkInvalidTitle": "Linket virker ikke længere",
   "auth.linkInvalidBody": "Det er måske udløbet eller allerede brugt. Bed om et nyt.",
