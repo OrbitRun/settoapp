@@ -712,6 +712,8 @@ const da: Dict = {
   "expense.deleteConfirm": "Slet denne udgift?",
   "expense.deleteHint": "Balancerne opdateres med det samme. Det kan ikke fortrydes.",
   "expense.deleted": "Udgift slettet",
+  "expense.deleteFailed": "Udgiften kunne ikke slettes. Prøv igen.",
+
   "expense.saved": "Udgift opdateret",
   "expense.gone": "Denne udgift findes ikke længere",
   "expense.saveChanges": "Gem ændringer",
