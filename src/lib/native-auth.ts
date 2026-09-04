@@ -48,6 +48,8 @@ export type NativeAuthResult =
   | { status: "error"; reason: "provider" | "network" | "unknown"; message?: string | undefined };
 
 const CALLBACK_TIMEOUT_MS = 180_000;
+/** Grace window for the browserFinished vs appUrlOpen handoff race. */
+const BROWSER_FINISHED_GRACE_MS = 1_000;
 
 function generateState(): string {
   if (typeof crypto !== "undefined" && crypto.getRandomValues) {
@@ -86,9 +88,11 @@ export function readCallbackUrl(raw: string): CallbackPayload {
   }
 }
 
-function isCallback(raw: string): boolean {
+export function isCallback(raw: string): boolean {
   try {
-    return new URL(raw).pathname === "/auth/callback";
+    const url = new URL(raw);
+    // Exact origin + path only — never accept arbitrary hosts with the same path.
+    return url.origin === SETTO_WEB_ORIGIN && url.pathname === "/auth/callback";
   } catch {
     return false;
   }
@@ -131,14 +135,17 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
 
   return new Promise<NativeAuthResult>((resolve) => {
     let settled = false;
+    let callbackObserved = false;
     let urlListener: { remove: () => Promise<void> } | undefined;
     let closeListener: { remove: () => Promise<void> } | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let graceTimer: ReturnType<typeof setTimeout> | undefined;
 
     const finish = async (result: NativeAuthResult) => {
       if (settled) return;
       settled = true;
       if (timer) clearTimeout(timer);
+      if (graceTimer) clearTimeout(graceTimer);
       await urlListener?.remove().catch(() => undefined);
       await closeListener?.remove().catch(() => undefined);
       await Browser.close().catch(() => undefined);
@@ -148,6 +155,13 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
     void (async () => {
       urlListener = await App.addListener("appUrlOpen", ({ url }) => {
         if (!isCallback(url)) return;
+        // Mark synchronously so a racing browserFinished never cancels a
+        // callback that already arrived.
+        callbackObserved = true;
+        if (graceTimer) {
+          clearTimeout(graceTimer);
+          graceTimer = undefined;
+        }
         console.info("[NATIVE_OAUTH] appUrlOpen received");
         void (async () => {
           const payload = readCallbackUrl(url);
@@ -191,11 +205,23 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
         })();
       });
 
-      // Dismissing the sheet without completing sign-in is a cancellation.
+      // Dismissing the sheet without completing sign-in is a cancellation —
+      // but on iOS the sheet also closes during a successful Universal Link
+      // handoff, racing appUrlOpen. Never cancel immediately: if a callback
+      // was observed, ignore; otherwise wait out a short grace window.
       closeListener = await Browser.addListener("browserFinished", () => {
         console.info("[NATIVE_OAUTH] browserFinished");
-        console.info("[NATIVE_OAUTH] finish cancelled");
-        void finish({ status: "cancelled" });
+        if (callbackObserved || settled) {
+          console.info("[NATIVE_OAUTH] browserFinished ignored callback observed");
+          return;
+        }
+        console.info("[NATIVE_OAUTH] browserFinished grace started");
+        graceTimer = setTimeout(() => {
+          graceTimer = undefined;
+          if (callbackObserved || settled) return;
+          console.info("[NATIVE_OAUTH] finish cancelled");
+          void finish({ status: "cancelled" });
+        }, BROWSER_FINISHED_GRACE_MS);
       });
 
       timer = setTimeout(() => {

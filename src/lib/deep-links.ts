@@ -90,15 +90,15 @@ export function useDeepLinks() {
       if (link.path === "/reset-password") {
         await consumeAuthParams(link);
       } else if (link.path === "/auth/callback") {
-        // native-auth.ts owns the broker callback tokens; never consume here.
-        console.info("[NATIVE_DEEPLINK] auth callback observed — not consuming code");
+        // native-auth.ts owns the broker callback AND the resulting navigation
+        // (auth.index.tsx lands on /home after nativeOAuthSignIn succeeds).
+        // Observed/logged only — never navigate, never consume tokens here.
+        console.info("[NATIVE_DEEPLINK] auth callback observed — not navigating");
+        return;
       }
       if (!active) return;
 
-      // OAuth callbacks are completed by the auth-session listener; land the
-      // user on the app home rather than the (web-only) callback screen.
-      const to = link.path === "/auth/callback" ? "/home" : link.path;
-      navigate({ to, replace: true }).catch(() => undefined);
+      navigate({ to: link.path, replace: true }).catch(() => undefined);
     };
 
     void (async () => {
