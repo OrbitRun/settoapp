@@ -86,9 +86,11 @@ export function readCallbackUrl(raw: string): CallbackPayload {
   }
 }
 
-function isCallback(raw: string): boolean {
+export function isCallback(raw: string): boolean {
   try {
-    return new URL(raw).pathname === "/auth/callback";
+    const url = new URL(raw);
+    // Exact origin + path only — never accept arbitrary hosts with the same path.
+    return url.origin === SETTO_WEB_ORIGIN && url.pathname === "/auth/callback";
   } catch {
     return false;
   }
