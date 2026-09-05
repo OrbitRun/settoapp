@@ -64,10 +64,11 @@ export type CallbackPayload = {
   state?: string;
   accessToken?: string;
   refreshToken?: string;
+  code?: string;
   error?: string;
 };
 
-/** Reads the broker's response from a returned callback URL (query or fragment). */
+/** Reads the provider response from a returned callback URL (query or fragment). */
 export function readCallbackUrl(raw: string): CallbackPayload {
   try {
     const url = new URL(raw);
@@ -77,10 +78,12 @@ export function readCallbackUrl(raw: string): CallbackPayload {
     const state = pick("state");
     const accessToken = pick("access_token");
     const refreshToken = pick("refresh_token");
+    const code = pick("code");
     return {
       ...(state ? { state } : {}),
       ...(accessToken ? { accessToken } : {}),
       ...(refreshToken ? { refreshToken } : {}),
+      ...(code ? { code } : {}),
       ...(error ? { error } : {}),
     };
   } catch {
@@ -109,18 +112,12 @@ export function buildBrokerUrl(provider: NativeAuthProvider, state: string): str
 }
 
 /**
- * Runs the full native sign-in for one provider and resolves once the Supabase
- * session exists in the app (or the user cancelled / the broker failed).
+ * Native sign-in for Google — unchanged Lovable broker flow.
  */
 export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<NativeAuthResult> {
   if (!isNative()) return { status: "error", reason: "unknown", message: "not native" };
 
   console.info(`[NATIVE_OAUTH] provider start ${provider}`);
-  const [{ Browser }, { App }] = await Promise.all([
-    import("@capacitor/browser"),
-    import("@capacitor/app"),
-  ]);
-
   console.info("[NATIVE_OAUTH] broker request starting");
   const state = generateState();
   let authUrl: string;
@@ -133,7 +130,44 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
     return { status: "error", reason: "unknown", message };
   }
 
+  return runNativeAuthFlow(authUrl, state);
+}
+
+/**
+ * Native Sign in with Apple through the Setto-owned backend Apple provider
+ * (BYOC Services ID `dk.setto.app.web`). Deliberately does NOT use the shared
+ * Lovable broker client. The authorize URL is obtained with
+ * `skipBrowserRedirect` so the WKWebView never navigates away; the system
+ * browser handles Apple, and the backend returns a PKCE `code` to the hosted
+ * Universal Link callback, which this module exchanges in-app.
+ */
+export async function nativeAppleSignIn(): Promise<NativeAuthResult> {
+  if (!isNative()) return { status: "error", reason: "unknown", message: "not native" };
+
+  console.info("[NATIVE_OAUTH] provider start apple (backend)");
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "apple",
+    options: { redirectTo: AUTH_CALLBACK_URL, skipBrowserRedirect: true },
+  });
+  if (error || !data?.url) {
+    const message = error?.message;
+    console.info(`[NATIVE_OAUTH] authorize error ${message ?? "no url"}`);
+    return { status: "error", reason: "provider", message };
+  }
+  console.info("[NATIVE_OAUTH] backend auth URL received");
+  return runNativeAuthFlow(data.url);
+}
+
+/**
+ * Shared native sheet + callback runner. Resolves once the Supabase session
+ * exists in the app (or the user cancelled / the provider failed).
+ *
+ * `expectedState` is only enforced for the broker flow, which mints it here;
+ * the backend flow's state is owned and verified by the Supabase client.
+ */
+function runNativeAuthFlow(authUrl: string, expectedState?: string): Promise<NativeAuthResult> {
   return new Promise<NativeAuthResult>((resolve) => {
+    let Browser: typeof import("@capacitor/browser").Browser | undefined;
     let settled = false;
     let callbackObserved = false;
     let urlListener: { remove: () => Promise<void> } | undefined;
@@ -148,12 +182,19 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
       if (graceTimer) clearTimeout(graceTimer);
       await urlListener?.remove().catch(() => undefined);
       await closeListener?.remove().catch(() => undefined);
-      await Browser.close().catch(() => undefined);
+      await Browser?.close().catch(() => undefined);
       resolve(result);
     };
 
     void (async () => {
-      urlListener = await App.addListener("appUrlOpen", ({ url }) => {
+      const [browserPlugin, appPlugin] = await Promise.all([
+        import("@capacitor/browser"),
+        import("@capacitor/app"),
+      ]);
+      Browser = browserPlugin.Browser;
+      const { App } = appPlugin;
+
+      urlListener = await App.addListener("appUrlOpen", ({ url }: { url: string }) => {
         if (!isCallback(url)) return;
         // Mark synchronously so a racing browserFinished never cancels a
         // callback that already arrived.
@@ -172,12 +213,13 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
             await finish({ status: "error", reason: "provider", message: payload.error });
             return;
           }
-          if (payload.state && payload.state !== state) {
+          if (expectedState && payload.state && payload.state !== expectedState) {
             console.info("[NATIVE_OAUTH] callback error state mismatch");
             await finish({ status: "error", reason: "provider", message: "state mismatch" });
             return;
           }
-          if (!payload.accessToken || !payload.refreshToken) {
+          const hasTokens = Boolean(payload.accessToken && payload.refreshToken);
+          if (!hasTokens && !payload.code) {
             console.info("[NATIVE_OAUTH] callback error no tokens received");
             await finish({ status: "error", reason: "provider", message: "no tokens received" });
             return;
@@ -185,10 +227,13 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
 
           try {
             console.info("[NATIVE_OAUTH] session establishment starting");
-            const { error } = await supabase.auth.setSession({
-              access_token: payload.accessToken,
-              refresh_token: payload.refreshToken,
-            });
+            // Broker flow returns tokens; the backend PKCE flow returns a code.
+            const { error } = hasTokens
+              ? await supabase.auth.setSession({
+                  access_token: payload.accessToken as string,
+                  refresh_token: payload.refreshToken as string,
+                })
+              : await supabase.auth.exchangeCodeForSession(payload.code as string);
             if (error) {
               console.info(`[NATIVE_OAUTH] session error ${error.message}`);
               await finish({ status: "error", reason: "provider", message: error.message });

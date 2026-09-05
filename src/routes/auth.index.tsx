@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { authMessageKey } from "@/lib/auth-errors";
 import { isNative } from "@/lib/native";
-import { nativeOAuthSignIn, SETTO_WEB_ORIGIN } from "@/lib/native-auth";
+import { nativeAppleSignIn, nativeOAuthSignIn, SETTO_WEB_ORIGIN } from "@/lib/native-auth";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth/")({
@@ -136,16 +136,17 @@ function AuthScreen() {
   };
 
   /**
-   * Web: unchanged browser redirect through the Lovable broker.
-   * Native: system-browser auth session returning through the hosted
-   * Universal Link callback (see src/lib/native-auth.ts).
+   * Google: unchanged Lovable broker flow (web redirect / native broker sheet).
+   * Apple: Setto-owned backend provider (BYOC Services ID), never the shared
+   * Lovable Apple client.
    */
   const oauth = async (provider: "google" | "apple") => {
     setBusy(true);
     const failKey = provider === "google" ? "auth.googleFailed" : "auth.appleFailed";
 
     if (isNative()) {
-      const result = await nativeOAuthSignIn(provider);
+      const result =
+        provider === "apple" ? await nativeAppleSignIn() : await nativeOAuthSignIn(provider);
       setBusy(false);
       if (result.status === "cancelled") {
         toast.message(t("auth.cancelled"));
@@ -159,7 +160,20 @@ function AuthScreen() {
       return;
     }
 
-    // Web flow stays exactly as before: broker redirect back to the origin.
+    if (provider === "apple") {
+      // Web Apple: backend provider redirect, returning to the hosted callback.
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "apple",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) {
+        setBusy(false);
+        toast.error(t(failKey));
+      }
+      return;
+    }
+
+    // Web Google flow stays exactly as before: broker redirect back to the origin.
     const result = await lovable.auth.signInWithOAuth(provider, {
       redirect_uri: window.location.origin,
     });
