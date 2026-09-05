@@ -167,7 +167,7 @@ export async function nativeAppleSignIn(): Promise<NativeAuthResult> {
  */
 function runNativeAuthFlow(authUrl: string, expectedState?: string): Promise<NativeAuthResult> {
   return new Promise<NativeAuthResult>((resolve) => {
-    let Browser: typeof import("@capacitor/browser").Browser;
+    let Browser: typeof import("@capacitor/browser").Browser | undefined;
     let settled = false;
     let callbackObserved = false;
     let urlListener: { remove: () => Promise<void> } | undefined;
@@ -182,12 +182,19 @@ function runNativeAuthFlow(authUrl: string, expectedState?: string): Promise<Nat
       if (graceTimer) clearTimeout(graceTimer);
       await urlListener?.remove().catch(() => undefined);
       await closeListener?.remove().catch(() => undefined);
-      await Browser.close().catch(() => undefined);
+      await Browser?.close().catch(() => undefined);
       resolve(result);
     };
 
     void (async () => {
-      urlListener = await App.addListener("appUrlOpen", ({ url }) => {
+      const [browserPlugin, appPlugin] = await Promise.all([
+        import("@capacitor/browser"),
+        import("@capacitor/app"),
+      ]);
+      Browser = browserPlugin.Browser;
+      const { App } = appPlugin;
+
+      urlListener = await App.addListener("appUrlOpen", ({ url }: { url: string }) => {
         if (!isCallback(url)) return;
         // Mark synchronously so a racing browserFinished never cancels a
         // callback that already arrived.
