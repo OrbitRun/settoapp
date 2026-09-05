@@ -213,12 +213,13 @@ function runNativeAuthFlow(authUrl: string, expectedState?: string): Promise<Nat
             await finish({ status: "error", reason: "provider", message: payload.error });
             return;
           }
-          if (payload.state && payload.state !== state) {
+          if (expectedState && payload.state && payload.state !== expectedState) {
             console.info("[NATIVE_OAUTH] callback error state mismatch");
             await finish({ status: "error", reason: "provider", message: "state mismatch" });
             return;
           }
-          if (!payload.accessToken || !payload.refreshToken) {
+          const hasTokens = Boolean(payload.accessToken && payload.refreshToken);
+          if (!hasTokens && !payload.code) {
             console.info("[NATIVE_OAUTH] callback error no tokens received");
             await finish({ status: "error", reason: "provider", message: "no tokens received" });
             return;
@@ -226,10 +227,13 @@ function runNativeAuthFlow(authUrl: string, expectedState?: string): Promise<Nat
 
           try {
             console.info("[NATIVE_OAUTH] session establishment starting");
-            const { error } = await supabase.auth.setSession({
-              access_token: payload.accessToken,
-              refresh_token: payload.refreshToken,
-            });
+            // Broker flow returns tokens; the backend PKCE flow returns a code.
+            const { error } = hasTokens
+              ? await supabase.auth.setSession({
+                  access_token: payload.accessToken as string,
+                  refresh_token: payload.refreshToken as string,
+                })
+              : await supabase.auth.exchangeCodeForSession(payload.code as string);
             if (error) {
               console.info(`[NATIVE_OAUTH] session error ${error.message}`);
               await finish({ status: "error", reason: "provider", message: error.message });
