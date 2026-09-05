@@ -64,10 +64,11 @@ export type CallbackPayload = {
   state?: string;
   accessToken?: string;
   refreshToken?: string;
+  code?: string;
   error?: string;
 };
 
-/** Reads the broker's response from a returned callback URL (query or fragment). */
+/** Reads the provider response from a returned callback URL (query or fragment). */
 export function readCallbackUrl(raw: string): CallbackPayload {
   try {
     const url = new URL(raw);
@@ -77,10 +78,12 @@ export function readCallbackUrl(raw: string): CallbackPayload {
     const state = pick("state");
     const accessToken = pick("access_token");
     const refreshToken = pick("refresh_token");
+    const code = pick("code");
     return {
       ...(state ? { state } : {}),
       ...(accessToken ? { accessToken } : {}),
       ...(refreshToken ? { refreshToken } : {}),
+      ...(code ? { code } : {}),
       ...(error ? { error } : {}),
     };
   } catch {
