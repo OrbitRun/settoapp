@@ -112,18 +112,12 @@ export function buildBrokerUrl(provider: NativeAuthProvider, state: string): str
 }
 
 /**
- * Runs the full native sign-in for one provider and resolves once the Supabase
- * session exists in the app (or the user cancelled / the broker failed).
+ * Native sign-in for Google — unchanged Lovable broker flow.
  */
 export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<NativeAuthResult> {
   if (!isNative()) return { status: "error", reason: "unknown", message: "not native" };
 
   console.info(`[NATIVE_OAUTH] provider start ${provider}`);
-  const [{ Browser }, { App }] = await Promise.all([
-    import("@capacitor/browser"),
-    import("@capacitor/app"),
-  ]);
-
   console.info("[NATIVE_OAUTH] broker request starting");
   const state = generateState();
   let authUrl: string;
@@ -136,7 +130,44 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
     return { status: "error", reason: "unknown", message };
   }
 
+  return runNativeAuthFlow(authUrl, state);
+}
+
+/**
+ * Native Sign in with Apple through the Setto-owned backend Apple provider
+ * (BYOC Services ID `dk.setto.app.web`). Deliberately does NOT use the shared
+ * Lovable broker client. The authorize URL is obtained with
+ * `skipBrowserRedirect` so the WKWebView never navigates away; the system
+ * browser handles Apple, and the backend returns a PKCE `code` to the hosted
+ * Universal Link callback, which this module exchanges in-app.
+ */
+export async function nativeAppleSignIn(): Promise<NativeAuthResult> {
+  if (!isNative()) return { status: "error", reason: "unknown", message: "not native" };
+
+  console.info("[NATIVE_OAUTH] provider start apple (backend)");
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "apple",
+    options: { redirectTo: AUTH_CALLBACK_URL, skipBrowserRedirect: true },
+  });
+  if (error || !data?.url) {
+    const message = error?.message;
+    console.info(`[NATIVE_OAUTH] authorize error ${message ?? "no url"}`);
+    return { status: "error", reason: "provider", message };
+  }
+  console.info("[NATIVE_OAUTH] backend auth URL received");
+  return runNativeAuthFlow(data.url);
+}
+
+/**
+ * Shared native sheet + callback runner. Resolves once the Supabase session
+ * exists in the app (or the user cancelled / the provider failed).
+ *
+ * `expectedState` is only enforced for the broker flow, which mints it here;
+ * the backend flow's state is owned and verified by the Supabase client.
+ */
+function runNativeAuthFlow(authUrl: string, expectedState?: string): Promise<NativeAuthResult> {
   return new Promise<NativeAuthResult>((resolve) => {
+    let Browser: typeof import("@capacitor/browser").Browser;
     let settled = false;
     let callbackObserved = false;
     let urlListener: { remove: () => Promise<void> } | undefined;
