@@ -6,16 +6,7 @@ import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
 import { shortDate, timeOfDay } from "@/lib/dates";
 import type { ActivityEntry, Expense } from "@/data/types";
-
-/** History lines describe what happened to the expense, never who is in the feed. */
-const HISTORY_KEYS: Record<ActivityEntry["activity_type"], string> = {
-  expense_added: "activity.historyCreated",
-  expense_updated: "activity.historyEdited",
-  expense_deleted: "activity.historyDeleted",
-  split_changed: "activity.historySplit",
-  settlement_marked: "activity.historyEdited",
-  group_created: "activity.historyCreated",
-};
+import { activityHistoryKey } from "@/lib/activity";
 
 export type ExpenseActivityCardProps = {
   expense: Expense;
@@ -129,7 +120,7 @@ export function ExpenseActivityCard({
           {history.map((event) => (
             <div key={event.id} className="flex justify-between">
               <span>
-                {t(HISTORY_KEYS[event.activity_type], {
+                {t(activityHistoryKey(event.activity_type), {
                   actor: event.actor_person_id
                     ? pari.personName(event.actor_person_id)
                     : pari.currentProfileName,

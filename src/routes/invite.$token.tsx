@@ -15,6 +15,7 @@ import {
 } from "@/data/invitations";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
+import { joinAction, redeemFallsBackToSignup } from "@/lib/invite-flow";
 
 /**
  * The public invitation landing page — and the future Universal Link target.
@@ -67,13 +68,23 @@ function InviteScreen() {
     };
   }, [token]);
 
+  /** Always keeps the invitation, then opens signup. */
+  const goToSignup = () => {
+    savePendingInvite(token);
+    navigate({ to: "/auth", search: { mode: "signup" } });
+  };
+
   const join = async () => {
     if (joining) return;
-    if (pari.isGuest) {
-      savePendingInvite(token);
-      navigate({ to: "/auth", search: { mode: "signup" } });
+
+    const action = joinAction({ authReady: pari.authReady, userId: pari.userId });
+    // The session check has not settled yet — treat the visitor as signed out
+    // rather than attempting a redemption that cannot succeed.
+    if (action !== "redeem") {
+      goToSignup();
       return;
     }
+
     setJoining(true);
     const { status, groupId } = await redeemInvitation(token);
     setJoining(false);
@@ -89,6 +100,10 @@ function InviteScreen() {
       clearPendingInvite();
       toast.success(t("invite.alreadyMember"));
       navigate({ to: "/groups/$groupId", params: { groupId } });
+      return;
+    }
+    if (redeemFallsBackToSignup(status)) {
+      goToSignup();
       return;
     }
     clearPendingInvite();

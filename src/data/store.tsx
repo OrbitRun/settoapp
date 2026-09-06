@@ -22,6 +22,7 @@ import {
   type SettlementStep,
   type SplitMode,
 } from "@/lib/split";
+import { normalizeActivityRows } from "@/lib/activity";
 import { detectLanguage, type Language } from "@/lib/i18n";
 import { clearNativeSecureSession } from "@/lib/native-secure-session";
 import { diffExpense, type ExpenseSnapshot } from "@/lib/history";
@@ -197,6 +198,8 @@ type PariContextValue = {
   resetDraft: () => void;
   /** True once the Supabase session check has resolved. */
   authReady: boolean;
+  /** The signed-in account id, or null when nobody is signed in. */
+  userId: string | null;
   /** True when nobody is signed in — Setto runs as a local, device-only workspace. */
   isGuest: boolean;
 
@@ -266,7 +269,7 @@ async function fetchAll(userId: string): Promise<PariData> {
     expenseSplits: (expenseSplits.data ?? []) as unknown as PariData["expenseSplits"],
     itemSplits: (itemSplits.data ?? []) as unknown as PariData["itemSplits"],
     settlements: (settlements.data ?? []) as unknown as PariData["settlements"],
-    activity: (activity.data ?? []) as unknown as ActivityEntry[],
+    activity: normalizeActivityRows(activity.data),
   };
 }
 
@@ -1455,6 +1458,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       setDraft: setDraftState,
       resetDraft: () => setDraftState(emptyDraft(currentPersonId)),
       authReady,
+      userId,
       isGuest,
 
       requireAccount: (reason: AccountPromptReason) => setAccountPrompt(reason),

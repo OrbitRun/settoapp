@@ -4,7 +4,7 @@ export type Language = "da" | "en";
 
 type Dict = Record<string, string>;
 
-const en: Dict = {
+export const en: Dict = {
   "app.tagline": "Share anything. Settle easily.",
   "nav.home": "Home",
   "nav.groups": "Groups",
@@ -127,6 +127,8 @@ const en: Dict = {
   "activity.edited": "Edited",
   "activity.deletedTag": "Deleted",
   "activity.history": "History",
+  "activity.unknownEvent": "{actor} updated this group",
+  "activity.historyUnknown": "Updated by {actor}",
   "activity.historyCreated": "Created by {actor}",
   "activity.historyEdited": "Edited by {actor}",
   "activity.historySplit": "Split changed by {actor}",
@@ -557,7 +559,7 @@ const en: Dict = {
   "group.noneOption": "No group — just these people",
 };
 
-const da: Dict = {
+export const da: Dict = {
   "app.tagline": "Del alt. Gør op med et tryk.",
   "nav.home": "Hjem",
   "nav.groups": "Grupper",
@@ -680,6 +682,8 @@ const da: Dict = {
   "activity.edited": "Redigeret",
   "activity.deletedTag": "Slettet",
   "activity.history": "Historik",
+  "activity.unknownEvent": "{actor} opdaterede denne gruppe",
+  "activity.historyUnknown": "Opdateret af {actor}",
   "activity.historyCreated": "Oprettet af {actor}",
   "activity.historyEdited": "Redigeret af {actor}",
   "activity.historySplit": "Fordeling ændret af {actor}",
