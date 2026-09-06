@@ -52,10 +52,11 @@ function randomToken(length: number, alphabet: string) {
 /**
  * The public invitation URL. `/invite/{token}` is the canonical path and the
  * future Universal Link target — it never contains an internal group id.
+ *
+ * Always uses the canonical HTTPS Setto origin; never `capacitor://localhost`.
  */
 export function invitationUrl(token: string) {
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
-  return `${origin}/invite/${token}`;
+  return `https://setto.dk/invite/${token}`;
 }
 
 /**
