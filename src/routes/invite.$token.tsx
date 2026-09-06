@@ -160,7 +160,7 @@ function InviteScreen() {
 
 
       <div className="mt-10 space-y-2">
-        <PrimaryButton onClick={() => void join()} disabled={joining}>
+        <PrimaryButton onClick={() => void join()} disabled={joining || !pari.authReady}>
           {t("invite.join")}
         </PrimaryButton>
         {pari.isGuest ? (
