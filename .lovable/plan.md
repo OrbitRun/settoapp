@@ -66,6 +66,6 @@ Signing up again with the same email produces a brand new, empty Setto. The only
 - `src/lib/i18n.tsx`: new keys `invite.person.inviteAgain` and revised `profile.deleteAccount*` copy, Danish and English.
 - New `src/lib/account-cleanup.ts` with a pure `settoLocalKeys()`/`clearSettoLocalState()` used by the profile delete flow: guest state key, pending invite, split draft, receipt draft, privacy/user preferences, Supabase session keys, plus `clearNativeSecureSession()` and `queryClient.clear()`.
 - Tests first, expected to fail for the stated reasons: person-sheet eligibility and label for a former person; claim reactivation semantics (same person id, membership active, no duplicates, idempotent, already-linked rejected); local-state key coverage; fresh-start invariant (no email/name based relinking anywhere).
-- Validation: focused tests, existing invitation and native-auth tests, full suite, typecheck, web production build, `SETTO_NATIVE=1` build, `cap sync ios`.
+- Validation: focused tests, existing invitation and native-auth tests, full suite, typecheck, web production build, `SETTO_NATIVE=1` build, `cap sync ios`. The same-email fresh-start invariant is not reported as proven from automated tests alone — it is confirmed by a real device run (delete, force-close and reopen still signed out, sign up with the same email, empty app, then "Invitér igen" restores the old person and balance).
 
 Migrations are additive function replacements plus a new delete branch; no column or table is dropped or renamed, so they apply safely to the live database.
