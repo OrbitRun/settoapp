@@ -78,9 +78,10 @@ function InviteScreen() {
     if (joining) return;
 
     const action = joinAction({ authReady: pari.authReady, userId: pari.userId });
-    // The session check has not settled yet — treat the visitor as signed out
-    // rather than attempting a redemption that cannot succeed.
-    if (action !== "redeem") {
+    // The session check has not settled yet: a tap must be a harmless no-op,
+    // never a signup detour for someone who is in fact signed in.
+    if (action === "wait") return;
+    if (action === "signup") {
       goToSignup();
       return;
     }
