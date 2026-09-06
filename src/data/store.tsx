@@ -22,6 +22,7 @@ import {
   type SettlementStep,
   type SplitMode,
 } from "@/lib/split";
+import { normalizeActivityRows } from "@/lib/activity";
 import { detectLanguage, type Language } from "@/lib/i18n";
 import { clearNativeSecureSession } from "@/lib/native-secure-session";
 import { diffExpense, type ExpenseSnapshot } from "@/lib/history";

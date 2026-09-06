@@ -15,6 +15,7 @@ import {
 } from "@/data/invitations";
 import { usePari } from "@/data/store";
 import { useT } from "@/lib/i18n";
+import { joinAction, redeemFallsBackToSignup } from "@/lib/invite-flow";
 
 /**
  * The public invitation landing page — and the future Universal Link target.
