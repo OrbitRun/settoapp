@@ -6,7 +6,9 @@ import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { MoneyAmount, balanceTone } from "@/components/pari/MoneyAmount";
 import { usePari } from "@/data/store";
+import { personInviteAction, personInviteLabelKey } from "@/lib/person-actions";
 import { useT } from "@/lib/i18n";
+
 
 export type PersonSheetState = {
   id: string;
@@ -59,9 +61,10 @@ export function PersonSheet({
         ? t("invite.person.pending")
         : t("invite.person.unlinked");
 
-  const canInvite = !person.former && !person.linked;
+  const inviteAction = personInviteAction(person);
   const canRename = !person.former;
   const canRemove = !person.former && !person.isSelf;
+
 
   const saveName = async () => {
     const trimmed = name.trim();
@@ -126,11 +129,12 @@ export function PersonSheet({
         </div>
       ) : (
         <div className="space-y-2 pb-2">
-          {canInvite ? (
+          {inviteAction ? (
             <PrimaryButton onClick={() => onInvite(person)}>
-              {person.pending ? t("invite.person.resend") : t("invite.person.invite")}
+              {t(personInviteLabelKey(inviteAction))}
             </PrimaryButton>
           ) : null}
+
           {canRename ? (
             <SecondaryButton onClick={() => setEditing(true)}>
               {t("person.editName")}
