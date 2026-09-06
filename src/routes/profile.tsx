@@ -15,8 +15,10 @@ import { useT, type Language } from "@/lib/i18n";
 import type { Appearance } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { AuthGate } from "@/components/pari/AuthGate";
-import { clearPendingInvite } from "@/data/invitations";
+import { clearSettoDeviceState } from "@/lib/account-cleanup";
+import { clearNativeSecureSession } from "@/lib/native-secure-session";
 import { deleteMyAccount } from "@/lib/account.functions";
+
 import { Switch } from "@/components/ui/switch";
 import { setHideAmounts, useHideAmounts } from "@/lib/privacy";
 
@@ -70,14 +72,16 @@ function ProfileScreen() {
         setDeleteError(t("profile.deleteAccountError"));
         return;
       }
+      // Only after the server confirmed full deletion is the device wiped.
       await queryClient.cancelQueries();
       queryClient.clear();
-      clearPendingInvite();
       try {
         await pari.signOut();
       } catch {
         // The session is already invalid after the account was deleted.
       }
+      clearNativeSecureSession().catch(() => undefined);
+      clearSettoDeviceState();
       navigate({ to: "/", replace: true });
     } catch {
       setDeleteError(t("profile.deleteAccountError"));
@@ -85,6 +89,7 @@ function ProfileScreen() {
       setDeleting(false);
     }
   };
+
 
   const saveName = async () => {
     await pari.updateProfile({ display_name: nameValue.trim() || pari.currentProfileName });

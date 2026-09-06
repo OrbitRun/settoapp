@@ -19,6 +19,18 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
 
+    // Storage paths are captured FIRST: the relational cleanup may delete
+    // groups and their receipts, which would take the paths with them.
+    const owned = await supabase.from("receipts").select("storage_path");
+    if (owned.error) {
+      console.error("[account-delete] receipt lookup failed", {
+        userId,
+        message: owned.error.message,
+      });
+      return { success: false as const, stage: "receipts" as const };
+    }
+    const storagePaths = (owned.data ?? []).map((row) => row.storage_path);
+
     const { data, error } = await supabase.rpc("delete_my_account");
 
     if (error) {
@@ -39,19 +51,7 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
     // Private receipt images must never outlive the account. Rows cascade with
     // auth.users, but Storage objects do not — so they go first, and a failure
     // stops the deletion instead of leaving private images behind.
-    const owned = await supabase.from("receipts").select("storage_path");
-    if (owned.error) {
-      console.error("[account-delete] receipt lookup failed", {
-        userId,
-        message: owned.error.message,
-      });
-      return { success: false as const, stage: "receipts" as const };
-    }
-
-    const cleanup = await removeReceiptObjects(
-      supabase,
-      (owned.data ?? []).map((row) => row.storage_path),
-    );
+    const cleanup = await removeReceiptObjects(supabase, storagePaths);
     if (!cleanup.ok) {
       console.error("[account-delete] receipt objects remain", {
         userId,
@@ -60,6 +60,7 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
       // delete_my_account is idempotent, so the user can safely retry.
       return { success: false as const, stage: "receipts" as const };
     }
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: adminError } = await supabaseAdmin.auth.admin.deleteUser(userId);
