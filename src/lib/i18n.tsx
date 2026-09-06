@@ -4,7 +4,7 @@ export type Language = "da" | "en";
 
 type Dict = Record<string, string>;
 
-const en: Dict = {
+export const en: Dict = {
   "app.tagline": "Share anything. Settle easily.",
   "nav.home": "Home",
   "nav.groups": "Groups",
@@ -557,7 +557,7 @@ const en: Dict = {
   "group.noneOption": "No group — just these people",
 };
 
-const da: Dict = {
+export const da: Dict = {
   "app.tagline": "Del alt. Gør op med et tryk.",
   "nav.home": "Hjem",
   "nav.groups": "Grupper",
