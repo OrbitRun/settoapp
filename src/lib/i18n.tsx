@@ -193,13 +193,15 @@ export const en: Dict = {
   "profile.howItWorks": "How Setto works",
   "profile.signOut": "Sign out",
   "profile.deleteAccount": "Delete account",
-  "profile.deleteAccountIntro": "This permanently deletes your account. Please read what happens:",
+  "profile.deleteAccountIntro":
+    "Your account and all your private Setto data are deleted permanently. If you sign up again — even with the same email — you start completely over. Shared history may be kept for the other participants.",
   "profile.deleteAccountPoint1": "Your account and private data are deleted.",
-  "profile.deleteAccountPoint2": "Your personal expenses are deleted.",
+  "profile.deleteAccountPoint2": "Your personal expenses, receipts and drafts are deleted.",
   "profile.deleteAccountPoint3": "Shared expenses and group history are kept for the other participants.",
   "profile.deleteAccountPoint4": "Groups you own are transferred to another active participant if possible.",
-  "profile.deleteAccountPoint5": "Otherwise the group is locked until it is handled later.",
-  "profile.deleteAccountPoint6": "This action cannot be undone.",
+  "profile.deleteAccountPoint5": "If nobody else has an account, that group and everything in it is deleted.",
+  "profile.deleteAccountPoint6": "This cannot be undone, and signing up with the same email starts empty.",
+
   "profile.deleteAccountConfirmHint": "Type DELETE to confirm.",
   "profile.deleteAccountConfirmWord": "DELETE",
   "profile.deleteAccountWorking": "Deleting account…",
@@ -410,6 +412,8 @@ export const en: Dict = {
   "invite.person.linked": "Connected",
   "invite.person.invite": "Invite",
   "invite.person.resend": "Send again",
+  "invite.person.inviteAgain": "Invite again",
+
   "invite.claimIntro": "You'll be connected to {name}",
   "invite.claimed": "You're connected to your existing history.",
   "invite.personTaken": "This person is already connected to an account.",
@@ -966,6 +970,8 @@ export const da: Dict = {
   "invite.person.linked": "Tilknyttet",
   "invite.person.invite": "Invitér",
   "invite.person.resend": "Send igen",
+  "invite.person.inviteAgain": "Invitér igen",
+
   "invite.claimIntro": "Du bliver tilknyttet {name}",
   "invite.claimed": "Du er nu tilknyttet din eksisterende historik.",
   "invite.personTaken": "Denne person er allerede tilknyttet en konto.",
