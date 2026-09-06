@@ -8,6 +8,14 @@ describe("invitation join action", () => {
     expect(joinAction({ authReady: false, userId: "u1" })).toBe("wait");
   });
 
+  it("neither signs up nor redeems while the session check is running", () => {
+    for (const userId of [null, "u1"]) {
+      const action = joinAction({ authReady: false, userId });
+      expect(action).not.toBe("signup");
+      expect(action).not.toBe("redeem");
+    }
+  });
+
   it("sends a signed-out visitor to signup", () => {
     expect(joinAction({ authReady: true, userId: null })).toBe("signup");
   });

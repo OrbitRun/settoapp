@@ -80,7 +80,8 @@ function ProfileScreen() {
       } catch {
         // The session is already invalid after the account was deleted.
       }
-      clearNativeSecureSession().catch(() => undefined);
+      // Deterministic: the Keychain copy must be gone before we navigate away.
+      await clearNativeSecureSession().catch(() => undefined);
       clearSettoDeviceState();
       navigate({ to: "/", replace: true });
     } catch {
