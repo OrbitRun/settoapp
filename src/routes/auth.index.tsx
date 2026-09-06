@@ -8,6 +8,7 @@ import { readPendingInvite } from "@/data/invitations";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { authMessageKey } from "@/lib/auth-errors";
+import { signupOutcome } from "@/lib/auth-flow";
 import { isNative } from "@/lib/native";
 import { nativeAppleSignIn, nativeOAuthSignIn, SETTO_WEB_ORIGIN } from "@/lib/native-auth";
 import { useT } from "@/lib/i18n";
@@ -79,48 +80,29 @@ function AuthScreen() {
     setBusy(true);
     try {
       if (mode === "signup") {
+        // Signup confirmation is intentionally disabled: a successful signUp
+        // must produce a usable session immediately. No email roundtrip.
         const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
             data: { display_name: name.trim() || email.split("@")[0] },
           },
         });
         if (error) throw error;
 
-        // Managed auth has auto-confirm enabled, so a successful signUp should
-        // return (or quickly produce) a session. Use it immediately instead of
-        // asking the user to check their email.
-        if (signUpData.session) {
-          navigate({ to: "/home" });
-          return;
+        let session = signUpData.session;
+        if (!session) {
+          const { data: immediate } = await supabase.auth.getSession();
+          session = immediate.session;
         }
 
-        const { data: immediate } = await supabase.auth.getSession();
-        if (immediate.session) {
-          navigate({ to: "/home" });
+        if (signupOutcome(signUpData.session, session) === "no-session") {
+          // Never enter the app without a session — stay put and explain.
+          toast.error(t("auth.signUpNoSession"));
+          setMode("signin");
           return;
         }
-
-        // Briefly wait for the auth-state change that auto-confirm will fire.
-        await new Promise<void>((resolve) => {
-          let timer: number | undefined;
-          const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === "SIGNED_IN" && session) {
-              cleanup();
-              resolve();
-            }
-          });
-          timer = window.setTimeout(() => {
-            cleanup();
-            resolve();
-          }, 2000);
-          function cleanup() {
-            if (timer) window.clearTimeout(timer);
-            listener.subscription.unsubscribe();
-          }
-        });
 
         navigate({ to: "/home" });
       } else {
