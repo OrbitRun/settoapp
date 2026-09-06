@@ -68,7 +68,12 @@ export function InviteSheet({
 
   const copy = async () => {
     if (!url) return;
-    await navigator.clipboard?.writeText(url);
+    try {
+      await navigator.clipboard?.writeText(url);
+    } catch {
+      toast.error(t("invite.copyFailed"));
+      return;
+    }
     setCopied(true);
     toast.success(t("invite.copied"));
     setTimeout(() => setCopied(false), 2000);
@@ -81,8 +86,13 @@ export function InviteSheet({
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({ title: groupName, text, url });
-      } catch {
-        /* dismissed or failed — the invitation stays "not sent" */
+      } catch (err) {
+        // User cancellation/dismissal is not a failure; anything else falls back
+        // to copying the HTTPS link so the invitation is still usable.
+        const dismissed =
+          err instanceof DOMException && err.name === "AbortError";
+        if (dismissed) return;
+        await copy();
         return;
       }
       await confirmSent();
