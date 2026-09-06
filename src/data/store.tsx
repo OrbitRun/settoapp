@@ -266,7 +266,7 @@ async function fetchAll(userId: string): Promise<PariData> {
     expenseSplits: (expenseSplits.data ?? []) as unknown as PariData["expenseSplits"],
     itemSplits: (itemSplits.data ?? []) as unknown as PariData["itemSplits"],
     settlements: (settlements.data ?? []) as unknown as PariData["settlements"],
-    activity: (activity.data ?? []) as unknown as ActivityEntry[],
+    activity: normalizeActivityRows(activity.data),
   };
 }
 

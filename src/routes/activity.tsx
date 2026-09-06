@@ -13,6 +13,7 @@ import { dayGroupLabel, shortDate } from "@/lib/dates";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { ActivityEntry } from "@/data/types";
+import { activityLabelKey } from "@/lib/activity";
 import { AuthGate } from "@/components/pari/AuthGate";
 
 export const Route = createFileRoute("/activity")({
@@ -36,25 +37,6 @@ export const Route = createFileRoute("/activity")({
     </AuthGate>
   ),
 });
-
-const KEYS: Record<ActivityEntry["activity_type"], string> = {
-  expense_added: "activity.expenseAdded",
-  expense_updated: "activity.expenseUpdated",
-  expense_deleted: "activity.expenseDeleted",
-  split_changed: "activity.splitChanged",
-  settlement_marked: "activity.settlementMarked",
-  group_created: "activity.groupCreated",
-};
-
-/** History lines describe what happened to the expense, never who is in the feed. */
-const HISTORY_KEYS: Record<ActivityEntry["activity_type"], string> = {
-  expense_added: "activity.historyCreated",
-  expense_updated: "activity.historyEdited",
-  expense_deleted: "activity.historyDeleted",
-  split_changed: "activity.historySplit",
-  settlement_marked: "activity.historyEdited",
-  group_created: "activity.historyCreated",
-};
 
 function ActivityScreen() {
   const pari = usePari();
@@ -147,7 +129,7 @@ function ActivityScreen() {
                                   from: settlement.from,
                                   to: settlement.to,
                                 })
-                              : t(KEYS[entry.activity_type], { actor, title })}
+                              : t(activityLabelKey(entry.activity_type), { actor, title })}
                           </p>
                           <p className="mt-0.5 text-[13px] text-muted-foreground">
                             {shortDate(entry.created_at)}
