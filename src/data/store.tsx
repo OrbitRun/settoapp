@@ -197,6 +197,8 @@ type PariContextValue = {
   resetDraft: () => void;
   /** True once the Supabase session check has resolved. */
   authReady: boolean;
+  /** The signed-in account id, or null when nobody is signed in. */
+  userId: string | null;
   /** True when nobody is signed in — Setto runs as a local, device-only workspace. */
   isGuest: boolean;
 
@@ -1455,6 +1457,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       setDraft: setDraftState,
       resetDraft: () => setDraftState(emptyDraft(currentPersonId)),
       authReady,
+      userId,
       isGuest,
 
       requireAccount: (reason: AccountPromptReason) => setAccountPrompt(reason),
