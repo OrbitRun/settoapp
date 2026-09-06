@@ -753,13 +753,16 @@ export const da: Dict = {
   "profile.howItWorks": "Sådan virker Setto",
   "profile.signOut": "Log ud",
   "profile.deleteAccount": "Slet konto",
-  "profile.deleteAccountIntro": "Din konto slettes permanent. Læs hvad der sker:",
+  "profile.deleteAccountIntro":
+    "Din konto og alle dine private Setto-data slettes permanent. Hvis du opretter dig igen — også med samme mail — starter du helt forfra. Fælles historik kan blive bevaret for andre deltagere.",
   "profile.deleteAccountPoint1": "Din konto og dine private data slettes.",
-  "profile.deleteAccountPoint2": "Dine personlige udgifter slettes.",
+  "profile.deleteAccountPoint2": "Dine personlige udgifter, kvitteringer og kladder slettes.",
   "profile.deleteAccountPoint3": "Delte udgifter og historik i grupper beholdes for de andre deltagere.",
   "profile.deleteAccountPoint4": "Grupper du ejer overføres til en anden aktiv deltager, hvis det er muligt.",
-  "profile.deleteAccountPoint5": "Ellers bliver gruppen låst, indtil den håndteres senere.",
-  "profile.deleteAccountPoint6": "Handlingen kan ikke fortrydes.",
+  "profile.deleteAccountPoint5": "Har ingen andre en konto, slettes gruppen og alt indhold i den.",
+  "profile.deleteAccountPoint6":
+    "Handlingen kan ikke fortrydes, og opretter du dig igen med samme mail, starter du tomt.",
+
   "profile.deleteAccountConfirmHint": "Skriv SLET for at bekræfte.",
   "profile.deleteAccountConfirmWord": "SLET",
   "profile.deleteAccountWorking": "Sletter konto…",
