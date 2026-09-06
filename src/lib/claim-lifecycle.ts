@@ -54,7 +54,10 @@ export function claimOutcome(ctx: ClaimContext): ClaimOutcome {
   if (ctx.personLinkedTo === ctx.callerId) {
     // Harmless idempotency only while the membership is still active.
     if (!ctx.membershipRemoved) return "already_member";
-    if (!valid) return ctx.expiredOnly() ? "expired" : "revoked";
+    if (!valid) {
+      const onlyExpired = ctx.invite.expired && !ctx.invite.revoked && ctx.invite.status === "active";
+      return onlyExpired ? "expired" : "revoked";
+    }
     return "claimed";
   }
 
