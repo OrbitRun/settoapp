@@ -8,7 +8,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
 
         window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = CAPBridgeViewController()
+        // Painted so no white surface can appear behind a rubber-band overscroll.
+        window?.backgroundColor = UIColor(red: 0.969, green: 0.965, blue: 0.949, alpha: 1.0)
+        window?.rootViewController = SettoViewController()
         window?.makeKeyAndVisible()
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)

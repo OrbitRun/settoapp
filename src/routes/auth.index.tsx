@@ -51,7 +51,7 @@ function AuthScreen() {
   useEffect(() => {
     setHasPendingInvite(Boolean(readPendingInvite()));
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/home" });
+      if (data.session) navigate({ to: "/home", replace: true });
     });
   }, [navigate]);
 
@@ -104,11 +104,11 @@ function AuthScreen() {
           return;
         }
 
-        navigate({ to: "/home" });
+        navigate({ to: "/home", replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/home" });
+        navigate({ to: "/home", replace: true });
       }
     } catch (error) {
       toast.error(t(authMessageKey(error)));
@@ -138,7 +138,7 @@ function AuthScreen() {
         toast.error(t(failKey));
         return;
       }
-      navigate({ to: "/home" });
+      navigate({ to: "/home", replace: true });
       return;
     }
 
@@ -165,7 +165,7 @@ function AuthScreen() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/home" });
+    navigate({ to: "/home", replace: true });
   };
 
 
