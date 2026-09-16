@@ -34,9 +34,21 @@ import { isNative } from "./native";
 export const SETTO_WEB_ORIGIN = "https://setto.dk";
 /** Previous canonical origin — still accepted for links already issued. */
 export const SETTO_LEGACY_WEB_ORIGIN = "https://settoapp.lovable.app";
-/** Dedicated Universal Link origin for native hand-off. OAuth must keep using the web origin. */
+/**
+ * Dedicated Universal Link origin for native hand-off.
+ *
+ * iOS never hands a Universal Link to the app when the browser is already on
+ * that same domain. The whole OAuth journey runs on `setto.dk`
+ * (`/~oauth/initiate` → provider → callback), so a `setto.dk/auth/callback`
+ * return simply renders as a web page inside the auth sheet and the app is
+ * never woken. The final native callback therefore targets this separate
+ * origin, which the app claims and whose AASA covers `/auth/callback`.
+ */
 export const SETTO_APPLINK_ORIGIN = "https://open.setto.dk";
+/** Web OAuth return target — unchanged. */
 export const AUTH_CALLBACK_URL = `${SETTO_WEB_ORIGIN}/auth/callback`;
+/** Native OAuth return target — cross-origin to the auth journey on purpose. */
+export const NATIVE_AUTH_CALLBACK_URL = `${SETTO_APPLINK_ORIGIN}/auth/callback`;
 /** Broker initiate endpoint — same path the cloud-auth-js package defaults to. */
 export const OAUTH_BROKER_URL = `${SETTO_WEB_ORIGIN}/~oauth/initiate`;
 
