@@ -103,11 +103,17 @@ export function readCallbackUrl(raw: string): CallbackPayload {
   }
 }
 
+/** Origins whose /auth/callback the native flow accepts back from the sheet. */
+const CALLBACK_ORIGINS = [SETTO_APPLINK_ORIGIN, SETTO_WEB_ORIGIN] as const;
+
 export function isCallback(raw: string): boolean {
   try {
     const url = new URL(raw);
     // Exact origin + path only — never accept arbitrary hosts with the same path.
-    return url.origin === SETTO_WEB_ORIGIN && url.pathname === "/auth/callback";
+    return (
+      CALLBACK_ORIGINS.includes(url.origin as (typeof CALLBACK_ORIGINS)[number]) &&
+      url.pathname === "/auth/callback"
+    );
   } catch {
     return false;
   }
@@ -117,7 +123,7 @@ export function isCallback(raw: string): boolean {
 export function buildBrokerUrl(provider: NativeAuthProvider, state: string): string {
   const params = new URLSearchParams({
     provider,
-    redirect_uri: AUTH_CALLBACK_URL,
+    redirect_uri: NATIVE_AUTH_CALLBACK_URL,
     state,
   });
   return `${OAUTH_BROKER_URL}?${params.toString()}`;
@@ -159,7 +165,7 @@ export async function nativeAppleSignIn(): Promise<NativeAuthResult> {
   console.info("[NATIVE_OAUTH] provider start apple (backend)");
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "apple",
-    options: { redirectTo: AUTH_CALLBACK_URL, skipBrowserRedirect: true },
+    options: { redirectTo: NATIVE_AUTH_CALLBACK_URL, skipBrowserRedirect: true },
   });
   if (error || !data?.url) {
     const message = error?.message;
