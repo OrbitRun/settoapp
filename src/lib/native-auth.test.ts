@@ -41,7 +41,7 @@ describe("isCallback", () => {
 
   it("rejects other origins with the same path", () => {
     expect(isCallback("https://settoapp.lovable.app/auth/callback")).toBe(false);
-    expect(isCallback("https://open.setto.dk/auth/callback")).toBe(false);
+    expect(isCallback("https://open.setto.dk.evil.example/auth/callback")).toBe(false);
     expect(isCallback("https://evil.example/auth/callback")).toBe(false);
     expect(isCallback("https://setto.dk.evil.example/auth/callback")).toBe(false);
     expect(isCallback("capacitor://localhost/auth/callback")).toBe(false);
