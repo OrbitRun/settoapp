@@ -1,27 +1,19 @@
 /**
- * Native (Capacitor/iOS) OAuth — through the Lovable auth broker.
+ * Native (Capacitor/iOS) OAuth — through the Lovable auth broker (Google) and
+ * the Setto-owned backend Apple provider.
  *
- * The managed Supabase project holds no Google/Apple provider secrets; those
- * credentials live behind the Lovable OAuth broker that the web build uses via
- * `lovable.auth.signInWithOAuth()`. `@lovable.dev/cloud-auth-js` cannot be used
- * as-is on native: outside an iframe it completes the flow by assigning
- * `window.location.href`, which would navigate the WKWebView away from the app.
+ * Transport: `ASWebAuthenticationSession` with HTTPS callback matching
+ * (`SettoAuthSession` native plugin). The provider redirect to
  *
- * So this module follows the exact same broker contract the package implements:
+ *     https://open.setto.dk/auth/callback
  *
- *     GET <origin>/~oauth/initiate?provider=<p>&redirect_uri=<uri>&state=<s>
+ * is intercepted by the authentication session itself and handed straight back
+ * to the app, which dismisses the sheet automatically. The callback is NOT a
+ * Universal Link hand-off any more: the in-app browser plugin, the URL-open
+ * listener and the close-race grace window are all out of the OAuth path.
  *
- * opened in the system browser (SFSafariViewController via `@capacitor/browser`).
- * The broker returns to the hosted HTTPS callback
- *
- *     https://setto.dk/auth/callback
- *
- * which iOS hands back to the installed app as a Universal Link, carrying
- * `state` plus `access_token`/`refresh_token` (or `error`). The session is then
- * established in-app with `supabase.auth.setSession()`.
- *
- * This module is the SOLE consumer of the native `/auth/callback` deep link;
- * `src/lib/deep-links.ts` only observes it.
+ * This module remains the SOLE consumer of the OAuth callback credentials;
+ * `src/lib/deep-links.ts` only observes `/auth/callback`.
  *
  * On the web this module is unused — `src/routes/auth.index.tsx` keeps the
  * existing `lovable.auth.signInWithOAuth()` browser flow untouched.
@@ -29,25 +21,23 @@
 import { supabase } from "@/integrations/supabase/client";
 
 import { isNative } from "./native";
+import { SettoAuthSession } from "./native-auth-session";
 
 /** Canonical web/auth origin. Primary custom domain; serves 200 directly. */
 export const SETTO_WEB_ORIGIN = "https://setto.dk";
 /** Previous canonical origin — still accepted for links already issued. */
 export const SETTO_LEGACY_WEB_ORIGIN = "https://settoapp.lovable.app";
 /**
- * Dedicated Universal Link origin for native hand-off.
+ * Dedicated hand-off origin for native authentication.
  *
- * iOS never hands a Universal Link to the app when the browser is already on
- * that same domain. The whole OAuth journey runs on `setto.dk`
- * (`/~oauth/initiate` → provider → callback), so a `setto.dk/auth/callback`
- * return simply renders as a web page inside the auth sheet and the app is
- * never woken. The final native callback therefore targets this separate
- * origin, which the app claims and whose AASA covers `/auth/callback`.
+ * The whole OAuth journey runs on `setto.dk`, so the final callback must be a
+ * separate origin the native authentication session can match on. It stays an
+ * Associated Domain for the app.
  */
 export const SETTO_APPLINK_ORIGIN = "https://open.setto.dk";
 /** Web OAuth return target — unchanged. */
 export const AUTH_CALLBACK_URL = `${SETTO_WEB_ORIGIN}/auth/callback`;
-/** Native OAuth return target — cross-origin to the auth journey on purpose. */
+/** Native OAuth return target — matched by ASWebAuthenticationSession. */
 export const NATIVE_AUTH_CALLBACK_URL = `${SETTO_APPLINK_ORIGIN}/auth/callback`;
 /** Broker initiate endpoint — same path the cloud-auth-js package defaults to. */
 export const OAUTH_BROKER_URL = `${SETTO_WEB_ORIGIN}/~oauth/initiate`;
@@ -58,10 +48,6 @@ export type NativeAuthResult =
   | { status: "success" }
   | { status: "cancelled" }
   | { status: "error"; reason: "provider" | "network" | "unknown"; message?: string | undefined };
-
-const CALLBACK_TIMEOUT_MS = 180_000;
-/** Grace window for the browserFinished vs appUrlOpen handoff race. */
-const BROWSER_FINISHED_GRACE_MS = 1_000;
 
 function generateState(): string {
   if (typeof crypto !== "undefined" && crypto.getRandomValues) {
@@ -129,19 +115,43 @@ export function buildBrokerUrl(provider: NativeAuthProvider, state: string): str
   return `${OAUTH_BROKER_URL}?${params.toString()}`;
 }
 
+/** What a returned callback URL asks the app to do — pure, no side effects. */
+export type CallbackDecision =
+  | { kind: "error"; message: string }
+  | { kind: "tokens"; accessToken: string; refreshToken: string }
+  | { kind: "code"; code: string };
+
 /**
- * Native sign-in for Google — unchanged Lovable broker flow.
+ * Validates a returned callback URL and classifies the credential it carries.
+ * `expectedState` is enforced only for the broker flow, which mints it here;
+ * the Apple backend flow's state is owned and verified by the Supabase client.
+ */
+export function evaluateCallback(raw: string, expectedState?: string): CallbackDecision {
+  if (!isCallback(raw)) return { kind: "error", message: "unexpected callback" };
+  const payload = readCallbackUrl(raw);
+  if (payload.error) return { kind: "error", message: payload.error };
+  if (expectedState && payload.state !== expectedState) {
+    return { kind: "error", message: "state mismatch" };
+  }
+  if (payload.accessToken && payload.refreshToken) {
+    return { kind: "tokens", accessToken: payload.accessToken, refreshToken: payload.refreshToken };
+  }
+  if (payload.code) return { kind: "code", code: payload.code };
+  return { kind: "error", message: "no tokens received" };
+}
+
+/**
+ * Native sign-in for Google — unchanged Lovable broker contract.
  */
 export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<NativeAuthResult> {
   if (!isNative()) return { status: "error", reason: "unknown", message: "not native" };
 
   console.info(`[NATIVE_OAUTH] provider start ${provider}`);
-  console.info("[NATIVE_OAUTH] broker request starting");
   const state = generateState();
   let authUrl: string;
   try {
     authUrl = buildBrokerUrl(provider, state);
-    console.info("[NATIVE_OAUTH] broker auth URL received");
+    console.info("[NATIVE_OAUTH] broker auth URL created");
   } catch (error) {
     const message = error instanceof Error ? error.message : undefined;
     console.info(`[NATIVE_OAUTH] broker error ${message ?? "unknown"}`);
@@ -153,11 +163,10 @@ export async function nativeOAuthSignIn(provider: NativeAuthProvider): Promise<N
 
 /**
  * Native Sign in with Apple through the Setto-owned backend Apple provider
- * (BYOC Services ID `dk.setto.app.web`). Deliberately does NOT use the shared
- * Lovable broker client. The authorize URL is obtained with
- * `skipBrowserRedirect` so the WKWebView never navigates away; the system
- * browser handles Apple, and the backend returns a PKCE `code` to the hosted
- * Universal Link callback, which this module exchanges in-app.
+ * (BYOC Services ID `dk.setto.app.web`). The authorize URL is obtained with
+ * `skipBrowserRedirect` so the WKWebView never navigates away; the native
+ * authentication session handles Apple and returns the PKCE `code`, which this
+ * module exchanges exactly once.
  */
 export async function nativeAppleSignIn(): Promise<NativeAuthResult> {
   if (!isNative()) return { status: "error", reason: "unknown", message: "not native" };
@@ -177,129 +186,58 @@ export async function nativeAppleSignIn(): Promise<NativeAuthResult> {
 }
 
 /**
- * Shared native sheet + callback runner. Resolves once the Supabase session
- * exists in the app (or the user cancelled / the provider failed).
- *
- * `expectedState` is only enforced for the broker flow, which mints it here;
- * the backend flow's state is owned and verified by the Supabase client.
+ * Runs the native authentication session and establishes the Supabase session
+ * from the callback it returns. Only safe lifecycle markers are logged — never
+ * the callback URL, a code or a token.
  */
-function runNativeAuthFlow(authUrl: string, expectedState?: string): Promise<NativeAuthResult> {
-  return new Promise<NativeAuthResult>((resolve) => {
-    let Browser: typeof import("@capacitor/browser").Browser | undefined;
-    let settled = false;
-    let callbackObserved = false;
-    let urlListener: { remove: () => Promise<void> } | undefined;
-    let closeListener: { remove: () => Promise<void> } | undefined;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let graceTimer: ReturnType<typeof setTimeout> | undefined;
+async function runNativeAuthFlow(
+  authUrl: string,
+  expectedState?: string,
+): Promise<NativeAuthResult> {
+  let session: Awaited<ReturnType<typeof SettoAuthSession.startAuthentication>>;
+  try {
+    console.info("[NATIVE_OAUTH] auth session starting");
+    session = await SettoAuthSession.startAuthentication({ url: authUrl });
+  } catch (thrown) {
+    const message = thrown instanceof Error ? thrown.message : undefined;
+    console.info(`[NATIVE_OAUTH] auth session error ${message ?? "unknown"}`);
+    return { status: "error", reason: "unknown", message };
+  }
 
-    const finish = async (result: NativeAuthResult) => {
-      if (settled) return;
-      settled = true;
-      if (timer) clearTimeout(timer);
-      if (graceTimer) clearTimeout(graceTimer);
-      await urlListener?.remove().catch(() => undefined);
-      await closeListener?.remove().catch(() => undefined);
-      await Browser?.close().catch(() => undefined);
-      resolve(result);
-    };
+  if (session.status === "cancelled") {
+    console.info("[NATIVE_OAUTH] finish cancelled");
+    return { status: "cancelled" };
+  }
+  if (session.status !== "success") {
+    console.info("[NATIVE_OAUTH] auth session error");
+    return { status: "error", reason: "provider", message: "auth session failed" };
+  }
 
-    void (async () => {
-      const [browserPlugin, appPlugin] = await Promise.all([
-        import("@capacitor/browser"),
-        import("@capacitor/app"),
-      ]);
-      Browser = browserPlugin.Browser;
-      const { App } = appPlugin;
+  console.info("[NATIVE_OAUTH] callback received");
+  const decision = evaluateCallback(session.callbackUrl, expectedState);
+  if (decision.kind === "error") {
+    console.info(`[NATIVE_OAUTH] callback error ${decision.message}`);
+    return { status: "error", reason: "provider", message: decision.message };
+  }
 
-      urlListener = await App.addListener("appUrlOpen", ({ url }: { url: string }) => {
-        if (!isCallback(url)) return;
-        // Mark synchronously so a racing browserFinished never cancels a
-        // callback that already arrived.
-        callbackObserved = true;
-        if (graceTimer) {
-          clearTimeout(graceTimer);
-          graceTimer = undefined;
-        }
-        console.info("[NATIVE_OAUTH] appUrlOpen received");
-        void (async () => {
-          const payload = readCallbackUrl(url);
-          console.info("[NATIVE_OAUTH] callback recognized");
-
-          if (payload.error) {
-            console.info(`[NATIVE_OAUTH] callback error ${payload.error}`);
-            await finish({ status: "error", reason: "provider", message: payload.error });
-            return;
-          }
-          if (expectedState && payload.state && payload.state !== expectedState) {
-            console.info("[NATIVE_OAUTH] callback error state mismatch");
-            await finish({ status: "error", reason: "provider", message: "state mismatch" });
-            return;
-          }
-          const hasTokens = Boolean(payload.accessToken && payload.refreshToken);
-          if (!hasTokens && !payload.code) {
-            console.info("[NATIVE_OAUTH] callback error no tokens received");
-            await finish({ status: "error", reason: "provider", message: "no tokens received" });
-            return;
-          }
-
-          try {
-            console.info("[NATIVE_OAUTH] session establishment starting");
-            // Broker flow returns tokens; the backend PKCE flow returns a code.
-            const { error } = hasTokens
-              ? await supabase.auth.setSession({
-                  access_token: payload.accessToken as string,
-                  refresh_token: payload.refreshToken as string,
-                })
-              : await supabase.auth.exchangeCodeForSession(payload.code as string);
-            if (error) {
-              console.info(`[NATIVE_OAUTH] session error ${error.message}`);
-              await finish({ status: "error", reason: "provider", message: error.message });
-              return;
-            }
-            console.info("[NATIVE_OAUTH] session establishment success");
-            console.info("[NATIVE_OAUTH] finish success");
-            await finish({ status: "success" });
-          } catch (thrown) {
-            const message = thrown instanceof Error ? thrown.message : undefined;
-            console.info(`[NATIVE_OAUTH] session error ${message ?? "unknown"}`);
-            await finish({ status: "error", reason: "network", message });
-          }
-        })();
-      });
-
-      // Dismissing the sheet without completing sign-in is a cancellation —
-      // but on iOS the sheet also closes during a successful Universal Link
-      // handoff, racing appUrlOpen. Never cancel immediately: if a callback
-      // was observed, ignore; otherwise wait out a short grace window.
-      closeListener = await Browser.addListener("browserFinished", () => {
-        console.info("[NATIVE_OAUTH] browserFinished");
-        if (callbackObserved || settled) {
-          console.info("[NATIVE_OAUTH] browserFinished ignored callback observed");
-          return;
-        }
-        console.info("[NATIVE_OAUTH] browserFinished grace started");
-        graceTimer = setTimeout(() => {
-          graceTimer = undefined;
-          if (callbackObserved || settled) return;
-          console.info("[NATIVE_OAUTH] finish cancelled");
-          void finish({ status: "cancelled" });
-        }, BROWSER_FINISHED_GRACE_MS);
-      });
-
-      timer = setTimeout(() => {
-        console.info("[NATIVE_OAUTH] finish cancelled");
-        void finish({ status: "cancelled" });
-      }, CALLBACK_TIMEOUT_MS);
-
-      try {
-        await Browser.open({ url: authUrl, presentationStyle: "popover" });
-        console.info("[NATIVE_OAUTH] browser opened");
-      } catch (error) {
-        const message = error instanceof Error ? error.message : undefined;
-        console.info(`[NATIVE_OAUTH] broker error ${message ?? "unknown"}`);
-        await finish({ status: "error", reason: "unknown", message });
-      }
-    })();
-  });
+  try {
+    console.info("[NATIVE_OAUTH] session establishment starting");
+    const { error } =
+      decision.kind === "tokens"
+        ? await supabase.auth.setSession({
+            access_token: decision.accessToken,
+            refresh_token: decision.refreshToken,
+          })
+        : await supabase.auth.exchangeCodeForSession(decision.code);
+    if (error) {
+      console.info(`[NATIVE_OAUTH] session error ${error.message}`);
+      return { status: "error", reason: "provider", message: error.message };
+    }
+    console.info("[NATIVE_OAUTH] finish success");
+    return { status: "success" };
+  } catch (thrown) {
+    const message = thrown instanceof Error ? thrown.message : undefined;
+    console.info(`[NATIVE_OAUTH] session error ${message ?? "unknown"}`);
+    return { status: "error", reason: "network", message };
+  }
 }

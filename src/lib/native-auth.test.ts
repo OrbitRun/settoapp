@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import {
   buildBrokerUrl,
+  evaluateCallback,
   isCallback,
   NATIVE_AUTH_CALLBACK_URL,
   SETTO_APPLINK_ORIGIN,
@@ -56,5 +59,71 @@ describe("isCallback", () => {
   it("rejects unparseable input", () => {
     expect(isCallback("not a url")).toBe(false);
     expect(isCallback("")).toBe(false);
+  });
+});
+
+describe("evaluateCallback", () => {
+  const cb = (query: string) => `${SETTO_APPLINK_ORIGIN}/auth/callback${query}`;
+
+  it("accepts a valid Google token callback with matching state", () => {
+    expect(
+      evaluateCallback(cb("?state=s1#access_token=at&refresh_token=rt"), "s1"),
+    ).toEqual({ kind: "tokens", accessToken: "at", refreshToken: "rt" });
+  });
+
+  it("fails on state mismatch", () => {
+    const result = evaluateCallback(cb("?state=other#access_token=at&refresh_token=rt"), "s1");
+    expect(result).toEqual({ kind: "error", message: "state mismatch" });
+  });
+
+  it("fails when state is missing but expected", () => {
+    expect(evaluateCallback(cb("#access_token=at&refresh_token=rt"), "s1").kind).toBe("error");
+  });
+
+  it("routes an Apple PKCE code into the exchange path", () => {
+    expect(evaluateCallback(cb("?code=abc"))).toEqual({ kind: "code", code: "abc" });
+  });
+
+  it("surfaces a provider error", () => {
+    expect(evaluateCallback(cb("?error=access_denied"))).toEqual({
+      kind: "error",
+      message: "access_denied",
+    });
+  });
+
+  it("rejects a callback from the wrong origin or path", () => {
+    expect(evaluateCallback("https://evil.example/auth/callback?code=abc").kind).toBe("error");
+    expect(evaluateCallback(`${SETTO_APPLINK_ORIGIN}/other?code=abc`).kind).toBe("error");
+  });
+
+  it("fails when no credential is present", () => {
+    expect(evaluateCallback(cb(""))).toEqual({ kind: "error", message: "no tokens received" });
+  });
+});
+
+describe("native OAuth transport", () => {
+  const source = readFileSync(new URL("./native-auth.ts", import.meta.url), "utf8");
+  const deepLinks = readFileSync(new URL("./deep-links.ts", import.meta.url), "utf8");
+
+  it("no longer uses @capacitor/browser or appUrlOpen for the OAuth callback", () => {
+    expect(source).not.toContain("@capacitor/browser");
+    expect(source).not.toContain("appUrlOpen");
+    expect(source).not.toContain("browserFinished");
+  });
+
+  it("uses the native authentication session bridge", () => {
+    expect(source).toContain("SettoAuthSession.startAuthentication");
+  });
+
+  it("keeps exactly one OAuth credential consumer", () => {
+    expect(deepLinks).not.toContain("/auth/callback\", ");
+    expect(source.match(/exchangeCodeForSession/g)?.length).toBe(1);
+  });
+
+  it("never logs raw tokens, codes or callback URLs", () => {
+    const logs = source.match(/console\.info\([^)]*\)/g) ?? [];
+    for (const line of logs) {
+      expect(line).not.toMatch(/callbackUrl|accessToken|refreshToken|decision\.code|authUrl/);
+    }
   });
 });
