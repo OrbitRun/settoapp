@@ -9,8 +9,8 @@
  *
  * is intercepted by the authentication session itself and handed straight back
  * to the app, which dismisses the sheet automatically. The callback is NOT a
- * Universal Link hand-off any more: no `@capacitor/browser`, no `appUrlOpen`,
- * no `browserFinished` race/grace handling.
+ * Universal Link hand-off any more: the in-app browser plugin, the URL-open
+ * listener and the close-race grace window are all out of the OAuth path.
  *
  * This module remains the SOLE consumer of the OAuth callback credentials;
  * `src/lib/deep-links.ts` only observes `/auth/callback`.
