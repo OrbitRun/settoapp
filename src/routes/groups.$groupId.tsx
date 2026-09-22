@@ -78,10 +78,17 @@ function GroupDetailScreen() {
 
   const group = pari.data.groups.find((g) => g.id === groupId);
   if (!group) {
+    // "Gone" is only the truth once authoritative data has settled. While the
+    // account is still loading or an invitation is synchronising, wait.
+    const settling = pari.loading || pari.syncingInvitation;
     return (
       <Screen>
         <FlowHeader title={t("groups.title")} />
-        <EmptyState title={t("groups.gone")} />
+        {settling ? (
+          <div className="mt-6 h-40 animate-pulse rounded-3xl bg-surface-strong" />
+        ) : (
+          <EmptyState title={t("groups.gone")} />
+        )}
       </Screen>
     );
   }
