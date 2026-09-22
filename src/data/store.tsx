@@ -53,6 +53,7 @@ import {
   type GuestState,
 } from "./guest";
 import { redeemInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
+import { confirmGroupAfterRedeem, invitationOwnsNavigation } from "@/lib/invite-sync";
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
@@ -193,6 +194,18 @@ type PariContextValue = {
   ) => Promise<void>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
+  /**
+   * Fetches authoritative account data and resolves true only once the group
+   * really is present. The one contract every invitation path uses before it
+   * navigates to a group.
+   */
+  refreshAndWaitForGroup: (groupId: string) => Promise<boolean>;
+  /** True while an invitation is being redeemed or synchronised. */
+  syncingInvitation: boolean;
+  /** True when a redeemed invitation could not be confirmed in fresh data. */
+  invitationSyncFailed: boolean;
+  /** Retries the kept pending invitation after a synchronisation failure. */
+  retryPendingInvitation: () => void;
   draft: SplitDraft;
   setDraft: (updater: SplitDraft | ((prev: SplitDraft) => SplitDraft)) => void;
   resetDraft: () => void;
@@ -406,6 +419,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
   const [migrationFailed, setMigrationFailed] = useState(false);
   const migratedRef = useRef(false);
   const inviteRef = useRef(false);
+  const [syncingInvitation, setSyncingInvitation] = useState(false);
+  const [invitationSyncFailed, setInvitationSyncFailed] = useState(false);
+  const [inviteAttempt, setInviteAttempt] = useState(0);
   const navigate = useNavigate();
 
   const setGuest = useCallback((updater: (prev: GuestState) => GuestState) => {
@@ -486,6 +502,28 @@ export function PariProvider({ children }: { children: ReactNode }) {
     await queryClient.invalidateQueries({ queryKey: ["pari"] });
   }, [queryClient]);
 
+  /**
+   * The single post-redemption contract: fetch authoritative account data into
+   * the canonical `["pari", userId]` cache and only resolve true once the
+   * group is really there. Bounded retries, never an infinite loop.
+   */
+  const refreshAndWaitForGroup = useCallback(
+    async (groupId: string) => {
+      if (!userId) return false;
+      const outcome = await confirmGroupAfterRedeem({
+        groupId,
+        fetchFresh: () =>
+          queryClient.fetchQuery({
+            queryKey: ["pari", userId],
+            queryFn: () => fetchAll(userId),
+            staleTime: 0,
+          }),
+      });
+      return outcome === "confirmed";
+    },
+    [queryClient, userId],
+  );
+
   // Keep the draft payer in sync once the real person id is known.
   useEffect(() => {
     if (!currentPersonId) return;
@@ -539,6 +577,8 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const code = readPendingInvite();
     if (!code) return;
     inviteRef.current = true;
+    setSyncingInvitation(true);
+    setInvitationSyncFailed(false);
     void redeemInvitation(code)
       .then(async ({ status, groupId }) => {
         // Idempotent: an existing membership returns `already_member` and no
@@ -547,15 +587,33 @@ export function PariProvider({ children }: { children: ReactNode }) {
           inviteRef.current = false;
           return;
         }
+        if (!groupId) {
+          clearPendingInvite();
+          return;
+        }
+        // The claim succeeded server-side; the invitation is only forgotten
+        // once fresh account data actually contains the group, so a failed
+        // synchronisation stays recoverable.
+        const confirmed = await refreshAndWaitForGroup(groupId);
+        if (!confirmed) {
+          inviteRef.current = false;
+          setInvitationSyncFailed(true);
+          return;
+        }
         clearPendingInvite();
-        if (!groupId) return;
-        await queryClient.invalidateQueries({ queryKey: ["pari"] });
-        if (loadGuestState().expenses.length === 0) {
+        // Guest migration keeps ownership of navigation when the guest
+        // brought real expenses along — unchanged product behaviour.
+        if (invitationOwnsNavigation(loadGuestState().expenses.length)) {
           navigate({ to: "/groups/$groupId", params: { groupId } });
         }
       })
-      .catch((error) => console.error("[pari] pending invite", error));
-  }, [userId, queryClient, navigate]);
+      .catch((error) => {
+        console.error("[pari] pending invite", error);
+        inviteRef.current = false;
+        setInvitationSyncFailed(true);
+      })
+      .finally(() => setSyncingInvitation(false));
+  }, [userId, navigate, refreshAndWaitForGroup, inviteAttempt]);
 
   const value = useMemo<PariContextValue>(() => {
     const personById = (id: string) => data.people.find((p) => p.id === id);
@@ -1454,6 +1512,14 @@ export function PariProvider({ children }: { children: ReactNode }) {
       updateProfile,
       signOut,
       refresh,
+      refreshAndWaitForGroup,
+      syncingInvitation,
+      invitationSyncFailed,
+      retryPendingInvitation: () => {
+        inviteRef.current = false;
+        setInvitationSyncFailed(false);
+        setInviteAttempt((n) => n + 1);
+      },
       draft,
       setDraft: setDraftState,
       resetDraft: () => setDraftState(emptyDraft(currentPersonId)),
@@ -1479,6 +1545,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
     query.isLoading,
     queryClient,
     refresh,
+    refreshAndWaitForGroup,
+    syncingInvitation,
+    invitationSyncFailed,
     isGuest,
     guest,
     setGuest,
