@@ -417,6 +417,7 @@ export const en: Dict = {
   "invite.claimIntro": "You'll be connected to {name}",
   "invite.claimed": "You're connected to your existing history.",
   "invite.personTaken": "This person is already connected to an account.",
+  "invite.syncFailed": "You're in the group, but it hasn't loaded yet. Try again.",
 
 
   "convert.title": "Save this split in Setto",
@@ -978,6 +979,7 @@ export const da: Dict = {
   "invite.claimIntro": "Du bliver tilknyttet {name}",
   "invite.claimed": "Du er nu tilknyttet din eksisterende historik.",
   "invite.personTaken": "Denne person er allerede tilknyttet en konto.",
+  "invite.syncFailed": "Du er med i gruppen, men den er ikke hentet endnu. Prøv igen.",
 
 
   "convert.title": "Gem dit split i Setto",
