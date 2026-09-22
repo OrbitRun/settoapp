@@ -1512,6 +1512,14 @@ export function PariProvider({ children }: { children: ReactNode }) {
       updateProfile,
       signOut,
       refresh,
+      refreshAndWaitForGroup,
+      syncingInvitation,
+      invitationSyncFailed,
+      retryPendingInvitation: () => {
+        inviteRef.current = false;
+        setInvitationSyncFailed(false);
+        setInviteAttempt((n) => n + 1);
+      },
       draft,
       setDraft: setDraftState,
       resetDraft: () => setDraftState(emptyDraft(currentPersonId)),
