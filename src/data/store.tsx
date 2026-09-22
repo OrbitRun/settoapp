@@ -577,6 +577,8 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const code = readPendingInvite();
     if (!code) return;
     inviteRef.current = true;
+    setSyncingInvitation(true);
+    setInvitationSyncFailed(false);
     void redeemInvitation(code)
       .then(async ({ status, groupId }) => {
         // Idempotent: an existing membership returns `already_member` and no
@@ -585,15 +587,33 @@ export function PariProvider({ children }: { children: ReactNode }) {
           inviteRef.current = false;
           return;
         }
+        if (!groupId) {
+          clearPendingInvite();
+          return;
+        }
+        // The claim succeeded server-side; the invitation is only forgotten
+        // once fresh account data actually contains the group, so a failed
+        // synchronisation stays recoverable.
+        const confirmed = await refreshAndWaitForGroup(groupId);
+        if (!confirmed) {
+          inviteRef.current = false;
+          setInvitationSyncFailed(true);
+          return;
+        }
         clearPendingInvite();
-        if (!groupId) return;
-        await queryClient.invalidateQueries({ queryKey: ["pari"] });
-        if (loadGuestState().expenses.length === 0) {
+        // Guest migration keeps ownership of navigation when the guest
+        // brought real expenses along — unchanged product behaviour.
+        if (invitationOwnsNavigation(loadGuestState().expenses.length)) {
           navigate({ to: "/groups/$groupId", params: { groupId } });
         }
       })
-      .catch((error) => console.error("[pari] pending invite", error));
-  }, [userId, queryClient, navigate]);
+      .catch((error) => {
+        console.error("[pari] pending invite", error);
+        inviteRef.current = false;
+        setInvitationSyncFailed(true);
+      })
+      .finally(() => setSyncingInvitation(false));
+  }, [userId, navigate, refreshAndWaitForGroup, inviteAttempt]);
 
   const value = useMemo<PariContextValue>(() => {
     const personById = (id: string) => data.people.find((p) => p.id === id);
