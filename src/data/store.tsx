@@ -419,6 +419,9 @@ export function PariProvider({ children }: { children: ReactNode }) {
   const [migrationFailed, setMigrationFailed] = useState(false);
   const migratedRef = useRef(false);
   const inviteRef = useRef(false);
+  const [syncingInvitation, setSyncingInvitation] = useState(false);
+  const [invitationSyncFailed, setInvitationSyncFailed] = useState(false);
+  const [inviteAttempt, setInviteAttempt] = useState(0);
   const navigate = useNavigate();
 
   const setGuest = useCallback((updater: (prev: GuestState) => GuestState) => {
@@ -498,6 +501,28 @@ export function PariProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ["pari"] });
   }, [queryClient]);
+
+  /**
+   * The single post-redemption contract: fetch authoritative account data into
+   * the canonical `["pari", userId]` cache and only resolve true once the
+   * group is really there. Bounded retries, never an infinite loop.
+   */
+  const refreshAndWaitForGroup = useCallback(
+    async (groupId: string) => {
+      if (!userId) return false;
+      const outcome = await confirmGroupAfterRedeem({
+        groupId,
+        fetchFresh: () =>
+          queryClient.fetchQuery({
+            queryKey: ["pari", userId],
+            queryFn: () => fetchAll(userId),
+            staleTime: 0,
+          }),
+      });
+      return outcome === "confirmed";
+    },
+    [queryClient, userId],
+  );
 
   // Keep the draft payer in sync once the real person id is known.
   useEffect(() => {
