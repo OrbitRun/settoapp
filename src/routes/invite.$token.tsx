@@ -88,21 +88,24 @@ function InviteScreen() {
 
     setJoining(true);
     const { status, groupId } = await redeemInvitation(token);
-    setJoining(false);
 
-    if ((status === "joined" || status === "claimed") && groupId) {
+    // Same contract as the post-signup path: never navigate before fresh
+    // account data really contains the group.
+    if ((status === "joined" || status === "claimed" || status === "already_member") && groupId) {
+      const confirmed = await pari.refreshAndWaitForGroup(groupId);
+      setJoining(false);
+      if (!confirmed) {
+        savePendingInvite(token);
+        toast.error(t("invite.syncFailed"));
+        return;
+      }
       clearPendingInvite();
-      await pari.refresh();
-      toast.success(status === "claimed" ? t("invite.claimed") : t("invite.joined"));
+      if (status === "already_member") toast.success(t("invite.alreadyMember"));
+      else toast.success(status === "claimed" ? t("invite.claimed") : t("invite.joined"));
       navigate({ to: "/groups/$groupId", params: { groupId } });
       return;
     }
-    if (status === "already_member" && groupId) {
-      clearPendingInvite();
-      toast.success(t("invite.alreadyMember"));
-      navigate({ to: "/groups/$groupId", params: { groupId } });
-      return;
-    }
+    setJoining(false);
     if (redeemFallsBackToSignup(status)) {
       goToSignup();
       return;
