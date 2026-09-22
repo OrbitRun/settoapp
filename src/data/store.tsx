@@ -53,6 +53,7 @@ import {
   type GuestState,
 } from "./guest";
 import { redeemInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
+import { confirmGroupAfterRedeem, invitationOwnsNavigation } from "@/lib/invite-sync";
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
@@ -193,6 +194,18 @@ type PariContextValue = {
   ) => Promise<void>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
+  /**
+   * Fetches authoritative account data and resolves true only once the group
+   * really is present. The one contract every invitation path uses before it
+   * navigates to a group.
+   */
+  refreshAndWaitForGroup: (groupId: string) => Promise<boolean>;
+  /** True while an invitation is being redeemed or synchronised. */
+  syncingInvitation: boolean;
+  /** True when a redeemed invitation could not be confirmed in fresh data. */
+  invitationSyncFailed: boolean;
+  /** Retries the kept pending invitation after a synchronisation failure. */
+  retryPendingInvitation: () => void;
   draft: SplitDraft;
   setDraft: (updater: SplitDraft | ((prev: SplitDraft) => SplitDraft)) => void;
   resetDraft: () => void;
