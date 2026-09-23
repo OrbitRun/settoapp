@@ -21,6 +21,7 @@ import { fetchActiveInvitations } from "@/data/invitations";
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { PersonSheet, type PersonSheetState } from "@/components/pari/PersonSheet";
+import { groupPeopleRows } from "@/lib/group-people";
 
 export const Route = createFileRoute("/groups/$groupId")({
   head: () => ({
@@ -289,11 +290,11 @@ function GroupDetailScreen() {
         {tab === "People" ? (
           <>
             <Panel>
-              {balances.map((balance, index) => {
+              {groupPeopleRows({ balances, removedPersonIds: removedIds }).map((balance, index) => {
                 const person = pari.data.people.find((p) => p.id === balance.personId);
                 const linked = Boolean(person?.linked_profile_id);
                 const pending = pendingPersonIds.has(balance.personId);
-                const former = removedIds.includes(balance.personId);
+                const former = balance.former;
                 const name = pari.personName(balance.personId);
                 const isSelf = balance.personId === pari.myPersonIdInGroup(groupId);
                 return (
