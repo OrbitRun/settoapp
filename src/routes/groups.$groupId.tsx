@@ -85,7 +85,11 @@ function GroupDetailScreen() {
       <Screen>
         <FlowHeader title={t("groups.title")} />
         {settling ? (
-          <div className="mt-6 h-40 animate-pulse rounded-3xl bg-surface-strong" />
+          <div className="mt-6 space-y-3">
+            <div className="h-40 animate-pulse rounded-3xl bg-surface-strong" />
+            <div className="h-20 animate-pulse rounded-3xl bg-surface-strong" />
+            <p className="pt-1 text-center text-sm text-muted-foreground">{t("common.loading")}</p>
+          </div>
         ) : (
           <EmptyState title={t("groups.gone")} />
         )}

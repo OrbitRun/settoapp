@@ -30,9 +30,15 @@ describe("person invite eligibility", () => {
     expect(personInviteAction({ ...base, former: true, pending: true })).toBe("invite-again");
   });
 
-  it("never invites a person that is already linked to an account", () => {
+  it("never invites an active person that is already linked to an account", () => {
     expect(personInviteAction({ ...base, linked: true })).toBeNull();
-    expect(personInviteAction({ ...base, linked: true, former: true })).toBeNull();
+  });
+
+  it("offers 'invite again' for a former member who already has an account", () => {
+    expect(personInviteAction({ ...base, linked: true, former: true })).toBe("invite-again");
+    expect(personInviteAction({ ...base, linked: true, former: true, pending: true })).toBe(
+      "invite-again",
+    );
   });
 
   it("never invites yourself", () => {
