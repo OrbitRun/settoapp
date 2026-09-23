@@ -33,7 +33,7 @@ describe("People tab rows", () => {
       balances: [{ personId: "owner", netMinor: 0 }],
       removedPersonIds: [],
     });
-    expect(rows[0].former).toBe(false);
+    expect(rows[0]?.former).toBe(false);
   });
 });
 

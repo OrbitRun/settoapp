@@ -1233,7 +1233,14 @@ export function PariProvider({ children }: { children: ReactNode }) {
         return "owner-self";
       }
 
-      if (personHasGroupHistory(groupId, personId)) {
+      // A person tied to a real account keeps their membership row, so a later
+      // invitation reactivates exactly that membership and person id.
+      if (
+        removalMode({
+          hasGroupHistory: personHasGroupHistory(groupId, personId),
+          linkedToAccount: Boolean(person?.linked_profile_id),
+        }) === "deactivate"
+      ) {
         await supabase
           .from("group_members")
           .update({ removed_at: nowIso() })
