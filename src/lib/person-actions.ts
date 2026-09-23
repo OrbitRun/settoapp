@@ -19,8 +19,11 @@ export type PersonInviteState = {
 export type PersonInviteAction = "invite" | "resend" | "invite-again";
 
 export function personInviteAction(person: PersonInviteState): PersonInviteAction | null {
-  if (person.isSelf || person.linked) return null;
+  if (person.isSelf) return null;
+  // A former member is always invitable again, even when the historic person is
+  // already linked to a real account: removal only ended the membership.
   if (person.former) return "invite-again";
+  if (person.linked) return null;
   return person.pending ? "resend" : "invite";
 }
 
