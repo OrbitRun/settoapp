@@ -1582,6 +1582,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
     query.isLoading,
     queryClient,
     refresh,
+    refetchAccount,
     refreshAndWaitForGroup,
     syncingInvitation,
     invitationSyncFailed,
