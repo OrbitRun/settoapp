@@ -54,7 +54,7 @@ import {
 } from "./guest";
 import { redeemInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
 import { confirmGroupAfterRedeem, invitationOwnsNavigation } from "@/lib/invite-sync";
-import { removalMode } from "@/lib/group-people";
+import { activePersonIdsFor, removalMode, removedPersonIdsFor } from "@/lib/group-people";
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
