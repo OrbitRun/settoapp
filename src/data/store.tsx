@@ -504,6 +504,16 @@ export function PariProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   /**
+   * Awaited refetch of the canonical account cache. Invalidation only marks
+   * data stale, which is not enough right after a membership change: the
+   * screen must already hold the new rows when the call resolves.
+   */
+  const refetchAccount = useCallback(async () => {
+    if (!userId) return;
+    await queryClient.refetchQueries({ queryKey: ["pari", userId], exact: true });
+  }, [queryClient, userId]);
+
+  /**
    * The single post-redemption contract: fetch authoritative account data into
    * the canonical `["pari", userId]` cache and only resolve true once the
    * group is really there. Bounded retries, never an infinite loop.
