@@ -620,15 +620,10 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const personById = (id: string) => data.people.find((p) => p.id === id);
     const personName = (id: string) => personById(id)?.name ?? "—";
 
-    const groupPersonIds = (groupId: string) =>
-      data.groupMembers
-        .filter((m) => m.group_id === groupId && !m.removed_at)
-        .map((m) => m.person_id);
+    const groupPersonIds = (groupId: string) => activePersonIdsFor(data.groupMembers, groupId);
 
     const groupRemovedPersonIds = (groupId: string) =>
-      data.groupMembers
-        .filter((m) => m.group_id === groupId && Boolean(m.removed_at))
-        .map((m) => m.person_id);
+      removedPersonIdsFor(data.groupMembers, groupId);
 
     /** Any expense, split, settlement or activity trace inside this group. */
     const personHasGroupHistory = (groupId: string, personId: string) => {
