@@ -1229,28 +1229,52 @@ export function PariProvider({ children }: { children: ReactNode }) {
         return "owner-self";
       }
 
+      /**
+       * Whether this person owns a real Setto account, answered by the
+       * database rather than by whatever the client happens to hold. Deleting
+       * a membership is irreversible, so an unreadable or missing person row
+       * must never be mistaken for "just a placeholder".
+       */
+      let linkedToAccount: boolean | "unknown" = person
+        ? Boolean(person.linked_profile_id)
+        : "unknown";
+      if (linkedToAccount !== true) {
+        const { data: row, error } = await supabase
+          .from("people")
+          .select("id, is_self, linked_profile_id")
+          .eq("id", personId)
+          .maybeSingle();
+        if (error) linkedToAccount = "unknown";
+        else if (!row) linkedToAccount = "unknown";
+        else linkedToAccount = Boolean(row.linked_profile_id);
+      }
+
       // A person tied to a real account keeps their membership row, so a later
       // invitation reactivates exactly that membership and person id.
       if (
         removalMode({
           hasGroupHistory: personHasGroupHistory(groupId, personId),
-          linkedToAccount: Boolean(person?.linked_profile_id),
+          linkedToAccount,
         }) === "deactivate"
       ) {
-        await supabase
+        const { error } = await supabase
           .from("group_members")
           .update({ removed_at: nowIso() })
           .eq("group_id", groupId)
           .eq("person_id", personId);
-        await refresh();
+        // A silent failure would leave the member on screen as if nothing
+        // happened, so the caller is told the write did not land.
+        if (error) return "not-allowed";
+        await refetchAccount();
         return "deactivated";
       }
 
-      await supabase
+      const { error: deleteError } = await supabase
         .from("group_members")
         .delete()
         .eq("group_id", groupId)
         .eq("person_id", personId);
+      if (deleteError) return "not-allowed";
 
       // A person record created only for this group and never used anywhere
       // else is a duplicate — clean it up so it stops showing in pickers.
@@ -1264,7 +1288,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       if (!usedElsewhere && person && !person.is_self && !person.linked_profile_id) {
         await supabase.from("people").delete().eq("id", personId);
       }
-      await refresh();
+      await refetchAccount();
       return "deleted";
     };
 
