@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { groupPeopleRows, removalMode } from "@/lib/group-people";
+import {
+  activePersonIdsFor,
+  groupPeopleRows,
+  removalMode,
+  removedPersonIdsFor,
+  type MembershipRow,
+} from "@/lib/group-people";
+import { personInviteAction } from "@/lib/person-actions";
 
 describe("People tab rows", () => {
   it("A. keeps a settled former member visible at zero", () => {
