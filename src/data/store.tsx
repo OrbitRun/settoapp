@@ -54,7 +54,7 @@ import {
 } from "./guest";
 import { redeemInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
 import { confirmGroupAfterRedeem, invitationOwnsNavigation } from "@/lib/invite-sync";
-import { removalMode } from "@/lib/group-people";
+import { activePersonIdsFor, removalMode, removedPersonIdsFor } from "@/lib/group-people";
 
 /** Why the app is asking a guest to create an account. */
 export type AccountPromptReason =
@@ -504,6 +504,16 @@ export function PariProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   /**
+   * Awaited refetch of the canonical account cache. Invalidation only marks
+   * data stale, which is not enough right after a membership change: the
+   * screen must already hold the new rows when the call resolves.
+   */
+  const refetchAccount = useCallback(async () => {
+    if (!userId) return;
+    await queryClient.refetchQueries({ queryKey: ["pari", userId], exact: true });
+  }, [queryClient, userId]);
+
+  /**
    * The single post-redemption contract: fetch authoritative account data into
    * the canonical `["pari", userId]` cache and only resolve true once the
    * group is really there. Bounded retries, never an infinite loop.
@@ -620,15 +630,10 @@ export function PariProvider({ children }: { children: ReactNode }) {
     const personById = (id: string) => data.people.find((p) => p.id === id);
     const personName = (id: string) => personById(id)?.name ?? "—";
 
-    const groupPersonIds = (groupId: string) =>
-      data.groupMembers
-        .filter((m) => m.group_id === groupId && !m.removed_at)
-        .map((m) => m.person_id);
+    const groupPersonIds = (groupId: string) => activePersonIdsFor(data.groupMembers, groupId);
 
     const groupRemovedPersonIds = (groupId: string) =>
-      data.groupMembers
-        .filter((m) => m.group_id === groupId && Boolean(m.removed_at))
-        .map((m) => m.person_id);
+      removedPersonIdsFor(data.groupMembers, groupId);
 
     /** Any expense, split, settlement or activity trace inside this group. */
     const personHasGroupHistory = (groupId: string, personId: string) => {
@@ -1234,28 +1239,52 @@ export function PariProvider({ children }: { children: ReactNode }) {
         return "owner-self";
       }
 
+      /**
+       * Whether this person owns a real Setto account, answered by the
+       * database rather than by whatever the client happens to hold. Deleting
+       * a membership is irreversible, so an unreadable or missing person row
+       * must never be mistaken for "just a placeholder".
+       */
+      let linkedToAccount: boolean | "unknown" = person
+        ? Boolean(person.linked_profile_id)
+        : "unknown";
+      if (linkedToAccount !== true) {
+        const { data: row, error } = await supabase
+          .from("people")
+          .select("id, is_self, linked_profile_id")
+          .eq("id", personId)
+          .maybeSingle();
+        if (error) linkedToAccount = "unknown";
+        else if (!row) linkedToAccount = "unknown";
+        else linkedToAccount = Boolean(row.linked_profile_id);
+      }
+
       // A person tied to a real account keeps their membership row, so a later
       // invitation reactivates exactly that membership and person id.
       if (
         removalMode({
           hasGroupHistory: personHasGroupHistory(groupId, personId),
-          linkedToAccount: Boolean(person?.linked_profile_id),
+          linkedToAccount,
         }) === "deactivate"
       ) {
-        await supabase
+        const { error } = await supabase
           .from("group_members")
           .update({ removed_at: nowIso() })
           .eq("group_id", groupId)
           .eq("person_id", personId);
-        await refresh();
+        // A silent failure would leave the member on screen as if nothing
+        // happened, so the caller is told the write did not land.
+        if (error) return "not-allowed";
+        await refetchAccount();
         return "deactivated";
       }
 
-      await supabase
+      const { error: deleteError } = await supabase
         .from("group_members")
         .delete()
         .eq("group_id", groupId)
         .eq("person_id", personId);
+      if (deleteError) return "not-allowed";
 
       // A person record created only for this group and never used anywhere
       // else is a duplicate — clean it up so it stops showing in pickers.
@@ -1269,7 +1298,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       if (!usedElsewhere && person && !person.is_self && !person.linked_profile_id) {
         await supabase.from("people").delete().eq("id", personId);
       }
-      await refresh();
+      await refetchAccount();
       return "deleted";
     };
 
@@ -1553,6 +1582,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
     query.isLoading,
     queryClient,
     refresh,
+    refetchAccount,
     refreshAndWaitForGroup,
     syncingInvitation,
     invitationSyncFailed,
