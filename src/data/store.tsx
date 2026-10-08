@@ -54,6 +54,13 @@ import {
 } from "./guest";
 import { redeemInvitation, clearPendingInvite, readPendingInvite } from "./invitations";
 import { confirmGroupAfterRedeem, invitationOwnsNavigation } from "@/lib/invite-sync";
+import {
+  deactivateMembership,
+  deleteMembership,
+  refreshQuietly,
+  type MembershipClient,
+} from "@/lib/member-mutations";
+import { saveExpenseEdit, type ExpenseRpcClient } from "@/lib/expense-save";
 import { activePersonIdsFor, removalMode, removedPersonIdsFor } from "@/lib/group-people";
 
 /** Why the app is asking a guest to create an account. */
@@ -983,26 +990,22 @@ export function PariProvider({ children }: { children: ReactNode }) {
         patch.card_charged_minor = locked.cardChargedMinor;
       }
 
-      if (Object.keys(patch).length > 0) {
-        await supabase.from("expenses").update(patch).eq("id", id);
-      }
-
-      if (input.allocations && locked) {
-        await supabase.from("expense_splits").delete().eq("expense_id", id);
-        if (locked.allocations.length > 0) {
-          await supabase.from("expense_splits").insert(
-            locked.allocations.map((allocation) => ({
-              owner_user_id: userId,
-              expense_id: id,
-              person_id: allocation.personId,
-              amount_minor: allocation.amountMinor,
-              original_amount_minor: locked.originalByPerson[allocation.personId] ?? null,
-              percentage: allocation.percentage ?? null,
-              shares: allocation.shares ?? null,
-            })),
-          );
-        }
-      }
+      // Fields and replacement splits are saved in ONE database transaction;
+      // any failure leaves the original expense and splits untouched.
+      await saveExpenseEdit(supabase as unknown as ExpenseRpcClient, {
+        expenseId: id,
+        patch,
+        splits:
+          input.allocations && locked
+            ? locked.allocations.map((allocation) => ({
+                person_id: allocation.personId,
+                amount_minor: allocation.amountMinor,
+                original_amount_minor: locked.originalByPerson[allocation.personId] ?? null,
+                percentage: allocation.percentage ?? null,
+                shares: allocation.shares ?? null,
+              }))
+            : null,
+      });
 
       // One meaningful activity entry per edit — never one per changed field.
       const existing = expenseById(id);
@@ -1267,24 +1270,30 @@ export function PariProvider({ children }: { children: ReactNode }) {
           linkedToAccount,
         }) === "deactivate"
       ) {
-        const { error } = await supabase
-          .from("group_members")
-          .update({ removed_at: nowIso() })
-          .eq("group_id", groupId)
-          .eq("person_id", personId);
-        // A silent failure would leave the member on screen as if nothing
-        // happened, so the caller is told the write did not land.
-        if (error) return "not-allowed";
-        await refetchAccount();
-        return "deactivated";
+        // Zero affected rows (blocked by access rules) is a failure, not success.
+        const written = await deactivateMembership(
+          supabase as unknown as MembershipClient,
+          groupId,
+          personId,
+          nowIso(),
+        );
+        // Re-read canonical data either way, so the screen never shows a
+        // removal that did not land. A failed refresh after a confirmed write
+        // is still a successful removal.
+        await refreshQuietly(refetchAccount);
+        return written === "ok" ? "deactivated" : "not-allowed";
       }
 
-      const { error: deleteError } = await supabase
-        .from("group_members")
-        .delete()
-        .eq("group_id", groupId)
-        .eq("person_id", personId);
-      if (deleteError) return "not-allowed";
+      const deleted = await deleteMembership(
+        supabase as unknown as MembershipClient,
+        groupId,
+        personId,
+      );
+      if (deleted !== "ok") {
+        await refreshQuietly(refetchAccount);
+        return "not-allowed";
+      }
+
 
       // A person record created only for this group and never used anywhere
       // else is a duplicate — clean it up so it stops showing in pickers.
@@ -1298,7 +1307,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       if (!usedElsewhere && person && !person.is_self && !person.linked_profile_id) {
         await supabase.from("people").delete().eq("id", personId);
       }
-      await refetchAccount();
+      await refreshQuietly(refetchAccount);
       return "deleted";
     };
 
