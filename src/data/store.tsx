@@ -1031,19 +1031,22 @@ export function PariProvider({ children }: { children: ReactNode }) {
         : null;
       const changes = before && after ? diffExpense(before, after) : {};
 
-      await logActivity(
-        "expense_updated",
-        "expense",
-        id,
-        input.groupId !== undefined ? input.groupId : (existing?.group_id ?? null),
-        {
-          title: input.title ?? existing?.title ?? "",
-          amount_minor: input.totalMinor ?? existing?.total_minor ?? 0,
-          ...(Object.keys(changes).length > 0 ? { changes } : {}),
-        },
+      // The save is already confirmed; history/refresh failures must not be
+      // reported as a failed save.
+      await refreshQuietly(() =>
+        logActivity(
+          "expense_updated",
+          "expense",
+          id,
+          input.groupId !== undefined ? input.groupId : (existing?.group_id ?? null),
+          {
+            title: input.title ?? existing?.title ?? "",
+            amount_minor: input.totalMinor ?? existing?.total_minor ?? 0,
+            ...(Object.keys(changes).length > 0 ? { changes } : {}),
+          },
+        ),
       );
-
-      await refresh();
+      await refreshQuietly(refresh);
     };
 
     const deleteExpense = async (id: string) => {
