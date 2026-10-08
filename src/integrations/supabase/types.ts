@@ -794,6 +794,15 @@ export type Database = {
         Args: { _group_id: string; _new_owner_person_id: string }
         Returns: string
       }
+      update_expense_with_splits: {
+        Args: {
+          _expense_id: string
+          _patch: Json
+          _replace_splits: boolean
+          _splits: Json
+        }
+        Returns: string
+      }
       update_my_people_name: {
         Args: { _name: string }
         Returns: {
