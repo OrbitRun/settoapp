@@ -3,7 +3,7 @@
 -- Requires a role that can SET ROLE authenticated (e.g. postgres on a local/test DB).
 -- Run: psql -v ON_ERROR_STOP=1 -f supabase/tests/update_expense_with_splits.sql
 BEGIN;
-SET LOCAL client_min_messages = warning;
+SET LOCAL client_min_messages = notice;
 
 -- Synthetic user / people / group / expense
 INSERT INTO auth.users (id, email) VALUES ('00000000-0000-0000-0000-0000000000a1', 'atomic-test@example.invalid');
