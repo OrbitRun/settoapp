@@ -58,7 +58,7 @@ describe("membership removal writes", () => {
   it("successful deactivation marks the row removed", async () => {
     const rows = base();
     expect(await deactivateMembership(fakeClient(rows), "g", "jonas", "t")).toBe("ok");
-    expect(rows[1].removed_at).toBe("t");
+    expect(rows[1]!.removed_at).toBe("t");
   });
 
   it("zero affected rows is a failure, row unchanged", async () => {
@@ -66,7 +66,7 @@ describe("membership removal writes", () => {
     expect(await deactivateMembership(fakeClient(rows, { blocked: true }), "g", "jonas", "t")).toBe(
       "no-rows",
     );
-    expect(rows[1].removed_at).toBeNull();
+    expect(rows[1]!.removed_at).toBeNull();
   });
 
   it("database error is a failure", async () => {
