@@ -16,18 +16,22 @@ export const Route = createFileRoute("/home")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Your overview — Setto" },
+      { title: "Your overview — Payside" },
       {
         name: "description",
         content:
           "See what you're owed, what you owe and every shared expense — in one calm overview.",
       },
-      { property: "og:title", content: "Your overview — Setto" },
+      { property: "og:title", content: "Your overview — Payside" },
       {
         property: "og:description",
         content: "The calm way to split shared expenses with the people around you.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: "https://setto.dk/home" },
     ],
+    links: [{ rel: "canonical", href: "https://setto.dk/home" }],
   }),
   component: () => (
     <AuthGate>

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Setto</string>
+        <string>Payside</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,9 +23,9 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Setto bruger kameraet til at tage billeder af kvitteringer, så de kan læses og deles.</string>
+	<string>Payside bruger kameraet til at tage billeder af kvitteringer, så de kan læses og deles.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Setto bruger dit fotobibliotek, når du vælger et billede af en kvittering.</string>
+	<string>Payside bruger dit fotobibliotek, når du vælger et billede af en kvittering.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

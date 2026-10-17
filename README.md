@@ -1,4 +1,6 @@
-# Setto
+# Payside
+
+Controlled rebrand release instructions: [Payside release readiness](docs/payside-release.md). The original foundation brief below is retained as historical context.
 
 Build PARI — Mobile-first shared expenses fintech app
 

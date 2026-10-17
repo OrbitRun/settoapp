@@ -29,17 +29,21 @@ export const Route = createFileRoute("/groups/new")({
   }),
   head: () => ({
     meta: [
-      { title: "Create a group — Setto" },
+      { title: "Create a group — Payside" },
       {
         name: "description",
         content: "Name it, add the people, done. No sign-ups needed for anyone else.",
       },
-      { property: "og:title", content: "Create a group — Setto" },
+      { property: "og:title", content: "Create a group — Payside" },
       {
         property: "og:description",
         content: "Name it, add the people, done. No sign-ups needed for anyone else.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: "https://setto.dk/groups/new" },
     ],
+    links: [{ rel: "canonical", href: "https://setto.dk/groups/new" }],
   }),
   component: () => (
     <AuthGate>

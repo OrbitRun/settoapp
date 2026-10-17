@@ -24,13 +24,15 @@ import type { SplitMode } from "@/lib/split";
 export const Route = createFileRoute("/groups/$groupId_/edit")({
   head: () => ({
     meta: [
-      { title: "Edit group — Setto" },
+      { title: "Edit group — Payside" },
       { name: "description", content: "Rename the group, manage members and split rules." },
-      { property: "og:title", content: "Edit group — Setto" },
+      { property: "og:title", content: "Edit group — Payside" },
       {
         property: "og:description",
         content: "Rename the group, manage members and split rules.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (

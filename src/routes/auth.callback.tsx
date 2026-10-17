@@ -20,14 +20,16 @@ export const Route = createFileRoute("/auth/callback")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Signing in — Setto" },
-      { name: "description", content: "Completing your Setto sign-in." },
-      { property: "og:title", content: "Signing in — Setto" },
-      { property: "og:description", content: "Completing your Setto sign-in." },
+      { title: "Signing in — Payside" },
+      { name: "description", content: "Completing your Payside sign-in." },
+      { property: "og:title", content: "Signing in — Payside" },
+      { property: "og:description", content: "Completing your Payside sign-in." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
+      { property: "og:url", content: "https://setto.dk/auth/callback" },
     ],
+    links: [{ rel: "canonical", href: "https://setto.dk/auth/callback" }],
   }),
   component: AuthCallbackScreen,
 });

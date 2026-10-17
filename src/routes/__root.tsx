@@ -82,16 +82,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "Setto — Share anything. Settle easily." },
+      { title: "Payside — Share anything. Settle easily." },
       {
         name: "description",
         content:
-          "Setto is the calm way to split shared expenses — dinner, rent, groceries or a weekend away.",
+          "Payside is the calm way to split shared expenses — dinner, rent, groceries or a weekend away.",
       },
       { name: "theme-color", content: "#F7F6F2" },
-      { name: "apple-mobile-web-app-title", content: "Setto" },
-      { name: "application-name", content: "Setto" },
-      { property: "og:site_name", content: "Setto" },
+      { name: "apple-mobile-web-app-title", content: "Payside" },
+      { name: "application-name", content: "Payside" },
+      { property: "og:site_name", content: "Payside" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

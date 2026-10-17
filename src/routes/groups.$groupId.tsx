@@ -26,13 +26,15 @@ import { groupPeopleRows } from "@/lib/group-people";
 export const Route = createFileRoute("/groups/$groupId")({
   head: () => ({
     meta: [
-      { title: "Group — Setto" },
+      { title: "Group — Payside" },
       { name: "description", content: "Your balance, the expenses and who shares what." },
-      { property: "og:title", content: "Group — Setto" },
+      { property: "og:title", content: "Group — Payside" },
       {
         property: "og:description",
         content: "Your balance, the expenses and who shares what.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (

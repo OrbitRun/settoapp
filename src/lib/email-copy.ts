@@ -21,7 +21,7 @@ export type EmailCopy = {
 
 type Vars = { group?: string; inviter?: string; app?: string };
 
-const APP = "Setto";
+const APP = "Payside";
 
 const da = (kind: EmailKind, v: Vars): EmailCopy => {
   const app = v.app ?? APP;
