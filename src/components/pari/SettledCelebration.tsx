@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { MoneyAmount } from "@/components/pari/MoneyAmount";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { useT } from "@/lib/i18n";
-import settoMark from "@/assets/setto-mark-dark.png.asset.json";
+import paysideMark from "@/assets/payside-mark-light.png.asset.json";
 import { syncNativeStatusBar } from "@/lib/native";
 
 /**
@@ -44,7 +44,7 @@ export function SettoMark() {
         />
       ))}
       <img
-        src={settoMark.url}
+        src={paysideMark.url}
         alt=""
         aria-hidden
         decoding="async"
