@@ -9,18 +9,14 @@ import { Wordmark } from "@/components/pari/Wordmark";
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
-      { title: "Welcome to Payside" },
+      { title: "Welcome to Setto" },
       {
         name: "description",
         content: "Share anything. Split it your way. Settle easily.",
       },
-      { property: "og:title", content: "Welcome to Payside" },
+      { property: "og:title", content: "Welcome to Setto" },
       { property: "og:description", content: "Share anything. Split it your way. Settle easily." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://setto.dk/onboarding" },
     ],
-    links: [{ rel: "canonical", href: "https://setto.dk/onboarding" }],
   }),
   component: OnboardingScreen,
 });

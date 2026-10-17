@@ -314,7 +314,7 @@ async function migrateGuestData(userId: string, state: GuestState): Promise<stri
       .from("people")
       .insert({
         owner_user_id: userId,
-        name: (profileRow?.display_name as string | undefined) || "Payside",
+        name: (profileRow?.display_name as string | undefined) || "Setto",
         is_self: true,
         linked_profile_id: userId,
       })
@@ -1515,7 +1515,7 @@ export function PariProvider({ children }: { children: ReactNode }) {
       currentPersonId,
       // The "me" person is the identity used in every split, so it wins over
       // the generic profile default.
-      currentProfileName: selfPerson?.name || profile?.display_name || "Payside",
+      currentProfileName: selfPerson?.name || profile?.display_name || "Setto",
 
       personById,
       personName,

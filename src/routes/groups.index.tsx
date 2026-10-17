@@ -12,21 +12,17 @@ import { AuthGate } from "@/components/pari/AuthGate";
 export const Route = createFileRoute("/groups/")({
   head: () => ({
     meta: [
-      { title: "Groups — Payside" },
+      { title: "Groups — Setto" },
       {
         name: "description",
         content: "Households, holidays and everyday groups with a balance you can trust.",
       },
-      { property: "og:title", content: "Groups — Payside" },
+      { property: "og:title", content: "Groups — Setto" },
       {
         property: "og:description",
         content: "Households, holidays and everyday groups with a balance you can trust.",
       },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://setto.dk/groups" },
     ],
-    links: [{ rel: "canonical", href: "https://setto.dk/groups" }],
   }),
   component: () => (
     <AuthGate>

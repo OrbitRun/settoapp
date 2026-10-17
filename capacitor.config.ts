@@ -11,7 +11,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
  */
 const config: CapacitorConfig = {
   appId: "dk.setto.app",
-  appName: "Payside",
+  appName: "Setto",
   webDir: "dist/client",
   ios: {
     contentInset: "never",

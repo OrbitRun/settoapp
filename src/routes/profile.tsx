@@ -25,15 +25,11 @@ import { setHideAmounts, useHideAmounts } from "@/lib/privacy";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "Your profile — Payside" },
-      { name: "description", content: "Your details, people and preferences in Payside." },
-      { property: "og:title", content: "Your profile — Payside" },
-      { property: "og:description", content: "Your details, people and preferences in Payside." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://setto.dk/profile" },
+      { title: "Your profile — Setto" },
+      { name: "description", content: "Your details, people and preferences in Setto." },
+      { property: "og:title", content: "Your profile — Setto" },
+      { property: "og:description", content: "Your details, people and preferences in Setto." },
     ],
-    links: [{ rel: "canonical", href: "https://setto.dk/profile" }],
   }),
   component: () => (
     <AuthGate>

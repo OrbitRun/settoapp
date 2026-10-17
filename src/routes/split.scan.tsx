@@ -13,18 +13,14 @@ import { isNative } from "@/lib/native";
 export const Route = createFileRoute("/split/scan")({
   head: () => ({
     meta: [
-      { title: "Scan a receipt — Payside" },
-      { name: "description", content: "Snap the receipt and Payside reads the items for you." },
-      { property: "og:title", content: "Scan a receipt — Payside" },
+      { title: "Scan a receipt — Setto" },
+      { name: "description", content: "Snap the receipt and Setto reads the items for you." },
+      { property: "og:title", content: "Scan a receipt — Setto" },
       {
         property: "og:description",
-        content: "Snap the receipt and Payside reads the items for you.",
+        content: "Snap the receipt and Setto reads the items for you.",
       },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://setto.dk/split/scan" },
     ],
-    links: [{ rel: "canonical", href: "https://setto.dk/split/scan" }],
   }),
   component: ScanScreen,
 });

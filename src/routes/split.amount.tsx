@@ -21,15 +21,11 @@ import { currencyLabel, formatMinorIn, formatMinorNumber, toMajor, toMinor } fro
 export const Route = createFileRoute("/split/amount")({
   head: () => ({
     meta: [
-      { title: "New expense — Payside" },
+      { title: "New expense — Setto" },
       { name: "description", content: "Enter an amount, pick the people, done." },
-      { property: "og:title", content: "New expense — Payside" },
+      { property: "og:title", content: "New expense — Setto" },
       { property: "og:description", content: "Enter an amount, pick the people, done." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://setto.dk/split/amount" },
     ],
-    links: [{ rel: "canonical", href: "https://setto.dk/split/amount" }],
   }),
   component: ManualExpenseScreen,
 });

@@ -20,15 +20,11 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/split/items")({
   head: () => ({
     meta: [
-      { title: "Split by item — Payside" },
+      { title: "Split by item — Setto" },
       { name: "description", content: "Assign each line to the people who had it." },
-      { property: "og:title", content: "Split by item — Payside" },
+      { property: "og:title", content: "Split by item — Setto" },
       { property: "og:description", content: "Assign each line to the people who had it." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://setto.dk/split/items" },
     ],
-    links: [{ rel: "canonical", href: "https://setto.dk/split/items" }],
   }),
   component: ItemSplitScreen,
 });

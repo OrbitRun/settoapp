@@ -26,15 +26,11 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/split/review")({
   head: () => ({
     meta: [
-      { title: "Check the receipt — Payside" },
+      { title: "Check the receipt — Setto" },
       { name: "description", content: "Edit any line before you share it with anyone." },
-      { property: "og:title", content: "Check the receipt — Payside" },
+      { property: "og:title", content: "Check the receipt — Setto" },
       { property: "og:description", content: "Edit any line before you share it with anyone." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://setto.dk/split/review" },
     ],
-    links: [{ rel: "canonical", href: "https://setto.dk/split/review" }],
   }),
   component: ReviewScreen,
 });

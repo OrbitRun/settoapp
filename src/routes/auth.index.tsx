@@ -20,18 +20,14 @@ export const Route = createFileRoute("/auth/")({
 
   head: () => ({
     meta: [
-      { title: "Sign in — Payside" },
-      { name: "description", content: "Sign in to Payside to split and settle shared expenses." },
-      { property: "og:title", content: "Sign in — Payside" },
+      { title: "Sign in — Setto" },
+      { name: "description", content: "Sign in to Setto to split and settle shared expenses." },
+      { property: "og:title", content: "Sign in — Setto" },
       {
         property: "og:description",
-        content: "Sign in to Payside to split and settle shared expenses.",
+        content: "Sign in to Setto to split and settle shared expenses.",
       },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://setto.dk/auth" },
     ],
-    links: [{ rel: "canonical", href: "https://setto.dk/auth" }],
   }),
   component: AuthScreen,
 });

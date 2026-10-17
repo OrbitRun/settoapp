@@ -10,21 +10,17 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/split/start")({
   head: () => ({
     meta: [
-      { title: "Split an expense — Payside" },
+      { title: "Split an expense — Setto" },
       {
         name: "description",
-        content: "Scan a receipt or enter an amount — Payside splits it in seconds.",
+        content: "Scan a receipt or enter an amount — Setto splits it in seconds.",
       },
-      { property: "og:title", content: "Split an expense — Payside" },
+      { property: "og:title", content: "Split an expense — Setto" },
       {
         property: "og:description",
-        content: "Scan a receipt or enter an amount — Payside splits it in seconds.",
+        content: "Scan a receipt or enter an amount — Setto splits it in seconds.",
       },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://setto.dk/split/start" },
     ],
-    links: [{ rel: "canonical", href: "https://setto.dk/split/start" }],
   }),
   component: SplitStartScreen,
 });

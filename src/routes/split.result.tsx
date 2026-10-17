@@ -18,15 +18,11 @@ export const Route = createFileRoute("/split/result")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Split saved — Payside" },
+      { title: "Split saved — Setto" },
       { name: "description", content: "Everyone's share, calculated to the øre." },
-      { property: "og:title", content: "Split saved — Payside" },
+      { property: "og:title", content: "Split saved — Setto" },
       { property: "og:description", content: "Everyone's share, calculated to the øre." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://setto.dk/split/result" },
     ],
-    links: [{ rel: "canonical", href: "https://setto.dk/split/result" }],
   }),
   component: ResultScreen,
 });
@@ -72,7 +68,7 @@ function ResultScreen() {
         `${pari.personName(allocation.personId)}: ${formatMinorIn(allocation.amountMinor, originalCurrency, { compact: false, raw: true })}`,
     ),
     "",
-    "Payside",
+    "Setto",
   ].join("\n");
 
   const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
