@@ -19,17 +19,21 @@ import { AuthGate } from "@/components/pari/AuthGate";
 export const Route = createFileRoute("/activity")({
   head: () => ({
     meta: [
-      { title: "Activity — Setto" },
+      { title: "Activity — Payside" },
       {
         name: "description",
         content: "A calm, transparent log of every expense, change and settlement.",
       },
-      { property: "og:title", content: "Activity — Setto" },
+      { property: "og:title", content: "Activity — Payside" },
       {
         property: "og:description",
         content: "A calm, transparent log of every expense, change and settlement.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: "https://setto.dk/activity" },
     ],
+    links: [{ rel: "canonical", href: "https://setto.dk/activity" }],
   }),
   component: () => (
     <AuthGate>

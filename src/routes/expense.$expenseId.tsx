@@ -36,13 +36,15 @@ import { AuthGate } from "@/components/pari/AuthGate";
 export const Route = createFileRoute("/expense/$expenseId")({
   head: () => ({
     meta: [
-      { title: "Expense — Setto" },
+      { title: "Expense — Payside" },
       { name: "description", content: "Every detail of a shared expense — and who owes what." },
-      { property: "og:title", content: "Expense — Setto" },
+      { property: "og:title", content: "Expense — Payside" },
       {
         property: "og:description",
         content: "Every detail of a shared expense — and who owes what.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (

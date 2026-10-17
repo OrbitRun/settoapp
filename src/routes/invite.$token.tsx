@@ -26,12 +26,12 @@ export const Route = createFileRoute("/invite/$token")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "You're invited — Setto" },
-      { name: "description", content: "Join a group in Setto and split shared expenses." },
-      { property: "og:title", content: "You're invited — Setto" },
+      { title: "You're invited — Payside" },
+      { name: "description", content: "Join a group in Payside and split shared expenses." },
+      { property: "og:title", content: "You're invited — Payside" },
       {
         property: "og:description",
-        content: "Join a group in Setto and split shared expenses.",
+        content: "Join a group in Payside and split shared expenses.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

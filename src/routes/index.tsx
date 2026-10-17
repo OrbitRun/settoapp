@@ -8,18 +8,22 @@ import { Wordmark } from "@/components/pari/Wordmark";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Setto — Share anything. Settle easily." },
+      { title: "Payside — Share anything. Settle easily." },
       {
         name: "description",
         content:
-          "Split a bill in seconds — scan a receipt or enter an amount. No account needed to try Setto.",
+          "Split a bill in seconds — scan a receipt or enter an amount. No account needed to try Payside.",
       },
-      { property: "og:title", content: "Setto — Share anything. Settle easily." },
+      { property: "og:title", content: "Payside — Share anything. Settle easily." },
       {
         property: "og:description",
         content: "The calm way to split shared expenses with the people around you.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: "https://setto.dk" },
     ],
+    links: [{ rel: "canonical", href: "https://setto.dk" }],
   }),
   component: WelcomeScreen,
 });

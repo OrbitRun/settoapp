@@ -20,14 +20,18 @@ import { useMoneyLock } from "@/hooks/useMoneyLock";
 export const Route = createFileRoute("/split/share")({
   head: () => ({
     meta: [
-      { title: "Share the receipt — Setto" },
+      { title: "Share the receipt — Payside" },
       { name: "description", content: "Split the whole receipt by any rule, or go item by item." },
-      { property: "og:title", content: "Share the receipt — Setto" },
+      { property: "og:title", content: "Share the receipt — Payside" },
       {
         property: "og:description",
         content: "Split the whole receipt by any rule, or go item by item.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: "https://setto.dk/split/share" },
     ],
+    links: [{ rel: "canonical", href: "https://setto.dk/split/share" }],
   }),
   component: ShareScreen,
 });

@@ -18,16 +18,18 @@ export const Route = createFileRoute("/reset-password")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Reset password — Setto" },
-      { name: "description", content: "Choose a new password for your Setto account." },
-      { property: "og:title", content: "Reset password — Setto" },
+      { title: "Reset password — Payside" },
+      { name: "description", content: "Choose a new password for your Payside account." },
+      { property: "og:title", content: "Reset password — Payside" },
       {
         property: "og:description",
-        content: "Choose a new password for your Setto account.",
+        content: "Choose a new password for your Payside account.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: "https://setto.dk/reset-password" },
     ],
+    links: [{ rel: "canonical", href: "https://setto.dk/reset-password" }],
   }),
   component: ResetPasswordScreen,
 });
@@ -132,20 +134,20 @@ function ResetPasswordScreen() {
             {isIOSBrowser() ? (
               <>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Åbn linket i Setto-appen for at vælge en ny adgangskode.
+                  {t("auth.openAppHint")}
                 </p>
                 <a
                   href={openInSettoUrl()}
                   className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-accent px-4 text-[15px] font-semibold text-white transition-colors hover:bg-accent/90"
                 >
-                  Åbn i Setto
+                  {t("auth.openApp")}
                 </a>
                 <div className="relative mt-8">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase text-muted-foreground">
-                    <span className="bg-background px-2">Eller fortsæt her</span>
+                    <span className="bg-background px-2">{t("auth.continueHere")}</span>
                   </div>
                 </div>
               </>

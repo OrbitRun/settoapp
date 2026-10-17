@@ -19,16 +19,18 @@ import { AuthGate } from "@/components/pari/AuthGate";
 export const Route = createFileRoute("/settle/$groupId")({
   head: () => ({
     meta: [
-      { title: "Settle up — Setto" },
+      { title: "Settle up — Payside" },
       {
         name: "description",
         content: "The shortest way to clear a group: fewest payments, exact amounts.",
       },
-      { property: "og:title", content: "Settle up — Setto" },
+      { property: "og:title", content: "Settle up — Payside" },
       {
         property: "og:description",
         content: "The shortest way to clear a group: fewest payments, exact amounts.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (

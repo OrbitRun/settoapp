@@ -15,13 +15,15 @@ import { useT } from "@/lib/i18n";
 export const Route = createFileRoute("/receipts")({
   head: () => ({
     meta: [
-      { title: "Receipts — Setto" },
-      { name: "description", content: "Your private receipt archive in Setto." },
-      { property: "og:title", content: "Receipts — Setto" },
-      { property: "og:description", content: "Your private receipt archive in Setto." },
+      { title: "Receipts — Payside" },
+      { name: "description", content: "Your private receipt archive in Payside." },
+      { property: "og:title", content: "Receipts — Payside" },
+      { property: "og:description", content: "Your private receipt archive in Payside." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: "https://setto.dk/receipts" },
     ],
+    links: [{ rel: "canonical", href: "https://setto.dk/receipts" }],
   }),
   component: () => (
     <AuthGate>
