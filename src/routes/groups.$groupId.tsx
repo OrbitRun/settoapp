@@ -21,7 +21,7 @@ import { fetchActiveInvitations } from "@/data/invitations";
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { PersonSheet, type PersonSheetState } from "@/components/pari/PersonSheet";
-import { groupPeopleRows } from "@/lib/group-people";
+import { canManageInvitations, groupPeopleRows } from "@/lib/group-people";
 
 export const Route = createFileRoute("/groups/$groupId")({
   head: () => ({
@@ -106,6 +106,10 @@ function GroupDetailScreen() {
   const defaults = pari.groupDefaultPercentages(groupId);
   // "Gør op" is a real action only when someone actually owes someone else.
   const canSettle = pari.settlementPlan(groupId).length > 0;
+  // Invitations are owner-only (enforced by group_invitations RLS). The group
+  // row only renders after loading settled, so ownership is resolved here and
+  // the buttons never flash for a regular member.
+  const canInvite = canManageInvitations(group, pari.session?.user?.id);
 
   // Same safe removal path as the group settings screen — no second system.
   const confirmRemove = async () => {
