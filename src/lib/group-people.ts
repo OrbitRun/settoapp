@@ -61,6 +61,23 @@ export function groupPeopleRows(args: {
  * not loaded the person row, deleting would be irreversible, so an unknown
  * link is treated as "linked" and the membership is kept.
  */
+/**
+ * Who may create invitations for a group. The backend enforces this through
+ * the `group_invitations` RLS policies: only the durable group owner can
+ * insert. The UI must mirror that rule so a regular member never opens an
+ * invitation sheet that can never succeed.
+ *
+ * Returns false while the user id is unknown, so a restricted action is never
+ * briefly shown before ownership has resolved.
+ */
+export function canManageInvitations(
+  group: { owner_user_id?: string | null } | null | undefined,
+  userId: string | null | undefined,
+): boolean {
+  if (!group || !userId) return false;
+  return group.owner_user_id === userId;
+}
+
 export function removalMode(args: {
   hasGroupHistory: boolean;
   linkedToAccount: boolean | "unknown";

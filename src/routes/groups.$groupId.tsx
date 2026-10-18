@@ -21,7 +21,7 @@ import { fetchActiveInvitations } from "@/data/invitations";
 import { BottomSheet } from "@/components/pari/BottomSheet";
 import { PrimaryButton, SecondaryButton } from "@/components/pari/Buttons";
 import { PersonSheet, type PersonSheetState } from "@/components/pari/PersonSheet";
-import { groupPeopleRows } from "@/lib/group-people";
+import { canManageInvitations, groupPeopleRows } from "@/lib/group-people";
 
 export const Route = createFileRoute("/groups/$groupId")({
   head: () => ({
@@ -106,6 +106,10 @@ function GroupDetailScreen() {
   const defaults = pari.groupDefaultPercentages(groupId);
   // "Gør op" is a real action only when someone actually owes someone else.
   const canSettle = pari.settlementPlan(groupId).length > 0;
+  // Invitations are owner-only (enforced by group_invitations RLS). The group
+  // row only renders after loading settled, so ownership is resolved here and
+  // the buttons never flash for a regular member.
+  const canInvite = canManageInvitations(group, pari.session?.user?.id);
 
   // Same safe removal path as the group settings screen — no second system.
   const confirmRemove = async () => {
@@ -268,14 +272,16 @@ function GroupDetailScreen() {
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={() => setInviteOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
-              >
-                <UserPlus className="h-4 w-4" strokeWidth={2} />
-                {t("invite.title")}
-              </button>
+              {canInvite ? (
+                <button
+                  type="button"
+                  onClick={() => setInviteOpen(true)}
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
+                >
+                  <UserPlus className="h-4 w-4" strokeWidth={2} />
+                  {t("invite.title")}
+                </button>
+              ) : null}
               <Link
                 to="/groups/$groupId/edit"
                 params={{ groupId }}
@@ -350,16 +356,18 @@ function GroupDetailScreen() {
               })}
             </Panel>
 
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => setInviteOpen(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
-              >
-                <UserPlus className="h-4 w-4" strokeWidth={2} />
-                {t("groups.addPerson")}
-              </button>
-            </div>
+            {canInvite ? (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setInviteOpen(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
+                >
+                  <UserPlus className="h-4 w-4" strokeWidth={2} />
+                  {t("groups.addPerson")}
+                </button>
+              </div>
+            ) : null}
           </>
         ) : null}
 
@@ -413,6 +421,7 @@ function GroupDetailScreen() {
       />
       <PersonSheet
         person={personDetail}
+        canInvite={canInvite}
         onClose={() => setPersonDetail(null)}
         onInvite={(person) => {
           setPersonDetail(null);

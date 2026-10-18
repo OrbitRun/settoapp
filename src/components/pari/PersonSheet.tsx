@@ -29,11 +29,14 @@ export type PersonSheetState = {
  */
 export function PersonSheet({
   person,
+  canInvite = true,
   onClose,
   onInvite,
   onRemove,
 }: {
   person: PersonSheetState | null;
+  /** Invitations are owner-only; regular members never see the action. */
+  canInvite?: boolean;
   onClose: () => void;
   /** Opens the existing invitation sheet for this exact person. */
   onInvite: (person: PersonSheetState) => void;
@@ -61,7 +64,7 @@ export function PersonSheet({
         ? t("invite.person.pending")
         : t("invite.person.unlinked");
 
-  const inviteAction = personInviteAction(person);
+  const inviteAction = canInvite ? personInviteAction(person) : null;
   const canRename = !person.former;
   const canRemove = !person.former && !person.isSelf;
 

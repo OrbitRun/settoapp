@@ -2,12 +2,31 @@ import { describe, expect, it } from "vitest";
 
 import {
   activePersonIdsFor,
+  canManageInvitations,
   groupPeopleRows,
   removalMode,
   removedPersonIdsFor,
   type MembershipRow,
 } from "@/lib/group-people";
 import { personInviteAction } from "@/lib/person-actions";
+
+describe("canManageInvitations", () => {
+  // Mirrors the group_invitations RLS policies: only the durable group owner
+  // may insert an invitation.
+  it("A. the group owner may invite", () => {
+    expect(canManageInvitations({ owner_user_id: "owner" }, "owner")).toBe(true);
+  });
+
+  it("B. a regular active member may not invite", () => {
+    expect(canManageInvitations({ owner_user_id: "owner" }, "member")).toBe(false);
+  });
+
+  it("C. ownership unknown (still loading) means the action stays hidden", () => {
+    expect(canManageInvitations({ owner_user_id: "owner" }, null)).toBe(false);
+    expect(canManageInvitations(null, "owner")).toBe(false);
+    expect(canManageInvitations(undefined, undefined)).toBe(false);
+  });
+});
 
 describe("People tab rows", () => {
   it("A. keeps a settled former member visible at zero", () => {

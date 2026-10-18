@@ -32,6 +32,8 @@ export type Person = {
 export type Group = {
   id: string;
   name: string;
+  /** Durable owner account — the only role allowed to create invitations. */
+  owner_user_id: string | null;
   created_by: string;
   default_split_type: SplitMode;
   currency: string;
