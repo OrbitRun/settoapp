@@ -13,6 +13,7 @@ import {
   type GroupInvitation,
 } from "@/data/invitations";
 import { useT } from "@/lib/i18n";
+import { runInvitationRequest, type InvitationRequestState } from "@/lib/invitation-request";
 
 /** One invitation, four ways to share it: link, QR, copy and join code. */
 export function InviteSheet({
@@ -36,35 +37,31 @@ export function InviteSheet({
 }) {
   const pari = usePari();
   const t = useT();
-  const [invitation, setInvitation] = useState<GroupInvitation | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [requestState, setRequestState] = useState<InvitationRequestState<GroupInvitation>>({ status: "loading" });
+  const [attempt, setAttempt] = useState(0);
+  const invitation = requestState.status === "ready" ? requestState.invitation : null;
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
   const userId = pari.session?.user?.id ?? null;
 
   useEffect(() => {
     if (!open) {
-      setInvitation(null);
-      setFailed(false);
+      setRequestState({ status: "loading" });
       return;
     }
-    if (!userId) return;
+    if (!userId) {
+      setRequestState({ status: "failed", reason: "temporary" });
+      return;
+    }
     let active = true;
-    // Every outcome ends in a defined state: an invitation, or a failure the
-    // user can read and close — never an endless placeholder.
-    ensureGroupInvitation(groupId, userId, personId)
-      .then((result) => {
-        if (!active) return;
-        if (result) setInvitation(result);
-        else setFailed(true);
-      })
-      .catch(() => {
-        if (active) setFailed(true);
-      });
+    void runInvitationRequest(
+      (signal) => ensureGroupInvitation(groupId, userId, personId, signal),
+      (state) => { if (active) setRequestState(state); },
+    );
     return () => {
       active = false;
     };
-  }, [open, groupId, userId, personId]);
+  }, [open, groupId, userId, personId, attempt]);
 
   const url = invitation ? invitationUrl(invitation.token) : "";
 
@@ -119,11 +116,16 @@ export function InviteSheet({
       description={personName ? t("invite.personDescription", { name: personName }) : groupName}
     >
 
-      {failed ? (
+      {requestState.status === "failed" ? (
         <div className="space-y-3 pb-2">
           <p className="rounded-2xl bg-surface-strong px-4 py-3.5 text-sm text-muted-foreground">
-            {t("invite.createFailed")}
+            {t(requestState.reason === "permission" ? "invite.permissionDenied" : "invite.createFailed")}
           </p>
+          {requestState.reason === "temporary" ? (
+            <PrimaryButton onClick={() => setAttempt((previous) => previous + 1)}>
+              {t("invite.retry")}
+            </PrimaryButton>
+          ) : null}
           <SecondaryButton onClick={onClose}>{t("common.cancel")}</SecondaryButton>
         </div>
       ) : !invitation ? (
