@@ -13,9 +13,9 @@ describe("invitation sheet request lifecycle", () => {
   it("ends loading after a network failure and a retry can return the invitation", async () => {
     const states: InvitationRequestState<string>[] = [];
     const request = vi.fn().mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValueOnce("original-invitation");
-    await runInvitationRequest(request, (s) => states.push(s));
+    await runInvitationRequest<string>(request, (s) => states.push(s));
     expect(states.at(-1)).toEqual({ status: "failed", reason: "temporary" });
-    await runInvitationRequest(request, (s) => states.push(s));
+    await runInvitationRequest<string>(request, (s) => states.push(s));
     expect(states).toEqual([
       { status: "loading" }, { status: "failed", reason: "temporary" },
       { status: "loading" }, { status: "ready", invitation: "original-invitation" },
