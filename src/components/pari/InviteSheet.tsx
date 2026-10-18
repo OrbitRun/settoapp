@@ -37,6 +37,7 @@ export function InviteSheet({
   const pari = usePari();
   const t = useT();
   const [invitation, setInvitation] = useState<GroupInvitation | null>(null);
+  const [failed, setFailed] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
   const userId = pari.session?.user?.id ?? null;
@@ -44,13 +45,22 @@ export function InviteSheet({
   useEffect(() => {
     if (!open) {
       setInvitation(null);
+      setFailed(false);
       return;
     }
     if (!userId) return;
     let active = true;
-    void ensureGroupInvitation(groupId, userId, personId).then((result) => {
-      if (active) setInvitation(result);
-    });
+    // Every outcome ends in a defined state: an invitation, or a failure the
+    // user can read and close — never an endless placeholder.
+    ensureGroupInvitation(groupId, userId, personId)
+      .then((result) => {
+        if (!active) return;
+        if (result) setInvitation(result);
+        else setFailed(true);
+      })
+      .catch(() => {
+        if (active) setFailed(true);
+      });
     return () => {
       active = false;
     };
