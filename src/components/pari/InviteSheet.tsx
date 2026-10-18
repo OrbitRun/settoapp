@@ -119,7 +119,14 @@ export function InviteSheet({
       description={personName ? t("invite.personDescription", { name: personName }) : groupName}
     >
 
-      {!invitation ? (
+      {failed ? (
+        <div className="space-y-3 pb-2">
+          <p className="rounded-2xl bg-surface-strong px-4 py-3.5 text-sm text-muted-foreground">
+            {t("invite.createFailed")}
+          </p>
+          <SecondaryButton onClick={onClose}>{t("common.cancel")}</SecondaryButton>
+        </div>
+      ) : !invitation ? (
         <div className="h-40 animate-pulse rounded-3xl bg-surface-strong" />
       ) : (
         <div className="space-y-4 pb-2">
