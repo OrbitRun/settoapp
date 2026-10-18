@@ -272,14 +272,16 @@ function GroupDetailScreen() {
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={() => setInviteOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
-              >
-                <UserPlus className="h-4 w-4" strokeWidth={2} />
-                {t("invite.title")}
-              </button>
+              {canInvite ? (
+                <button
+                  type="button"
+                  onClick={() => setInviteOpen(true)}
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
+                >
+                  <UserPlus className="h-4 w-4" strokeWidth={2} />
+                  {t("invite.title")}
+                </button>
+              ) : null}
               <Link
                 to="/groups/$groupId/edit"
                 params={{ groupId }}
@@ -354,16 +356,18 @@ function GroupDetailScreen() {
               })}
             </Panel>
 
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => setInviteOpen(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
-              >
-                <UserPlus className="h-4 w-4" strokeWidth={2} />
-                {t("groups.addPerson")}
-              </button>
-            </div>
+            {canInvite ? (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setInviteOpen(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-surface-strong py-4 text-[15px] font-medium transition-transform active:scale-[0.99]"
+                >
+                  <UserPlus className="h-4 w-4" strokeWidth={2} />
+                  {t("groups.addPerson")}
+                </button>
+              </div>
+            ) : null}
           </>
         ) : null}
 
@@ -417,6 +421,7 @@ function GroupDetailScreen() {
       />
       <PersonSheet
         person={personDetail}
+        canInvite={canInvite}
         onClose={() => setPersonDetail(null)}
         onInvite={(person) => {
           setPersonDetail(null);
