@@ -12,6 +12,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { invitationRequestError } from "@/lib/invitation-request";
 
 export type GroupInvitation = {
   id: string;
@@ -67,6 +68,7 @@ export async function ensureGroupInvitation(
   groupId: string,
   userId: string,
   personId?: string | null,
+  signal?: AbortSignal,
 ): Promise<GroupInvitation | null> {
   let query = supabase
     .from("group_invitations")
@@ -78,12 +80,14 @@ export async function ensureGroupInvitation(
 
   query = personId ? query.eq("person_id", personId) : query.is("person_id", null);
 
-  const { data: existing } = await query.order("created_at", { ascending: false }).limit(1);
+  if (signal) query = query.abortSignal(signal);
+  const { data: existing, error: lookupError } = await query.order("created_at", { ascending: false }).limit(1);
+  if (lookupError) throw invitationRequestError(lookupError);
 
   const live = (existing ?? [])[0] as GroupInvitation | undefined;
   if (live) return live;
 
-  const { data, error } = await supabase
+  const insert = supabase
     .from("group_invitations")
     .insert({
       group_id: groupId,
@@ -92,12 +96,11 @@ export async function ensureGroupInvitation(
       token: randomToken(24, "abcdefghijklmnopqrstuvwxyz0123456789"),
       join_code: randomToken(6, CODE_ALPHABET),
     })
-    .select()
-    .single();
+    .select();
+  const { data, error } = await (signal ? insert.abortSignal(signal) : insert).single();
 
   if (error) {
-    console.error("[pari] ensureGroupInvitation", error);
-    return null;
+    throw invitationRequestError(error);
   }
   return data as unknown as GroupInvitation;
 }
